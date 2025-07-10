@@ -60,7 +60,7 @@ GSPREAD_CLIENT = None
 DRIVE_CLIENT = None
 
 try:
-    creds_json = None # ตัวแปรนี้จะเก็บ dictionary ของ service account key
+    creds_json = None # This will store the dictionary of the service account key
 
     # ขั้นแรก: อ่านเนื้อหา JSON ของ Service Account Key ไม่ว่าจะมาจาก Environment Variable หรือไฟล์
     if os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY_JSON'):
@@ -74,27 +74,26 @@ try:
 
     # ถ้า creds_json ถูกโหลดได้สำเร็จ
     if creds_json:
-        # 1. สำหรับ gspread: สร้าง ServiceAccountCredentials object
-        # ตัวแปร 'creds' นี้จะใช้กับ gspread
+        # Create ServiceAccountCredentials object (used by both gspread and PyDrive)
+        # ตัวแปร 'creds' นี้จะถูกใช้สำหรับทั้ง gspread และ PyDrive
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, GOOGLE_API_SCOPE)
+
+        # 1. สำหรับ gspread: Authenticate gspread client
         GSPREAD_CLIENT = gspread.authorize(creds)
 
-        # 2. สำหรับ PyDrive: ใช้แนวทางที่เหมาะกับ Service Account ของ PyDrive โดยตรง
+        # 2. สำหรับ PyDrive: Initialize PyDrive client
         gauth = GoogleAuth()
-        # กำหนด client_config_json ใน settings ของ PyDrive
-        # PyDrive ต้องการ dictionary ของ Service Account Key โดยตรงที่นี่
-        gauth.settings['client_config_json'] = creds_json
-        gauth.settings['oauth_scope'] = GOOGLE_API_SCOPE # กำหนด scope ให้ PyDrive ด้วย
-        
-        # ทำการยืนยันตัวตนสำหรับ Service Account โดยเฉพาะ
-        gauth.ServiceAuth() 
+        # กำหนด ServiceAccountCredentials object ให้กับ gauth.credentials โดยตรง
+        gauth.credentials = creds
+        # (บรรทัด gauth.Authorize() อาจไม่จำเป็นสำหรับ Service Account แต่อาจช่วยได้ถ้ายังติดปัญหา)
+        # gauth.Authorize() # Un-comment บรรทัดนี้ถ้ายังเจอ error เกี่ยวกับการ authenticate ของ PyDrive
+
         DRIVE_CLIENT = GoogleDrive(gauth)
     else:
         raise ValueError("Service Account credentials could not be loaded from environment or file.")
 
 except Exception as e:
     print(f"CRITICAL ERROR: Google API clients failed to initialize. Error: {e}")
-    # ตั้งค่า client เป็น None หากเกิดข้อผิดพลาดในการเชื่อมต่อ
     GSPREAD_CLIENT = None
     DRIVE_CLIENT = None
 
