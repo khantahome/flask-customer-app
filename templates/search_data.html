@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ค้นหาข้อมูลลูกค้า</title>
+    <!-- Import Google Fonts (Kanit) for a modern Thai font -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Define CSS variables for easy theme customization */
+        :root {
+            --primary-color: #4A90E2; /* Main blue color */
+            --secondary-color: #50E3C2; /* Secondary mint green color */
+            --background-color: #F0F2F5; /* Light background color */
+            --card-background: #FFFFFF; /* Background color for the form card */
+            --text-color: #333333; /* General text color */
+            --border-color: #DDDDDD; /* Border color for input fields */
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow for the card */
+            --success-color: #28A745; /* Green for success messages */
+            --error-color: #DC3545; /* Red for error messages */
+            --info-color: #17A2B8; /* Blue for info messages */
+            --record-bg-odd: #F9F9F9; /* Background for odd records */
+            --record-bg-even: #EFEFEF; /* Background for even records */
+        }
+
+        /* Basic styles for the body to center content and set font */
+        body {
+            font-family: 'Kanit', sans-serif; /* Use Kanit font */
+            background-color: var(--background-color);
+            display: flex; /* Use Flexbox for centering */
+            flex-direction: column; /* Stack content vertically */
+            justify-content: flex-start; /* Align content to the top */
+            align-items: center; /* Center horizontally */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            margin: 0;
+            padding: 20px; /* Add padding around the content */
+            color: var(--text-color);
+            line-height: 1.6; /* Improve readability */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /* Styles for the main container */
+        .main-container {
+            background-color: var(--card-background);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
+            text-align: center;
+            width: 100%;
+            max-width: 800px; /* Wider max-width for search results */
+            box-sizing: border-box;
+            margin-bottom: 20px; /* Space below the search form */
+        }
+
+        /* Styles for the heading */
+        .main-container h2 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 2em;
+        }
+
+        /* Style for the logged-in user display */
+        .logged-in-user {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* Styles for input groups (label + input) */
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 400;
+            color: var(--text-color);
+            font-size: 0.95em;
+        }
+
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input-group input[type="text"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+            outline: none;
+        }
+
+        /* Styles for the search and clear buttons */
+        .search-button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .search-button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex: 1;
+            min-width: 120px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-button.clear {
+            background-color: #FFC107; /* Orange for clear button */
+            color: #333;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+        }
+        .search-button:active {
+            transform: translateY(0);
+        }
+        .search-button.clear:hover {
+            background-color: #e0a800;
+        }
+
+        /* Styles for flash messages */
+        .flash-message {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .flash-message.success {
+            background-color: #D4EDDA;
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+        .flash-message.error {
+            background-color: #F8D7DA;
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+        .flash-message.info {
+            background-color: #D1ECF1;
+            color: var(--info-color);
+            border: 1px solid var(--info-color);
+        }
+
+        /* Styles for search results container */
+        .results-container {
+            background-color: var(--card-background);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+            margin-top: 20px; /* Space above results */
+            text-align: left;
+        }
+
+        .results-container h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        /* Styles for individual customer records (cards) */
+        .customer-record-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+        .customer-record-card:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Alternating background colors for records */
+        .customer-record-card:nth-child(odd) {
+            background-color: var(--record-bg-odd);
+        }
+        .customer-record-card:nth-child(even) {
+            background-color: var(--record-bg-even);
+        }
+
+        .customer-record-card p {
+            margin: 5px 0;
+            font-size: 0.95em;
+            word-wrap: break-word; /* Ensure long links wrap */
+        }
+        .customer-record-card p strong {
+            color: var(--primary-color);
+            min-width: 120px; /* Align labels */
+            display: inline-block;
+        }
+
+        /* Image thumbnails */
+        .image-thumbnails {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .image-thumbnail {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .image-thumbnail:hover {
+            transform: scale(1.05);
+        }
+
+        /* Lightbox/Modal Styles */
+        .lightbox-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .lightbox-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .lightbox-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .lightbox-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transform: scale(1); /* Initial zoom level */
+            transition: transform 0.2s ease;
+        }
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1.5em;
+            user-select: none;
+        }
+        .lightbox-nav.prev { left: 10px; }
+        .lightbox-nav.next { right: 10px; }
+        .lightbox-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 50%; /* Changed to circle */
+            font-size: 1.2em;
+            user-select: none;
+            width: 30px; /* Make it a clear circle */
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .lightbox-zoom-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: flex;
+            gap: 10px;
+        }
+        .lightbox-zoom-controls button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+
+
+        .record-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: flex-end; /* Align buttons to the right */
+        }
+
+        .record-button {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+        .record-button.edit {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .record-button:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        /* Back to Main Menu button at the bottom */
+        .back-to-main-menu {
+            display: block;
+            margin: 30px auto 0; /* Center horizontally, space above */
+            padding: 12px 25px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
+            font-weight: 600;
+            text-align: center; /* เพิ่มบรรทัดนี้ */
+        }
+        .back-to-main-menu:hover {
+            background-color: #5a6268;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .main-container, .results-container {
+                padding: 25px;
+                margin-bottom: 15px;
+            }
+            .main-container h2 {
+                font-size: 1.8em;
+            }
+            .search-button, .back-to-main-menu {
+                padding: 10px 15px;
+                font-size: 1em;
+                width: 100%; /* Full width on small screens */
+            }
+            .search-button-group, .record-buttons {
+                flex-direction: column;
+            }
+            .customer-record-card {
+                padding: 15px;
+            }
+            .customer-record-card p {
+                font-size: 0.9em;
+            }
+            .customer-record-card p strong {
+                display: block; /* Stack label and value on small screens */
+                min-width: unset;
+                margin-bottom: 3px;
+            }
+            .lightbox-nav {
+                font-size: 1.2em;
+                padding: 8px 12px;
+            }
+            .lightbox-close {
+                font-size: 1em;
+                padding: 3px 8px;
+            }
+            .lightbox-zoom-controls {
+                font-size: 1em;
+                padding: 3px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h2>ค้นหาข้อมูลลูกค้า</h2>
+        <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
+
+        <!-- Flash messages display here -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="GET" action="{{ url_for('search_customer_data') }}" class="search-form">
+            <div class="input-group">
+                <label for="search_keyword">คำค้นหา (ชื่อ, นามสกุล, เบอร์มือถือ, เลขบัตรประชาชน, ชื่อกิจการ)</label>
+                <input type="text" id="search_keyword" name="search_keyword" placeholder="กรอกคำค้นหา" value="{{ search_keyword if search_keyword else '' }}">
+            </div>
+            
+            <div class="search-button-group">
+                <button type="submit" class="search-button">ค้นหาข้อมูล</button>
+                <button type="button" class="search-button clear" id="clearSearchButton">ล้างข้อมูลการค้นหา</button>
+            </div>
+        </form>
+    </div>
+
+    {# Only display results container if there are records to show #}
+    {% if customer_records %}
+    <div class="results-container">
+        <h3>ผลการค้นหา ({{ customer_records|length }} รายการ)</h3>
+        {% for record in customer_records %}
+            <div class="customer-record-card">
+                <p><strong>ชื่อ-นามสกุล:</strong> {{ record.ชื่อ }} {{ record.นามสกุล }}</p>
+                <p><strong>เบอร์มือถือ:</strong> {{ record.เบอร์มือถือ }}</p>
+                <p><strong>เลขบัตรประชาชน:</strong> {{ record.เลขบัตรประชาชน }}</p>
+                <p><strong>ชื่อกิจการ:</strong> {{ record.ชื่อกิจการ }}</p>
+                <p><strong>สถานะ:</strong> {{ record.สถานะ }}</p>
+                <p><strong>วงเงินที่ต้องการ:</strong> {{ record['วงเงินที่ต้องการ'] }}</p>
+                <p><strong>วงเงินที่อนุมัติ:</strong> {{ record['วงเงินที่อนุมัติ'] }}</p>
+                <p><strong>LINE ID:</strong> {{ record['LINE ID'] }}</p>
+                <p><strong>วันที่ขอเข้ามา:</strong> {{ record['วันที่ขอเข้ามา'] }}</p>
+                <p><strong>ลิงค์โลเคชั่นบ้าน:</strong> <a href="{{ record['ลิงค์โลเคชั่นบ้าน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นบ้าน'] }}</a></p>
+                <p><strong>ลิงค์โลเคชั่นที่ทำงาน:</strong> <a href="{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}</a></p>
+                <p><strong>หมายเหตุ:</strong> {{ record.หมายเหตุ }}</p>
+                <p><strong>บันทึกโดย:</strong> {{ record['Logged In User'] }}</p>
+                
+                <p><strong>รูปภาพ:</strong>
+                    <div class="image-thumbnails" data-image-urls="{{ record['Image URLs'] if record['Image URLs'] != '-' else '' }}">
+                        {% if record['Image URLs'] and record['Image URLs'] != '-' %}
+                            {% set image_urls_list = record['Image URLs'].split(', ') | select('ne', '-') | map('trim') | list %}
+                            {% if image_urls_list %}
+                                {% for url in image_urls_list %}
+                                    {# Use Flask proxy route for image src #}
+                                    <img src="{{ url_for('proxy_image', image_url=url) }}" alt="Thumbnail {{ loop.index }}" class="image-thumbnail" onerror="console.error('Thumbnail image load error. src:', this.src, '. Please check Flask proxy setup and Google Drive permissions.'); this.src='https://placehold.co/80x80/FF0000/FFFFFF?text=Error';">
+                                {% endfor %}
+                            {% else %}
+                                <p>ไม่มีรูปภาพที่ถูกต้อง</p>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                </p>
+                
+                <div class="record-buttons">
+                    {# Link to edit page with row_index #}
+                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไขข้อมูล</a>
+                    {# This button will also go to the edit page #}
+                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button">อัปโหลดรูปเพิ่มเติม</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('dashboard') }}" class="back-to-main-menu">กลับสู่เมนูหลัก</a>
+
+    <!-- Lightbox/Modal HTML Structure -->
+    <div class="lightbox-overlay" id="lightboxOverlay">
+        <div class="lightbox-content">
+            {# Use Flask proxy route for lightbox image src #}
+            <img src="" alt="Full size image" class="lightbox-image" id="lightboxImage" onerror="console.error('Lightbox image load error. src:', this.src, '. Please check Flask proxy setup and Google Drive permissions.'); this.src='https://placehold.co/600x400/FF0000/FFFFFF?text=Error';">
+            <span class="lightbox-nav prev" id="lightboxPrev">&lt;</span>
+            <span class="lightbox-nav next" id="lightboxNext">&gt;</span>
+            <span class="lightbox-close" id="lightboxClose">X</span>
+            <div class="lightbox-zoom-controls">
+                <button id="zoomInButton">+</button>
+                <button id="zoomOutButton">-</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const clearSearchButton = document.getElementById('clearSearchButton');
+            const searchForm = document.querySelector('.search-form');
+            const searchKeywordInput = document.getElementById('search_keyword');
+
+            if (clearSearchButton) {
+                clearSearchButton.addEventListener('click', function() {
+                    searchKeywordInput.value = '';
+                    searchForm.submit(); // Submit with empty keyword to clear results
+                });
+            }
+
+            // --- Lightbox/Modal Logic ---
+            const lightboxOverlay = document.getElementById('lightboxOverlay');
+            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxPrev = document.getElementById('lightboxPrev');
+            const lightboxNext = document.getElementById('lightboxNext');
+            const lightboxClose = document.getElementById('lightboxClose');
+            const zoomInButton = document.getElementById('zoomInButton');
+            const zoomOutButton = document.getElementById('zoomOutButton');
+
+            let currentImageUrls = [];
+            let currentImageIndex = 0;
+            let currentZoom = 1;
+
+            function openLightbox(urls, startIndex) {
+                currentImageUrls = urls;
+                currentImageIndex = startIndex;
+                currentZoom = 1; // Reset zoom when opening new image
+                updateLightboxImage();
+                lightboxOverlay.classList.add('visible');
+            }
+
+            function updateLightboxImage() {
+                if (currentImageUrls.length > 0) {
+                    // Corrected: Use Flask proxy route for lightbox image src
+                    const proxyUrl = `{{ url_for('proxy_image') }}?image_url=${encodeURIComponent(currentImageUrls[currentImageIndex])}`;
+                    lightboxImage.src = proxyUrl;
+                    lightboxImage.style.transform = `scale(${currentZoom})`; // Apply zoom
+                    lightboxPrev.style.display = currentImageUrls.length > 1 ? 'block' : 'none';
+                    lightboxNext.style.display = currentImageUrls.length > 1 ? 'block' : 'none';
+                }
+            }
+
+            function closeLightbox() {
+                lightboxOverlay.classList.remove('visible');
+                lightboxImage.src = ''; // Clear image source
+            }
+
+            // Event listeners for thumbnails
+            document.querySelectorAll('.image-thumbnails').forEach(container => {
+                const urlsString = container.dataset.imageUrls;
+                console.log('data-image-urls string from HTML:', urlsString); // Debugging: Check raw data-attribute
+                if (urlsString) {
+                    const urls = urlsString.split(', ').filter(url => url.trim() !== '');
+                    console.log('Parsed image URLs array in JS:', urls); // Debugging: Check parsed array
+                    container.querySelectorAll('.image-thumbnail').forEach((thumbnail, index) => {
+                        thumbnail.addEventListener('click', () => {
+                            openLightbox(urls, index);
+                        });
+                    });
+                }
+            });
+
+            // Navigation and Close
+            lightboxPrev.addEventListener('click', () => {
+                currentImageIndex = (currentImageIndex - 1 + currentImageUrls.length) % currentImageUrls.length;
+                currentZoom = 1; // Reset zoom on navigation
+                updateLightboxImage();
+            });
+
+            lightboxNext.addEventListener('click', () => {
+                currentImageIndex = (currentImageIndex + 1) % currentImageUrls.length;
+                currentZoom = 1; // Reset zoom on navigation
+                updateLightboxImage();
+            });
+
+            lightboxClose.addEventListener('click', closeLightbox);
+            lightboxOverlay.addEventListener('click', (e) => {
+                // Close if clicking on the overlay itself, not the image or controls
+                if (e.target === lightboxOverlay) {
+                    closeLightbox();
+                }
+            });
+
+            // Zoom controls
+            zoomInButton.addEventListener('click', () => {
+                currentZoom = Math.min(currentZoom + 0.1, 3); // Max zoom 3x
+                lightboxImage.style.transform = `scale(${currentZoom})`;
+            });
+
+            zoomOutButton.addEventListener('click', () => {
+                currentZoom = Math.max(currentZoom - 0.1, 0.5); // Min zoom 0.5x
+                lightboxImage.style.transform = `scale(${currentZoom})`;
+            });
+
+            // Keyboard navigation (optional)
+            document.addEventListener('keydown', (e) => {
+                if (lightboxOverlay.classList.contains('visible')) {
+                    if (e.key === 'ArrowLeft') {
+                        lightboxPrev.click();
+                    } else if (e.key === 'ArrowRight') {
+                        lightboxNext.click();
+                    } else if (e.key === 'Escape') {
+                        closeLightbox();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

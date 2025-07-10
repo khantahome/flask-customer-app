@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เมนูหลัก</title>
+    <!-- Import Google Fonts (Kanit) for a modern Thai font -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Define CSS variables for easy theme customization */
+        :root {
+            --primary-color: #4A90E2; /* Main blue color */
+            --secondary-color: #50E3C2; /* Secondary mint green color */
+            --background-color: #F0F2F5; /* Light background color */
+            --card-background: #FFFFFF; /* Background color for the menu card */
+            --text-color: #333333; /* General text color */
+            --border-color: #DDDDDD; /* Border color */
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow for the card */
+        }
+
+        /* Basic styles for the body to center content and set font */
+        body {
+            font-family: 'Kanit', sans-serif; /* Use Kanit font */
+            background-color: var(--background-color);
+            display: flex; /* Use Flexbox for centering */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            margin: 0;
+            color: var(--text-color);
+            line-height: 1.6; /* Improve readability */
+        }
+
+        /* Styles for the main menu container (the "card") */
+        .menu-container {
+            background-color: var(--card-background);
+            padding: 40px;
+            border-radius: 12px; /* Rounded corners */
+            box-shadow: var(--shadow-light); /* Subtle shadow */
+            text-align: center;
+            width: 100%;
+            max-width: 500px; /* Max width for larger screens */
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+        }
+
+        /* Styles for the heading */
+        .menu-container h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px; /* Adjust margin */
+            font-weight: 600;
+            font-size: 2em;
+        }
+
+        /* Styles for the welcome message */
+        .welcome-message {
+            font-size: 1.2em;
+            color: var(--text-color);
+            margin-bottom: 10px; /* Adjust margin */
+        }
+
+        /* Styles for the date display */
+        .current-date {
+            font-size: 0.9em;
+            color: #666666; /* Slightly lighter text for date */
+            margin-bottom: 30px; /* Space before buttons */
+        }
+
+        /* Styles for the button group */
+        .button-group {
+            display: flex; /* Use flexbox to arrange buttons */
+            flex-direction: column; /* Stack buttons vertically */
+            gap: 15px; /* Space between buttons */
+        }
+
+        /* Styles for the menu buttons */
+        .menu-button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transitions */
+            text-decoration: none; /* Remove underline for links */
+            display: block; /* Make links behave like block elements for full width */
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Styles for menu buttons on hover */
+        .menu-button:hover {
+            background-color: #3A7BBF; /* Darker shade on hover */
+            transform: translateY(-2px); /* Slight lift effect on hover */
+        }
+
+        /* Styles for menu buttons when active (clicked) */
+        .menu-button:active {
+            transform: translateY(0); /* Return to original position on click */
+        }
+
+        /* Responsive adjustments for smaller screens (e.g., mobile phones) */
+        @media (max-width: 600px) {
+            .menu-container {
+                margin: 20px; /* Add margin on smaller screens */
+                padding: 30px;
+            }
+            .menu-container h2 {
+                font-size: 1.8em;
+            }
+            .welcome-message, .current-date {
+                font-size: 1em;
+            }
+            .menu-button {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="menu-container">
+        <h2>เมนูหลัก</h2>
+        <p class="welcome-message">ยินดีต้อนรับคุณ {{ username }}</p>
+        <!-- Element to display the current date -->
+        <p id="dateDisplay" class="current-date"></p>
+
+        <div class="button-group">
+            <!-- Link to the data entry page (will create this route next) -->
+            <a href="{{ url_for('enter_customer_data') }}" class="menu-button">กรอกข้อมูลลูกค้า</a>
+            <!-- Link to the customer search page (will create this route next) -->
+            <a href="{{ url_for('search_customer_data') }}" class="menu-button">ค้นหาข้อมูลลูกค้า</a>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript to display the current date
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateOptions = {
+                weekday: 'long', // Full weekday name (e.g., วันจันทร์)
+                year: 'numeric',   // Full year (e.g., 2568)
+                month: 'long',     // Full month name (e.g., กรกฎาคม)
+                day: 'numeric'     // Day of the month (e.g., 4)
+            };
+            const today = new Date();
+            // Format the date for Thai locale
+            const formattedDate = today.toLocaleDateString('th-TH', dateOptions);
+            document.getElementById('dateDisplay').textContent = `วันที่: ${formattedDate}`;
+        });
+    </script>
+</body>
+</html>

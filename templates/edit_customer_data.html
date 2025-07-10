@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แก้ไขข้อมูลลูกค้า</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Define CSS variables for easy theme customization */
+        :root {
+            --primary-color: #4A90E2; /* Main blue color */
+            --secondary-color: #50E3C2; /* Secondary mint green color */
+            --background-color: #F0F2F5; /* Light background color */
+            --card-background: #FFFFFF; /* Background color for the form card */
+            --text-color: #333333; /* General text color */
+            --border-color: #DDDDDD; /* Border color for input fields */
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow for the card */
+            --success-color: #28A745; /* Green for success messages */
+            --error-color: #DC3545; /* Red for error messages */
+        }
+
+        /* Basic styles for the body to center content and set font */
+        body {
+            font-family: 'Kanit', sans-serif; /* Use Kanit font */
+            background-color: var(--background-color);
+            display: flex; /* Use Flexbox for centering */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            margin: 0;
+            color: var(--text-color);
+            line-height: 1.6; /* Improve readability */
+        }
+
+        /* Styles for the main form container (the "card") */
+        .form-container {
+            background-color: var(--card-background);
+            padding: 40px;
+            border-radius: 12px; /* Rounded corners */
+            box-shadow: var(--shadow-light); /* Subtle shadow */
+            text-align: center;
+            width: 100%;
+            max-width: 600px; /* Increased max-width for more fields */
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+            margin: 20px auto; /* Add margin for responsiveness on larger screens */
+        }
+
+        /* Styles for the heading */
+        .form-container h2 {
+            color: var(--primary-color);
+            margin-bottom: 10px; /* Adjusted margin */
+            font-weight: 600;
+            font-size: 2em;
+        }
+
+        /* Style for the logged-in user display */
+        .logged-in-user {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* Styles for input groups (label + input) */
+        .input-group {
+            margin-bottom: 15px; /* Slightly reduced margin */
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block; /* Make label appear on its own line */
+            margin-bottom: 5px; /* Reduced margin */
+            font-weight: 400;
+            color: var(--text-color);
+            font-size: 0.95em;
+        }
+
+        .input-group input[type="text"],
+        .input-group input[type="tel"],
+        .input-group input[type="number"],
+        .input-group input[type="date"],
+        .input-group textarea {
+            width: 100%; /* Make input fields take full width of their container */
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px; /* Rounded corners for inputs */
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition on focus */
+        }
+
+        /* Specific style for textarea */
+        .input-group textarea {
+            min-height: 80px;
+            resize: vertical; /* Allow vertical resizing */
+        }
+
+        /* Style for file input, to make it look nicer */
+        .input-group input[type="file"] {
+            width: 100%;
+            padding: 10px 0; /* Adjust padding for file input */
+            border: none; /* Remove border */
+            border-radius: 0; /* Remove border-radius */
+            background-color: transparent; /* Transparent background */
+        }
+        /* Styles for input fields when focused */
+        .input-group input[type="text"]:focus,
+        .input-group input[type="tel"]:focus,
+        .input-group input[type="number"]:focus,
+        .input-group input[type="date"]:focus,
+        .input-group textarea:focus,
+        .input-group input[type="file"]:focus {
+            border-color: var(--primary-color); /* Change border color on focus */
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); /* Add subtle shadow on focus */
+            outline: none; /* Remove default browser outline */
+        }
+
+        /* Styles for the buttons */
+        .button-group {
+            display: flex;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 15px; /* Space between buttons */
+            margin-top: 30px;
+            justify-content: center; /* Center buttons horizontally */
+        }
+
+        .action-button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex: 1; /* Allow buttons to grow */
+            min-width: 150px; /* Minimum width for buttons */
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-decoration: none; /* For link buttons */
+            display: inline-flex; /* For centering text in button */
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-button.cancel {
+            background-color: #6c757d; /* Grey for cancel button */
+        }
+        .action-button:hover {
+            transform: translateY(-2px);
+        }
+        .action-button:active {
+            transform: translateY(0);
+        }
+        .action-button.cancel:hover {
+            background-color: #5a6268; /* Darker grey */
+        }
+
+        /* Styles for flash messages */
+        .flash-message {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .flash-message.success {
+            background-color: #D4EDDA;
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+        .flash-message.error {
+            background-color: #F8D7DA;
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        /* Existing Image Previews */
+        .existing-images-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .existing-images-section h4 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        .existing-image-previews {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .existing-image-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9f9f9;
+        }
+        .existing-image-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .existing-image-item .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(255, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8em;
+            cursor: pointer;
+            line-height: 1;
+            font-weight: bold;
+        }
+
+        /* New Image Upload Previews */
+        .new-images-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .new-images-section h4 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        #newImagePreviewsContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .new-image-preview-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9f9f9;
+        }
+        .new-image-preview-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .new-image-preview-item .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(255, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8em;
+            cursor: pointer;
+            line-height: 1;
+            font-weight: bold;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .form-container {
+                margin: 20px;
+                padding: 25px;
+            }
+            .form-container h2 {
+                font-size: 1.6em;
+                margin-bottom: 15px;
+            }
+            .logged-in-user {
+                font-size: 0.85em;
+                margin-bottom: 15px;
+            }
+            .action-button {
+                padding: 12px 20px;
+                font-size: 1em;
+                min-width: unset;
+                width: 100%;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+        }
+
+        /* Styles for the loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Ensure it's on top of other content */
+            visibility: hidden; /* Hidden by default */
+            opacity: 0; /* Fully transparent by default */
+            transition: visibility 0s, opacity 0.3s ease; /* Smooth transition */
+        }
+
+        .loading-overlay.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Spinner animation */
+        .spinner {
+            border: 6px solid #f3f3f3; /* Light grey */
+            border-top: 6px solid var(--primary-color); /* Primary color */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite; /* Spinner animation */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+    <div class="form-container">
+        <h2>แก้ไขข้อมูลลูกค้า</h2>
+        <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form id="editCustomerForm" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="row_index" value="{{ row_index }}">
+            
+            <input type="hidden" id="keptImageUrls" name="kept_image_urls" value="{{ customer_data.existing_image_urls | join(', ') }}">
+
+            <div class="input-group">
+                <label for="customer_name">ชื่อ</label>
+                <input type="text" id="customer_name" name="customer_name" placeholder="กรอกชื่อลูกค้า" value="{{ customer_data.ชื่อ if customer_data.ชื่อ != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="last_name">นามสกุล</label>
+                <input type="text" id="last_name" name="last_name" placeholder="กรอกนามสกุลลูกค้า" value="{{ customer_data.นามสกุล if customer_data.นามสกุล != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="id_card_number">เลขบัตรประชาชน</label>
+                <input type="text" id="id_card_number" name="id_card_number" placeholder="กรอกเลขบัตรประชาชน" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก" value="{{ customer_data.เลขบัตรประชาชน if customer_data.เลขบัตรประชาชน != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="mobile_phone_number">เบอร์มือถือ</label>
+                <input type="tel" id="mobile_phone_number" name="mobile_phone_number" placeholder="กรอกเบอร์มือถือ" pattern="\d{10}" title="กรุณากรอกเบอร์มือถือ 10 หลัก" value="{{ customer_data.เบอร์มือถือ if customer_data.เบอร์มือถือ != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="registered">จดทะเบียน</label>
+                <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่" value="{{ customer_data.จดทะเบียน if customer_data.จดทะเบียน != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="business_name">ชื่อกิจการ</label>
+                <input type="text" id="business_name" name="business_name" placeholder="กรอกชื่อกิจการ" value="{{ customer_data.ชื่อกิจการ if customer_data.ชื่อกิจการ != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="business_type">ประเภทธุรกิจ (เกี่ยวกับอะไร)</label>
+                <input type="text" id="business_type" name="business_type" placeholder="เช่น ร้านอาหาร, บริการ" value="{{ customer_data.ประเภทธุรกิจ if customer_data.ประเภทธุรกิจ != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="registered_address">ที่อยู่จดทะเบียน</label>
+                <textarea id="registered_address" name="registered_address" placeholder="กรอกที่อยู่จดทะเบียน" rows="3">{{ customer_data.ที่อยู่จดทะเบียน if customer_data.ที่อยู่จดทะเบียน != '-' else '' }}</textarea>
+            </div>
+
+            <div class="input-group">
+                <label for="status">สถานะ</label>
+                <input type="text" id="status" name="status" placeholder="กรอกสถานะ" value="{{ customer_data.สถานะ if customer_data.สถานะ != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="desired_credit_limit">วงเงินที่ต้องการ</label>
+                <input type="number" id="desired_credit_limit" name="desired_credit_limit" placeholder="กรอกวงเงินที่ต้องการ" min="0" value="{{ customer_data['วงเงินที่ต้องการ'] if customer_data['วงเงินที่ต้องการ'] != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="approved_credit_limit">วงเงินที่อนุมัติ</label>
+                <input type="number" id="approved_credit_limit" name="approved_credit_limit" placeholder="กรอกวงเงินที่อนุมัติ" min="0" value="{{ customer_data['วงเงินที่อนุมัติ'] if customer_data['วงเงินที่อนุมัติ'] != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="applied_before">เคยขอเข้ามาในเครือหรือยัง</label>
+                <input type="text" id="applied_before" name="applied_before" placeholder="เช่น ใช่ / ไม่ใช่" value="{{ customer_data['เคยขอเข้ามาในเครือหรือยัง'] if customer_data['เคยขอเข้ามาในเครือหรือยัง'] != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="check_field">เช็ค</label>
+                <input type="text" id="check_field" name="check" placeholder="ข้อมูลเช็ค" value="{{ customer_data.เช็ค if customer_data.เช็ค != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="how_applied">ขอเข้ามาทางไหน</label>
+                <input type="text" id="how_applied" name="how_applied" placeholder="เช่น เว็บไซต์, โทรศัพท์" value="{{ customer_data['ขอเข้ามาทางไหน'] if customer_data['ขอเข้ามาทางไหน'] != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="line_id">LINE : ID</label>
+                <input type="text" id="line_id" name="line_id" placeholder="กรอก LINE ID" value="{{ customer_data['LINE ID'] if customer_data['LINE ID'] != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="upfront_interest">หักดอกหัวท้าย</label>
+                <input type="number" id="upfront_interest" name="upfront_interest" placeholder="กรอกจำนวนเงิน" min="0" value="{{ customer_data['หักดอกหัวท้าย'] if customer_data['หักดอกหัวท้าย'] != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="processing_fee">ค่าดำเนินการ</label>
+                <input type="number" id="processing_fee" name="processing_fee" placeholder="กรอกจำนวนเงิน" min="0" value="{{ customer_data.ค่าดำเนินการ if customer_data.ค่าดำเนินการ != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="application_date">วันที่ขอเข้ามา</label>
+                <input type="date" id="application_date" name="application_date" value="{{ customer_data['วันที่ขอเข้ามา'] if customer_data['วันที่ขอเข้ามา'] != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="home_location_link">ลิงค์โลเคชั่นบ้าน</label>
+                <input type="text" id="home_location_link" name="home_location_link" placeholder="วางลิงค์ Google Maps บ้าน" value="{{ customer_data['ลิงค์โลเคชั่นบ้าน'] if customer_data['ลิงค์โลเคชั่นบ้าน'] != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="work_location_link">ลิงค์โลเคชั่นที่ทำงาน</label>
+                <input type="text" id="work_location_link" name="work_location_link" placeholder="วางลิงค์ Google Maps ที่ทำงาน" value="{{ customer_data['ลิงค์โลเคชั่นที่ทำงาน'] if customer_data['ลิงค์โลเคชั่นที่ทำงาน'] != '-' else '' }}">
+            </div>
+
+            <div class="input-group">
+                <label for="remarks">หมายเหตุ</label>
+                <textarea id="remarks" name="remarks" placeholder="บันทึกหมายเหตุเพิ่มเติม" rows="3">{{ customer_data.หมายเหตุ if customer_data.หมายเหตุ != '-' else '' }}</textarea>
+            </div>
+
+            <div class="input-group">
+                <label for="logged_in_user">ลงทะเบียนโดย</label>
+                <input type="text" id="logged_in_user" name="logged_in_user" value="{{ customer_data['Logged In User'] if customer_data['Logged In User'] != '-' else '' }}" readonly>
+            </div>
+
+            <div class="existing-images-section">
+                <h4>รูปภาพเดิม</h4>
+                <div class="existing-image-previews" id="existingImagePreviewsContainer">
+                    {% if customer_data.existing_image_urls %}
+                        {% for url in customer_data.existing_image_urls %}
+                            <div class="existing-image-item" data-url="{{ url }}">
+                                {# Use Flask proxy route for existing image src #}
+                                <img src="{{ url_for('proxy_image', image_url=url) }}" alt="Existing Image" onerror="console.error('Existing image load error. src:', this.src, '. Please check Flask proxy setup and Google Drive permissions.'); this.src='https://placehold.co/100x100/FF0000/FFFFFF?text=Error';">
+                                <span class="remove-image">X</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>ไม่มีรูปภาพเดิม</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="new-images-section">
+                <h4>อัปโหลดรูปภาพเพิ่มเติม</h4>
+                <div class="input-group">
+                    <label for="new_customer_images">เลือกรูปภาพใหม่ (เลือกหลายรูปได้)</label>
+                    <input type="file" id="new_customer_images" name="new_customer_images" accept="image/*" multiple>
+                    <div id="newImagePreviewsContainer">
+                        </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="action-button">บันทึกการแก้ไข</button>
+                <a href="{{ url_for('search_customer_data') }}" class="action-button cancel">ยกเลิก</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const editCustomerForm = document.getElementById('editCustomerForm');
+            const newCustomerImageInput = document.getElementById('new_customer_images');
+            const newImagePreviewsContainer = document.getElementById('newImagePreviewsContainer');
+            const existingImagePreviewsContainer = document.getElementById('existingImagePreviewsContainer');
+            const keptImageUrlsInput = document.getElementById('keptImageUrls');
+            const loadingOverlay = document.getElementById('loadingOverlay'); // Get the loading overlay element
+            const saveButton = editCustomerForm.querySelector('button[type="submit"]'); // Get the save button
+
+            // For new image uploads
+            let newSelectedFiles = [];
+
+            function renderNewImagePreviews() {
+                newImagePreviewsContainer.innerHTML = '';
+                newSelectedFiles.forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewItem = document.createElement('div');
+                        previewItem.className = 'new-image-preview-item';
+                        previewItem.innerHTML = `
+                            <img src="${e.target.result}" alt="New Image Preview">
+                            <span class="remove-image" data-index="${index}">X</span>
+                        `;
+                        newImagePreviewsContainer.appendChild(previewItem);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            newCustomerImageInput.addEventListener('change', function(event) {
+                const newlySelected = Array.from(event.target.files);
+                const uniqueNewFilesMap = new Map(); // Use a Map to store unique files by a key (e.g., name + size)
+
+                // Add existing files in newSelectedFiles to the map to preserve them
+                newSelectedFiles.forEach(file => {
+                    uniqueNewFilesMap.set(`${file.name}-${file.size}`, file);
+                });
+
+                // Add newly selected files, overwriting if duplicate name+size
+                newlySelected.forEach(file => {
+                    uniqueNewFilesMap.set(`${file.name}-${file.size}`, file);
+                });
+
+                newSelectedFiles = Array.from(uniqueNewFilesMap.values()); // Convert Map values back to array
+                renderNewImagePreviews();
+            });
+
+            newImagePreviewsContainer.addEventListener('click', function(event) {
+                if (event.target.classList.contains('remove-image')) {
+                    const indexToRemove = parseInt(event.target.dataset.index);
+                    newSelectedFiles.splice(indexToRemove, 1);
+                    renderNewImagePreviews();
+                    // Reset the file input value to allow re-selecting the same file if needed
+                    newCustomerImageInput.value = '';
+                }
+            });
+
+            // For existing images (deletion logic)
+            existingImagePreviewsContainer.addEventListener('click', function(event) {
+                if (event.target.classList.contains('remove-image')) {
+                    const itemToRemove = event.target.closest('.existing-image-item');
+                    const imageUrlToRemove = itemToRemove.dataset.url; // This is the original Google Drive URL
+
+                    // Confirm deletion
+                    if (confirm('คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้?')) {
+                        // Remove from DOM
+                        itemToRemove.remove();
+
+                        // Update the hidden input for kept image URLs
+                        let keptUrls = keptImageUrlsInput.value.split(', ').filter(url => url.trim() !== '');
+                        keptUrls = keptUrls.filter(url => url !== imageUrlToRemove);
+                        keptImageUrlsInput.value = keptUrls.join(', ');
+
+                        // No need to make an AJAX call here, the form submission will handle actual deletion from Drive
+                        // based on the 'kept_image_urls' field.
+                        console.log('รูปภาพถูกทำเครื่องหมายเพื่อลบแล้ว จะถูกลบถาวรเมื่อบันทึกการแก้ไข'); // Replaced alert
+                    }
+                }
+            });
+
+            // Form submission logic
+            editCustomerForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent default form submission
+
+                // Show loading overlay and disable the save button
+                loadingOverlay.classList.add('visible');
+                saveButton.disabled = true; // Disable button to prevent multiple submissions
+                saveButton.textContent = 'กำลังบันทึก...'; // Change button text
+
+                const formData = new FormData(editCustomerForm);
+
+                // Append new image files
+                newSelectedFiles.forEach(file => {
+                    formData.append('new_customer_images', file, file.name);
+                });
+
+                // Submit using fetch
+                fetch(editCustomerForm.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text()) // Get response as text
+                .then(html => {
+                    // Hide loading overlay and re-enable the save button
+                    loadingOverlay.classList.remove('visible');
+                    saveButton.disabled = false;
+                    saveButton.textContent = 'บันทึกการแก้ไข'; // Restore button text
+
+                    document.open();
+                    document.write(html);
+                    document.close();
+                })
+                .catch(error => {
+                    console.error('Error submitting form:', error);
+                    // Hide loading overlay and re-enable the save button in case of an error
+                    loadingOverlay.classList.remove('visible');
+                    saveButton.disabled = false;
+                    saveButton.textContent = 'บันทึกการแก้ไข'; // Restore button text
+                    // Optionally, display an error message to the user
+                });
+            });
+
+            // Set current date for application_date field if it's empty
+            const applicationDateInput = document.getElementById('application_date');
+            if (!applicationDateInput.value) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                applicationDateInput.value = `${year}-${month}-${day}`;
+            }
+        });
+    </script>
+</body>
+</html>

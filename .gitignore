@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+.ipynb_checkpoints/
+
+# Google Service Account Key (IMPORTANT: Keep this file private!)
+exclusive.json
+firebase-service-account.json.json
+
+# Local testing tools
+ngrok.exe
+
+# Operating System files
+desktop.ini
+Thumbs.db
+
+# Log files
+*.log
