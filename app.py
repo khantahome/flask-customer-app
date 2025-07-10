@@ -569,10 +569,8 @@ def edit_customer_data(row_index):
 
 # --- Main execution block ---
 if __name__ == '__main__':
-    # Run the Flask application.
-    # debug=True: Enables debug mode, which provides helpful error messages and auto-reloads the server on code changes.
-    # host='0.0.0.0': This is crucial! It tells the Flask server to listen on all available public IPs.
-    #                 This allows you to access the web app from other devices on your local network (like your phone).
-    #                 Without this, it would only be accessible from 127.0.0.1 (localhost) on your computer.
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Get port from environment variable, default to 5000 for local development
+    port = int(os.environ.get('PORT', 5000))
+    # Run the Flask application. Disable debug mode in production.
+    app.run(host='0.0.0.0', port=port, debug=False)
 
