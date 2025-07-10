@@ -9,6 +9,9 @@ import os # For path manipulation (e.g., getting file extension)
 from datetime import datetime # For getting current timestamp
 import requests # NEW: Import requests library for making HTTP requests (to fetch images)
 import json
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -49,11 +52,13 @@ CUSTOMER_DATA_WORKSHEET_HEADERS = [
     'Logged In User' # This is the LAST column for the logged-in username
 ]
 
-# --- Google Drive Configuration ---
-# Name of the folder in Google Drive where images will be stored.
-IMAGE_FOLDER_NAME = 'image2' # โฟลเดอร์สำหรับเก็บรูปภาพลูกค้า
-# Global variable to store the ID of the image folder once found or created.
-IMAGE_FOLDER_ID = None
+
+# --- Cloudinary Configuration ---
+cloudinary.config(
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key = os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET')
+)
 
 # --- Initialize Google API Clients ---
 GSPREAD_CLIENT = None
@@ -158,152 +163,74 @@ def get_customer_data_worksheet():
 
 # --- Helper Functions for Google Drive ---
 
-def get_or_create_folder(folder_name):
-    """
-    Finds the ID of an existing Google Drive folder or creates it if it doesn't exist.
-    Stores the ID in a global variable for efficiency.
-    """
-    global IMAGE_FOLDER_ID
-    if IMAGE_FOLDER_ID:
-        return IMAGE_FOLDER_ID
 
-    if not DRIVE_CLIENT:
-        print("PyDrive client not initialized. Cannot access Google Drive.")
-        return None
 
+
+
+def upload_image_to_cloudinary(file_stream, original_filename):
+    """
+    Uploads an image file stream to Cloudinary.
+    Returns the URL of the uploaded file, or None if upload fails.
+    """
     try:
-        # Search for the folder by title and mimeType (folder type)
-        file_list = DRIVE_CLIENT.ListFile(
-            {'q': f"title='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"}
-        ).GetList()
+        # Upload the file directly from the stream
+        # The 'folder' parameter allows you to organize images in Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            file_stream,
+            folder="customer_app_images" # คุณสามารถเปลี่ยนชื่อโฟลเดอร์นี้ได้ตามต้องการใน Cloudinary
+        )
 
-        if file_list:
-            IMAGE_FOLDER_ID = file_list[0]['id']
-            print(f"Found existing folder: '{folder_name}' with ID: {IMAGE_FOLDER_ID}")
+        if upload_result and 'secure_url' in upload_result:
+            print(f"Uploaded file '{original_filename}' to Cloudinary. URL: {upload_result['secure_url']}")
+            return upload_result['secure_url']
         else:
-            # Create the folder if not found
-            print(f"Folder '{folder_name}' not found. Creating new folder...")
-            folder_metadata = {'title': folder_name, 'mimeType': 'application/vnd.google-apps.folder'}
-            folder = DRIVE_CLIENT.CreateFile(folder_metadata)
-            folder.Upload()
-            IMAGE_FOLDER_ID = folder['id']
-            print(f"Created new folder: '{folder_name}' with ID: {IMAGE_FOLDER_ID}")
-        return IMAGE_FOLDER_ID
-    except Exception as e:
-        print(f"Error getting or creating folder '{folder_name}': {e}")
-        return None
-
-def get_next_sequential_filename(folder_id, original_filename):
-    """
-    Determines the next available sequential filename (e.g., 000001.ext, 000002.ext).
-    It checks existing files in the folder and finds the smallest missing number.
-    """
-    if not DRIVE_CLIENT or not folder_id:
-        return None
-
-    try:
-        # Get list of files in the folder
-        file_list = DRIVE_CLIENT.ListFile(
-            {'q': f"'{folder_id}' in parents and trashed=false"}
-        ).GetList()
-
-        existing_numbers = set()
-        for file_item in file_list:
-            # Extract number from filename (assuming format NNNNNN.ext)
-            name_parts = os.path.splitext(file_item['title'])
-            if len(name_parts[0]) == 6 and name_parts[0].isdigit():
-                existing_numbers.add(int(name_parts[0]))
-
-        next_number = 1
-        while next_number in existing_numbers:
-            next_number += 1
-
-        # Format the number with leading zeros (e.g., 1 -> 000001)
-        new_base_name = f"{next_number:06d}"
-        file_extension = os.path.splitext(original_filename)[1] # Keep original extension
-
-        return f"{new_base_name}{file_extension}"
-
-    except Exception as e:
-        print(f"Error determining next sequential filename: {e}")
-        return None
-
-def upload_image_to_drive(file_stream, original_filename):
-    """
-    Uploads an image file stream to the designated Google Drive folder with a sequential filename.
-    Returns the direct download link of the uploaded file, or None if upload fails.
-    """
-    if not DRIVE_CLIENT:
-        print("PyDrive client not initialized. Cannot upload image.")
-        return None
-
-    folder_id = get_or_create_folder(IMAGE_FOLDER_NAME)
-    if not folder_id:
-        print(f"Failed to get or create folder '{IMAGE_FOLDER_NAME}'. Image upload failed.")
-        return None
-
-    try:
-        # Get the next sequential filename
-        new_filename = get_next_sequential_filename(folder_id, original_filename)
-        if not new_filename:
-            return None
-
-        # Create a new file in Google Drive with the determined filename and parent folder.
-        file_metadata = {'title': new_filename, 'parents': [{'id': folder_id}]}
-        gdrive_file = DRIVE_CLIENT.CreateFile(file_metadata)
-        gdrive_file.content = file_stream # Set the content of the file from the stream
-
-        gdrive_file.Upload() # Perform the upload
-
-        # Make the file publicly accessible (optional, but needed if you want to display it directly without auth)
-        gdrive_file.InsertPermission({
-            'type': 'anyone',
-            'value': 'reader',
-            'role': 'reader'
-        })
-        
-        # Create Direct Download Link using File ID
-        if 'id' in gdrive_file:
-            file_id = gdrive_file['id']
-            direct_link = f"https://drive.google.com/uc?export=view&id={file_id}"
-            print(f"Uploaded file '{new_filename}' to Google Drive. Direct Link: {direct_link}")
-            return direct_link
-        else:
-            print(f"Warning: File ID not found for uploaded file '{new_filename}'. Cannot generate direct link.")
+            print(f"Error uploading image '{original_filename}' to Cloudinary: No secure_url returned.")
             return None
     except Exception as e:
-        print(f"Error uploading image '{original_filename}' to Google Drive: {e}")
+        print(f"Error uploading image '{original_filename}' to Cloudinary: {e}")
         return None
 
-def delete_image_from_drive(image_url):
+def delete_image_from_cloudinary(image_url):
     """
-    Deletes an image from Google Drive given its direct download link.
-    This function extracts the file ID from the direct link.
+    Deletes an image from Cloudinary using its URL.
     """
-    if not DRIVE_CLIENT:
-        print("PyDrive client not initialized. Cannot delete image.")
-        return False
-    
-    try:
-        # Extract file ID from the direct download URL format: https://drive.google.com/uc?export=view&id=FILE_ID
-        file_id = None
-        if "id=" in image_url:
-            file_id = image_url.split("id=")[1].split("&")[0] # In case there are other params after id=
-        # Handle old webViewLink format if it exists in the sheet for old records
-        elif "file/d/" in image_url and "/view" in image_url:
-            file_id = image_url.split("file/d/")[1].split("/view")[0]
+    if not image_url:
+        return True # ไม่มี URL ให้ลบ ถือว่าสำเร็จ
 
-        if not file_id:
-            print(f"Could not extract file ID from URL for deletion: {image_url}")
+    try:
+        # Extract public_id from Cloudinary URL
+        # Example URL: https://res.cloudinary.com/your_cloud_name/image/upload/v12345/folder/public_id.jpg
+        parts = image_url.split('/')
+        if len(parts) < 2: # Basic check for valid URL structure
+            print(f"Invalid Cloudinary URL for deletion: {image_url}")
             return False
 
-        # Get the file object by ID
-        gdrive_file = DRIVE_CLIENT.CreateFile({'id': file_id})
-        gdrive_file.Delete() # Move to trash
-        print(f"Successfully deleted file with ID: {file_id}")
-        return True
+        # The public_id is usually the last part before the file extension,
+        # sometimes including folder path if specified during upload
+        # We need to get the part that was used as 'public_id' in Cloudinary.
+        # A more robust way would be to store public_id in the sheet.
+        # For simplicity, let's try to extract it from the URL based on the 'folder' we used during upload
+        public_id_with_folder = "/".join(parts[-2:]).split('.')[0] # e.g., "customer_app_images/image_001"
+        
+        # If you used a specific folder, you must include it in the public_id for deletion
+        # In our example, folder is 'customer_app_images'
+        if "customer_app_images" in public_id_with_folder:
+            public_id_to_delete = public_id_with_folder
+        else: # Fallback if not in folder, assuming it's root
+            public_id_to_delete = parts[-1].split('.')[0]
+
+        print(f"Attempting to delete Cloudinary image with public_id: {public_id_to_delete}")
+
+        delete_result = cloudinary.uploader.destroy(public_id_to_delete)
+
+        if delete_result and delete_result.get('result') == 'ok':
+            print(f"Successfully deleted image from Cloudinary: {image_url}")
+            return True
+        else:
+            print(f"Failed to delete image from Cloudinary: {image_url}, Result: {delete_result}")
+            return False
     except Exception as e:
-        print(f"Error deleting image from Google Drive (URL: {image_url}): {e}")
+        print(f"Error deleting image from Cloudinary: {image_url}, Error: {e}")
         return False
 
 
@@ -398,7 +325,7 @@ def enter_customer_data():
             files = request.files.getlist('customer_images')
             for customer_image in files:
                 if customer_image and customer_image.filename:
-                    url = upload_image_to_drive(customer_image.stream, customer_image.filename)
+                    url = upload_image_to_cloudinary(customer_image.stream, customer_image.filename)
                     if url:
                         image_urls.append(url)
                     # else: flash message is already handled inside upload_image_to_drive
@@ -599,7 +526,7 @@ def edit_customer_data(row_index):
 
         # Delete images from Google Drive that were marked for deletion
         for url_to_delete in deleted_image_urls:
-            delete_image_from_drive(url_to_delete) # This function needs to be implemented
+            delete_image_from_cloudinary(url_to_delete)
 
         # Handle new image uploads
         new_image_urls = []
@@ -607,7 +534,7 @@ def edit_customer_data(row_index):
             files = request.files.getlist('new_customer_images')
             for new_image in files:
                 if new_image and new_image.filename:
-                    url = upload_image_to_drive(new_image.stream, new_image.filename)
+                    url = upload_image_to_cloudinary(new_image.stream, new_image.filename)
                     if url:
                         new_image_urls.append(url)
         
@@ -636,39 +563,8 @@ def edit_customer_data(row_index):
                            customer_data=customer_data, 
                            row_index=row_index)
 
-# NEW: Route for proxying images from Google Drive to bypass CORS
-@app.route('/proxy_image')
-def proxy_image():
-    image_url = request.args.get('image_url')
-    if not image_url:
-        return "Missing image_url parameter", 400
-
-    try:
-        # Fetch the image from Google Drive
-        response = requests.get(image_url, stream=True)
-        response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
-
-        # Get content type from Google Drive's response
-        content_type = response.headers.get('Content-Type', 'application/octet-stream')
-        
-        # Return the image content directly to the browser
-        return Response(response.iter_content(chunk_size=1024), mimetype=content_type)
-    except requests.exceptions.RequestException as e:
-        print(f"Error proxying image from {image_url}: {e}")
-        return "Error loading image", 500
 
 
-# Route for deleting an image from Google Drive and updating the sheet
-# This route is no longer directly called by the JS, but the delete_image_from_drive function is used
-# when the edit form is submitted.
-@app.route('/delete_image/<int:row_index>/<path:image_url_encoded>', methods=['POST'])
-def delete_image_route(row_index, image_url_encoded):
-    # This route is kept for completeness, but the actual deletion logic is now handled
-    # within the POST request of /edit_customer_data/<int:row_index>
-    # The 'image_url_encoded' from the path is not directly used here, but the image_url
-    # is expected from request.form.get('image_url') if this route were to be called directly.
-    flash("การลบรูปภาพถูกจัดการผ่านหน้าแก้ไขข้อมูลแล้ว", "info")
-    return redirect(url_for('edit_customer_data', row_index=row_index))
 
 
 # --- Main execution block ---
