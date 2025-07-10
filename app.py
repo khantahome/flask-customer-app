@@ -8,12 +8,13 @@ from pydrive.drive import GoogleDrive # For interacting with Google Drive
 import os # For path manipulation (e.g., getting file extension)
 from datetime import datetime # For getting current timestamp
 import requests # NEW: Import requests library for making HTTP requests (to fetch images)
+import json
 
 # Initialize the Flask application
 app = Flask(__name__)
 # Set a secret key for Flask sessions (needed for flash messages and session management)
 # *** สำคัญ: เปลี่ยนเป็นคีย์ลับของคุณเองเพื่อความปลอดภัย! ***
-app.secret_key = 'your_super_secret_key_for_customer_app_2025_new' # Make sure this is a strong, unique key
+app.secret_key = os.environ.get('SECRET_KEY', 'your_super_secret_key_for_customer_app_2025_new')
 
 # --- Configuration for Google Sheets & Drive API Access ---
 # Define the scope of access for the Google Sheets and Google Drive APIs.
@@ -55,23 +56,49 @@ IMAGE_FOLDER_NAME = 'image2' # โฟลเดอร์สำหรับเก�
 IMAGE_FOLDER_ID = None
 
 # --- Initialize Google API Clients ---
-# Initialize gspread client for Google Sheets
 GSPREAD_CLIENT = None
-try:
-    GSPREAD_CREDS = ServiceAccountCredentials.from_json_keyfile_name(SERVICE_ACCOUNT_KEY_FILE, GOOGLE_API_SCOPE)
-    GSPREAD_CLIENT = gspread.authorize(GSPREAD_CREDS)
-except Exception as e:
-    print(f"CRITICAL ERROR: gspread client failed to initialize. Check 'exclusive.json' and network. Error: {e}")
-
-
-# Initialize PyDrive client for Google Drive
 DRIVE_CLIENT = None
+
 try:
-    GAUTH = GoogleAuth()
-    GAUTH.credentials = GSPREAD_CREDS # Reuse credentials from gspread
-    DRIVE_CLIENT = GoogleDrive(GAUTH)
+    creds_json = None # ตัวแปรนี้จะเก็บ dictionary ของ service account key
+
+    # ขั้นแรก: อ่านเนื้อหา JSON ของ Service Account Key ไม่ว่าจะมาจาก Environment Variable หรือไฟล์
+    if os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY_JSON'):
+        creds_json_str = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY_JSON')
+        creds_json = json.loads(creds_json_str) # แปลง string JSON เป็น Python dictionary
+    else:
+        # ถ้าไม่มี Environment Variable (สำหรับ Dev ในเครื่อง) ให้อ่านจากไฟล์
+        # ตรวจสอบว่าไฟล์ 'exclusive.json' อยู่ในโฟลเดอร์เดียวกันกับ app.py
+        with open(SERVICE_ACCOUNT_KEY_FILE, 'r') as f:
+            creds_json = json.load(f)
+
+    # ถ้า creds_json ถูกโหลดได้สำเร็จ
+    if creds_json:
+        # 1. สำหรับ gspread: สร้าง ServiceAccountCredentials object
+        # ตัวแปร 'creds' นี้จะใช้กับ gspread
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, GOOGLE_API_SCOPE)
+        GSPREAD_CLIENT = gspread.authorize(creds)
+
+        # 2. สำหรับ PyDrive: ใช้แนวทางที่เหมาะกับ Service Account ของ PyDrive โดยตรง
+        gauth = GoogleAuth()
+        # กำหนด client_config_json ใน settings ของ PyDrive
+        # PyDrive ต้องการ dictionary ของ Service Account Key โดยตรงที่นี่
+        gauth.settings['client_config_json'] = creds_json
+        gauth.settings['oauth_scope'] = GOOGLE_API_SCOPE # กำหนด scope ให้ PyDrive ด้วย
+        
+        # ทำการยืนยันตัวตนสำหรับ Service Account โดยเฉพาะ
+        gauth.ServiceAuth() 
+        DRIVE_CLIENT = GoogleDrive(gauth)
+    else:
+        raise ValueError("Service Account credentials could not be loaded from environment or file.")
+
 except Exception as e:
-    print(f"CRITICAL ERROR: PyDrive client failed to initialize. Check 'exclusive.json' and Google Drive API permissions. Error: {e}")
+    print(f"CRITICAL ERROR: Google API clients failed to initialize. Error: {e}")
+    # ตั้งค่า client เป็น None หากเกิดข้อผิดพลาดในการเชื่อมต่อ
+    GSPREAD_CLIENT = None
+    DRIVE_CLIENT = None
+
+# ... โค้ดส่วนอื่นๆ ของแอปของคุณจะอยู่ด้านล่างนี้ตามปกติ ...
 
 
 # --- Helper Functions for Google Sheets ---
