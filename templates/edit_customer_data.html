@@ -481,7 +481,7 @@
                         {% for url in customer_data.existing_image_urls %}
                             <div class="existing-image-item" data-url="{{ url }}">
                                 {# Use Flask proxy route for existing image src #}
-                                <img src="{{ url_for('proxy_image', image_url=url) }}" alt="Existing Image" onerror="console.error('Existing image load error. src:', this.src, '. Please check Flask proxy setup and Google Drive permissions.'); this.src='https://placehold.co/100x100/FF0000/FFFFFF?text=Error';">
+                                <img src="{{ url }}" alt="Existing Image" onerror="console.error('Existing image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/100x100/FF0000/FFFFFF?text=Error';">
                                 <span class="remove-image">X</span>
                             </div>
                         {% endfor %}
