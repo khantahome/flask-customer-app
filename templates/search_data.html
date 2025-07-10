@@ -477,7 +477,7 @@
                             {% if image_urls_list %}
                                 {% for url in image_urls_list %}
                                     {# Use Flask proxy route for image src #}
-                                    <img src="{{ url_for('proxy_image', image_url=url) }}" alt="Thumbnail {{ loop.index }}" class="image-thumbnail" onerror="console.error('Thumbnail image load error. src:', this.src, '. Please check Flask proxy setup and Google Drive permissions.'); this.src='https://placehold.co/80x80/FF0000/FFFFFF?text=Error';">
+                                    <img src="{{ url }}" alt="Thumbnail {{ loop.index }}" class="image-thumbnail" onerror="console.error('Thumbnail image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/80x80/FF0000/FFFFFF?text=Error';">
                                 {% endfor %}
                             {% else %}
                                 <p>ไม่มีรูปภาพที่ถูกต้อง</p>
@@ -553,8 +553,8 @@
             function updateLightboxImage() {
                 if (currentImageUrls.length > 0) {
                     // Corrected: Use Flask proxy route for lightbox image src
-                    const proxyUrl = `{{ url_for('proxy_image') }}?image_url=${encodeURIComponent(currentImageUrls[currentImageIndex])}`;
-                    lightboxImage.src = proxyUrl;
+                    // ใช้ URL ของ Cloudinary โดยตรง ไม่ต้องผ่าน proxy แล้ว
+                    lightboxImage.src = currentImageUrls[currentImageIndex];
                     lightboxImage.style.transform = `scale(${currentZoom})`; // Apply zoom
                     lightboxPrev.style.display = currentImageUrls.length > 1 ? 'block' : 'none';
                     lightboxNext.style.display = currentImageUrls.length > 1 ? 'block' : 'none';
