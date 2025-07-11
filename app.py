@@ -43,7 +43,7 @@ WORKSHEET_NAME = 'customer_records' # Worksheet สำหรับข้อม�
 # Define headers for the customer data worksheet.
 # This list must match the order of data you intend to save.
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
-    'Timestamp', 'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
+    'Timestamp', 'ชื่อ', 'นามสกิล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
     'จดทะเบียน', 'ชื่อกิจการ', 'ประเภทธุรกิจ', 'ที่อยู่จดทะเบียน', 'สถานะ',
     'วงเงินที่ต้องการ', 'วงเงินที่อนุมัติ', 'เคยขอเข้ามาในเครือหรือยัง', 'เช็ค',
     'ขอเข้ามาทางไหน', 'LINE ID', 'หักดอกหัวท้าย', 'ค่าดำเนินการ',
@@ -102,24 +102,6 @@ except Exception as e:
     GSPREAD_CLIENT = None
     DRIVE_CLIENT = None
 
-# ... โค้ดส่วนอื่นๆ ของแอปของคุณจะอยู่ด้านล่างนี้ตามปกติ ...
-
-
-# --- Helper Functions for Google Sheets ---
-def get_customer_records_by_status(status_value):
-    """
-    Retrieves customer records where the 'สถานะ' (Status) column matches the given status_value,
-    including their 1-based row index.
-    """
-    # Use the function that already retrieves all records with row_index
-    all_records_with_index = get_all_customer_records()
-
-    # Filter these records based on status
-    filtered_records = [
-        record for record in all_records_with_index
-        if record.get('สถานะ') and status_value in record['สถานะ']
-    ]
-    return filtered_records
 
 def get_all_customer_records():
     """
@@ -133,7 +115,6 @@ def get_all_customer_records():
         # Get all data as a list of lists, including headers
         all_data = worksheet.get_all_values()
         if not all_data:
-            # ---> บรรทัดที่ 1 ที่เพิ่ม:
             print("DEBUG: Google Sheet 'all_data' is empty or only has headers.")
             return []
 
@@ -159,16 +140,15 @@ def get_all_customer_records():
             # (1 for 0-indexing + 1 for header row)
             record['row_index'] = i + 2
 
-            # ---> บรรทัดที่ 2 ที่เพิ่ม:
             print(f"DEBUG: Added record with row_index {record['row_index']} - Record snippet: {record.get('ชื่อ', '')}, Status: {record.get('สถานะ', '')}")
             
             customer_records.append(record)
-            print(f"DEBUG: get_all_customer_records - Returning {len(customer_records)} records. First record BEFORE return: {customer_records[0] if customer_records else 'N/A'}")
+        print(f"DEBUG: get_all_customer_records - Returning {len(customer_records)} records. First record BEFORE return: {customer_records[0] if customer_records else 'N/A'}")
         return customer_records
     except Exception as e:
-        # ---> บรรทัดที่ 3 ที่เพิ่ม:
         print(f"ERROR in get_all_customer_records: {e}")
         return []
+
 def get_customer_records_by_status(status):
     """
     Retrieves customer records filtered by status.
@@ -193,39 +173,6 @@ def get_customer_records_by_keyword(keyword):
     ]
     print(f"DEBUG: get_customer_records_by_keyword returning {len(filtered_records)} records for keyword '{keyword}'")
     return filtered_records
-def get_customer_records_by_keyword(keyword):
-    """
-    Retrieves customer records that match the keyword in any relevant text column.
-    """
-    worksheet = get_customer_data_worksheet()
-    if not worksheet:
-        return []
-    try:
-        all_records = worksheet.get_all_records()
-        if not keyword:
-            return all_records # If no keyword, return all records
-
-        # Convert keyword to lowercase for case-insensitive search
-        keyword_lower = keyword.lower()
-
-        matched_records = []
-        for record in all_records:
-            # Check relevant text columns for the keyword
-            # You can customize which columns to search here
-            searchable_columns = [
-                'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
-                'จดทะเบียน', 'ชื่อกิจการ', 'ประเภทธุรกิจ', 'ที่อยู่จดทะเบียน',
-                'สถานะ', 'LINE ID', 'หมายเหตุ'
-            ]
-            for col in searchable_columns:
-                # Ensure the column exists and its value is not None, then convert to string and lower
-                if col in record and record[col] is not None and keyword_lower in str(record[col]).lower():
-                    matched_records.append(record)
-                    break # Move to the next record once a match is found
-        return matched_records
-    except Exception as e:
-        print(f"Error searching customer data: {e}")
-        return []
 
 def load_users():
     """
@@ -282,7 +229,6 @@ def get_customer_data_worksheet():
         return None
 
 # --- Helper Functions for Google Drive ---
-
 
 
 
@@ -498,7 +444,6 @@ def enter_customer_data():
 
 # Route for the customer data search page
 @app.route('/search_customer_data', methods=['GET'])
-@app.route('/search_customer_data', methods=['GET'])
 def search_customer_data():
     """
     Handles searching for customer data.
@@ -540,7 +485,7 @@ def search_customer_data():
             flash(f"แสดงข้อมูลลูกค้า {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ' (ค่าเริ่มต้น)", "info")
         # ================================================================
 
-    # --- ส่วน DEBUGGING ที่เพิ่มเข้าไป (นำกลับมาเพื่อให้เห็น Flow ทั้งหมด) ---
+    # --- ส่วน DEBUGGING ที่เพิ่มเข้าไป ---
     print(f"DEBUG: search_customer_data - Final customer_records before rendering. Contains {len(customer_records)} records. First record (if any): {customer_records[0] if customer_records else 'N/A'}")
     
     print(f"DEBUG: customer_records list contains {len(customer_records)} records.")
@@ -607,7 +552,7 @@ def edit_customer_data(row_index):
             # Preserve original Timestamp if not updated by form, or use current time if it's new (unlikely for edit)
             'Timestamp': customer_data.get('Timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
             'ชื่อ': request.form.get('customer_name', '') or '-',
-            'นามสกุล': request.form.get('last_name', '') or '-',
+            'นามสกิล': request.form.get('last_name', '') or '-',
             'เลขบัตรประชาชน': request.form.get('id_card_number', '') or '-',
             'เบอร์มือถือ': request.form.get('mobile_phone_number', '') or '-',
             'จดทะเบียน': request.form.get('registered', '') or '-',
@@ -678,12 +623,9 @@ def edit_customer_data(row_index):
                            row_index=row_index)
 
 
-
-
 # --- Main execution block ---
 if __name__ == '__main__':
     # Get port from environment variable, default to 5000 for local development
     port = int(os.environ.get('PORT', 5000))
     # Run the Flask application. Disable debug mode in production.
     app.run(host='0.0.0.0', port=port, debug=False)
-
