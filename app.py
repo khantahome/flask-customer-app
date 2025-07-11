@@ -162,6 +162,7 @@ def get_all_customer_records():
             print(f"DEBUG: Added record with row_index {record['row_index']} - Record snippet: {record.get('ชื่อ', '')}, Status: {record.get('สถานะ', '')}")
             
             customer_records.append(record)
+            print(f"DEBUG: get_all_customer_records - Returning {len(customer_records)} records. First record BEFORE return: {customer_records[0] if customer_records else 'N/A'}")
         return customer_records
     except Exception as e:
         # ---> บรรทัดที่ 3 ที่เพิ่ม:
