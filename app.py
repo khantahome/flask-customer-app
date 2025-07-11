@@ -552,7 +552,7 @@ def edit_customer_data(row_index):
             # Preserve original Timestamp if not updated by form, or use current time if it's new (unlikely for edit)
             'Timestamp': customer_data.get('Timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
             'ชื่อ': request.form.get('customer_name', '') or '-',
-            'นามสกิล': request.form.get('last_name', '') or '-',
+            'นามสกุล': request.form.get('last_name', '') or '-',
             'เลขบัตรประชาชน': request.form.get('id_card_number', '') or '-',
             'เบอร์มือถือ': request.form.get('mobile_phone_number', '') or '-',
             'จดทะเบียน': request.form.get('registered', '') or '-',
