@@ -463,54 +463,55 @@ def enter_customer_data():
 
 # Route for the customer data search page
 @app.route('/search_customer_data', methods=['GET'])
-def search_customer_data():
-    """
-    Handles searching for customer data.
-    Can search by keyword or filter by 'รอดำเนินการ' status.
-    Requires user to be logged in.
-    """
-    if 'username' not in session:
-        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
-        return redirect(url_for('login'))
+    def search_customer_data():
+        """
+        Handles searching for customer data.
+        Can search by keyword or filter by 'รอดำเนินการ' status.
+        Requires user to be logged in.
+        """
+        if 'username' not in session:
+            flash('กรุณาเข้าสู่ระบบก่อน', 'error')
+            return redirect(url_for('login'))
 
-    logged_in_user = session['username']
+        logged_in_user = session['username']
+        
+        search_keyword = request.args.get('search_keyword', '').strip()
+        status_filter = request.args.get('status_filter', '').strip()
 
-    search_keyword = request.args.get('search_keyword', '').strip()
-    status_filter = request.args.get('status_filter', '').strip() # NEW: Get status filter
+        customer_records = []
+        display_title = "ค้นหาข้อมูลลูกค้า" # Default title
 
-    customer_records = []
-    display_title = "ค้นหาข้อมูลลูกค้า" # Default title
-
-    if status_filter == 'pending':
-        customer_records = get_customer_records_by_status("รอดำเนินการ")
-        display_title = "ข้อมูลลูกค้า: รอดำเนินการ"
-        if not customer_records:
-            flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ'", "info")
+        if status_filter == 'pending':
+            customer_records = get_customer_records_by_status("รอดำเนินการ")
+            display_title = "ข้อมูลลูกค้า: รอดำเนินการ"
+            if not customer_records:
+                flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ'", "info")
+            else:
+                flash(f"พบ {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ'", "success")
+        elif search_keyword:
+            customer_records = get_customer_records_by_keyword(search_keyword)
+            if not customer_records:
+                flash(f"ไม่พบข้อมูลลูกค้าสำหรับ '{search_keyword}'", "info")
+            else:
+                flash(f"พบ {len(customer_records)} รายการสำหรับ '{search_keyword}'", "success")
         else:
-            flash(f"พบ {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ'", "success")
-    elif search_keyword:
-        customer_records = get_customer_records_by_keyword(search_keyword)
-        if not customer_records:
-            flash(f"ไม่พบข้อมูลลูกค้าสำหรับ '{search_keyword}'", "info")
-        else:
-            flash(f"พบ {len(customer_records)} รายการสำหรับ '{search_keyword}'", "success")
-    else:
-        # If no search_keyword and no status_filter, display all or none depending on desired default
-        # For now, let's display all if no specific filter/keyword is provided
-        customer_records = get_all_customer_records()
-        if not customer_records:
-            flash("ไม่พบข้อมูลลูกค้าในระบบ", "info")
-        else:
-            flash(f"แสดงข้อมูลลูกค้าทั้งหมด {len(customer_records)} รายการ", "info")
+            # === ส่วนที่ต้องแก้ไข: ทำให้แสดง 'รอดำเนินการ' เป็นค่าเริ่มต้น ===
+            customer_records = get_customer_records_by_status("รอดำเนินการ") # เรียกใช้ฟังก์ชันนี้แทน
+            display_title = "ข้อมูลลูกค้า: รอดำเนินการ (ค่าเริ่มต้น)" # เปลี่ยนชื่อหัวข้อ
+            if not customer_records:
+                flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ' ในระบบ", "info")
+            else:
+                flash(f"แสดงข้อมูลลูกค้า {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ' (ค่าเริ่มต้น)", "info")
+            # ================================================================
 
 
-    return render_template(
-        'search_data.html',
-        customer_records=customer_records,
-        search_keyword=search_keyword,
-        username=logged_in_user,
-        display_title=display_title # Pass the dynamic title
-    )
+        return render_template(
+            'search_data.html',
+            customer_records=customer_records,
+            search_keyword=search_keyword,
+            username=logged_in_user,
+            display_title=display_title # Pass the dynamic title
+        )
 
 # Route for editing customer data
 @app.route('/edit_customer_data/<int:row_index>', methods=['GET', 'POST'])
@@ -526,37 +527,38 @@ def edit_customer_data(row_index):
         return redirect(url_for('login'))
 
     logged_in_user = session['username']
-    customer_data = {}
-    
+    customer_data = {} # Initialize as empty, will be populated below
+
     worksheet = get_customer_data_worksheet()
     if not worksheet:
         flash('ไม่สามารถเข้าถึง Google Sheet สำหรับแก้ไขข้อมูลลูกค้าได้', 'error')
         return redirect(url_for('search_customer_data'))
 
-    if request.method == 'GET':
-        try:
-            # Get specific row values (1-based index)
-            row_values = worksheet.row_values(row_index)
-            if row_values:
-                # Map values to dictionary using headers
-                customer_data = dict(zip(CUSTOMER_DATA_WORKSHEET_HEADERS, row_values))
-                # Store original image URLs for display and potential deletion
-                if 'Image URLs' in customer_data and customer_data['Image URLs'] != '-':
-                    customer_data['existing_image_urls'] = customer_data['Image URLs'].split(', ')
-                else:
-                    customer_data['existing_image_urls'] = []
+    # --- Fetch current customer data for both GET and POST requests ---
+    # This ensures customer_data is always populated with the latest from the sheet
+    try:
+        row_values = worksheet.row_values(row_index)
+        if row_values:
+            customer_data = dict(zip(CUSTOMER_DATA_WORKSHEET_HEADERS, row_values))
+            # Store original image URLs for display and potential deletion
+            if 'Image URLs' in customer_data and customer_data['Image URLs'] != '-':
+                customer_data['existing_image_urls'] = customer_data['Image URLs'].split(', ')
             else:
-                flash('ไม่พบข้อมูลลูกค้าในแถวที่ระบุ', 'error')
-                return redirect(url_for('search_customer_data'))
-        except Exception as e:
-            flash(f'เกิดข้อผิดพลาดในการดึงข้อมูลลูกค้าเพื่อแก้ไข: {e}', 'error')
-            print(f"Error fetching row {row_index} for edit: {e}")
+                customer_data['existing_image_urls'] = []
+        else:
+            flash('ไม่พบข้อมูลลูกค้าในแถวที่ระบุ', 'error')
             return redirect(url_for('search_customer_data'))
-    
-    elif request.method == 'POST':
+    except Exception as e:
+        flash(f'เกิดข้อผิดพลาดในการดึงข้อมูลลูกค้าเพื่อแก้ไข: {e}', 'error')
+        print(f"Error fetching row {row_index} for edit: {e}")
+        return redirect(url_for('search_customer_data'))
+    # --- End of data fetching for GET/POST ---
+
+    if request.method == 'POST':
         # Get updated text data from the form
         updated_data = {
-            'Timestamp': customer_data.get('Timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S')), # Keep original or update
+            # Preserve original Timestamp if not updated by form, or use current time if it's new (unlikely for edit)
+            'Timestamp': customer_data.get('Timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
             'ชื่อ': request.form.get('customer_name', '') or '-',
             'นามสกุล': request.form.get('last_name', '') or '-',
             'เลขบัตรประชาชน': request.form.get('id_card_number', '') or '-',
@@ -578,14 +580,11 @@ def edit_customer_data(row_index):
             'ลิงค์โลเคชั่นบ้าน': request.form.get('home_location_link', '') or '-',
             'ลิงค์โลเคชั่นที่ทำงาน': request.form.get('work_location_link', '') or '-',
             'หมายเหตุ': request.form.get('remarks', '') or '-',
-            # 'Logged In User' is NOT updated from form, it remains the original or is set by system
         }
 
         # Handle existing image URLs (those not marked for deletion)
-        # Get current image URLs from the sheet first
-        current_sheet_row = worksheet.row_values(row_index)
-        current_image_urls_str = current_sheet_row[CUSTOMER_DATA_WORKSHEET_HEADERS.index('Image URLs')] if 'Image URLs' in CUSTOMER_DATA_WORKSHEET_HEADERS else '-'
-        current_image_urls = [url.strip() for url in current_image_urls_str.split(',')] if current_image_urls_str and current_image_urls_str != '-' else []
+        # current_image_urls is now available from the initial data fetch
+        current_image_urls = customer_data.get('existing_image_urls', []) # Use the already parsed list
 
         # Get image URLs that were NOT removed via the form (hidden input)
         kept_image_urls_str = request.form.get('kept_image_urls', '')
@@ -594,7 +593,7 @@ def edit_customer_data(row_index):
         # Determine which images were actually deleted by comparing current_image_urls with kept_image_urls
         deleted_image_urls = [url for url in current_image_urls if url not in kept_image_urls]
 
-        # Delete images from Google Drive that were marked for deletion
+        # Delete images from Cloudinary that were marked for deletion
         for url_to_delete in deleted_image_urls:
             delete_image_from_cloudinary(url_to_delete)
 
@@ -612,11 +611,8 @@ def edit_customer_data(row_index):
         final_image_urls = kept_image_urls + new_image_urls
         updated_data['Image URLs'] = ', '.join(final_image_urls) if final_image_urls else '-'
 
-        # Ensure 'Logged In User' is not changed
-        # Re-fetch the original 'Logged In User' from the sheet to ensure it's preserved
-        original_logged_in_user_index = CUSTOMER_DATA_WORKSHEET_HEADERS.index('Logged In User')
-        original_logged_in_user = current_sheet_row[original_logged_in_user_index]
-        updated_data['Logged In User'] = original_logged_in_user
+        # Ensure 'Logged In User' is not changed (preserve original from fetched customer_data)
+        updated_data['Logged In User'] = customer_data.get('Logged In User', logged_in_user)
 
         try:
             # Prepare the row data in the correct order for gspread update
@@ -628,11 +624,11 @@ def edit_customer_data(row_index):
             flash(f'เกิดข้อผิดพลาดในการบันทึกการแก้ไขข้อมูล: {e}', 'error')
             print(f"Error updating row {row_index} in Google Sheet: {e}")
     
+    # For GET request, or if POST fails before redirect, render the template
     return render_template('edit_customer_data.html', 
                            username=logged_in_user, 
                            customer_data=customer_data, 
                            row_index=row_index)
-
 
 
 
