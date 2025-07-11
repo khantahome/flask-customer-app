@@ -145,6 +145,7 @@ def get_all_customer_records():
 
         customer_records = []
         for i, row in enumerate(data_rows):
+            print(f"DEBUG: Loop entered for i={i}, processing row (snippet): {row[:5]}...") # แสดง 5 องค์ประกอบแรกของแถว
             # Create a dictionary for each row
             record = {}
             for j, header in enumerate(headers):
