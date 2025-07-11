@@ -133,6 +133,8 @@ def get_all_customer_records():
         # Get all data as a list of lists, including headers
         all_data = worksheet.get_all_values()
         if not all_data:
+            # ---> บรรทัดที่ 1 ที่เพิ่ม:
+            print("DEBUG: Google Sheet 'all_data' is empty or only has headers.")
             return []
 
         # Assume the first row is headers
@@ -148,15 +150,19 @@ def get_all_customer_records():
                     record[header] = row[j]
                 else:
                     record[header] = '' # Handle cases where row might be shorter than headers
-
+            
             # Add the 1-based row index (actual row in Google Sheet)
             # i is 0-indexed for data_rows, so i + 2 gives the 1-based row number
             # (1 for 0-indexing + 1 for header row)
             record['row_index'] = i + 2
+            # ---> บรรทัดที่ 2 ที่เพิ่ม:
+            print(f"DEBUG: Added record with row_index {record['row_index']} - Record snippet: {record.get('ชื่อ', '')}, Status: {record.get('สถานะ', '')}")
+            
             customer_records.append(record)
         return customer_records
     except Exception as e:
-        print(f"Error getting all customer records with row index: {e}")
+        # ---> บรรทัดที่ 3 ที่เพิ่ม:
+        print(f"ERROR in get_all_customer_records: {e}")
         return []
 def get_customer_records_by_keyword(keyword):
     """
@@ -464,54 +470,63 @@ def enter_customer_data():
 # Route for the customer data search page
 @app.route('/search_customer_data', methods=['GET'])
 def search_customer_data():
-        """
-        Handles searching for customer data.
-        Can search by keyword or filter by 'รอดำเนินการ' status.
-        Requires user to be logged in.
-        """
-        if 'username' not in session:
-            flash('กรุณาเข้าสู่ระบบก่อน', 'error')
-            return redirect(url_for('login'))
+    """
+    Handles searching for customer data.
+    Can search by keyword or filter by 'รอดำเนินการ' status.
+    Requires user to be logged in.
+    """
+    if 'username' not in session:
+        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
+        return redirect(url_for('login'))
 
-        logged_in_user = session['username']
-        
-        search_keyword = request.args.get('search_keyword', '').strip()
-        status_filter = request.args.get('status_filter', '').strip()
+    logged_in_user = session['username']
+    
+    search_keyword = request.args.get('search_keyword', '').strip()
+    status_filter = request.args.get('status_filter', '').strip()
 
-        customer_records = []
-        display_title = "ค้นหาข้อมูลลูกค้า" # Default title
+    customer_records = []
+    display_title = "ค้นหาข้อมูลลูกค้า" # Default title
 
-        if status_filter == 'pending':
-            customer_records = get_customer_records_by_status("รอดำเนินการ")
-            display_title = "ข้อมูลลูกค้า: รอดำเนินการ"
-            if not customer_records:
-                flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ'", "info")
-            else:
-                flash(f"พบ {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ'", "success")
-        elif search_keyword:
-            customer_records = get_customer_records_by_keyword(search_keyword)
-            if not customer_records:
-                flash(f"ไม่พบข้อมูลลูกค้าสำหรับ '{search_keyword}'", "info")
-            else:
-                flash(f"พบ {len(customer_records)} รายการสำหรับ '{search_keyword}'", "success")
+    if status_filter == 'pending':
+        customer_records = get_customer_records_by_status("รอดำเนินการ")
+        display_title = "ข้อมูลลูกค้า: รอดำเนินการ"
+        if not customer_records:
+            flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ'", "info")
         else:
-            # === ส่วนที่ต้องแก้ไข: ทำให้แสดง 'รอดำเนินการ' เป็นค่าเริ่มต้น ===
-            customer_records = get_customer_records_by_status("รอดำเนินการ") # เรียกใช้ฟังก์ชันนี้แทน
-            display_title = "ข้อมูลลูกค้า: รอดำเนินการ (ค่าเริ่มต้น)" # เปลี่ยนชื่อหัวข้อ
-            if not customer_records:
-                flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ' ในระบบ", "info")
-            else:
-                flash(f"แสดงข้อมูลลูกค้า {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ' (ค่าเริ่มต้น)", "info")
-            # ================================================================
+            flash(f"พบ {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ'", "success")
+    elif search_keyword:
+        customer_records = get_customer_records_by_keyword(search_keyword)
+        if not customer_records:
+            flash(f"ไม่พบข้อมูลลูกค้าสำหรับ '{search_keyword}'", "info")
+        else:
+            flash(f"พบ {len(customer_records)} รายการสำหรับ '{search_keyword}'", "success")
+    else:
+        # === ส่วนที่ต้องแก้ไข: ทำให้แสดง 'รอดำเนินการ' เป็นค่าเริ่มต้น ===
+        customer_records = get_customer_records_by_status("รอดำเนินการ")
+        display_title = "ข้อมูลลูกค้า: รอดำเนินการ (ค่าเริ่มต้น)"
+        if not customer_records:
+            flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ' ในระบบ", "info")
+        else:
+            flash(f"แสดงข้อมูลลูกค้า {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ' (ค่าเริ่มต้น)", "info")
+        # ================================================================
 
+    # --- ส่วน DEBUGGING ที่เพิ่มเข้าไป ---
+    print(f"DEBUG: customer_records list contains {len(customer_records)} records.")
+    if customer_records:
+        print(f"DEBUG: First record in list: {customer_records[0]}")
+        if 'row_index' in customer_records[0]:
+            print(f"DEBUG: First record HAS 'row_index': {customer_records[0]['row_index']}")
+        else:
+            print("DEBUG: First record DOES NOT HAVE 'row_index'. THIS IS THE PROBLEM.")
+    # --- สิ้นสุดส่วน DEBUGGING ---
 
-        return render_template(
-            'search_data.html',
-            customer_records=customer_records,
-            search_keyword=search_keyword,
-            username=logged_in_user,
-            display_title=display_title # Pass the dynamic title
-        )
+    return render_template(
+        'search_data.html',
+        customer_records=customer_records,
+        search_keyword=search_keyword,
+        username=logged_in_user,
+        display_title=display_title # Pass the dynamic title
+    )
 
 # Route for editing customer data
 @app.route('/edit_customer_data/<int:row_index>', methods=['GET', 'POST'])
