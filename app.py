@@ -169,6 +169,30 @@ def get_all_customer_records():
         # ---> บรรทัดที่ 3 ที่เพิ่ม:
         print(f"ERROR in get_all_customer_records: {e}")
         return []
+def get_customer_records_by_status(status):
+    """
+    Retrieves customer records filtered by status.
+    Assumes get_all_customer_records already adds 'row_index'.
+    """
+    print(f"DEBUG: get_customer_records_by_status called with status: {status}")
+    all_records = get_all_customer_records() # เรียกใช้ฟังก์ชันที่ดึงข้อมูลทั้งหมดพร้อม row_index
+    filtered_records = [record for record in all_records if record.get('สถานะ') == status]
+    print(f"DEBUG: get_customer_records_by_status returning {len(filtered_records)} records for status '{status}'")
+    return filtered_records
+
+def get_customer_records_by_keyword(keyword):
+    """
+    Retrieves customer records filtered by keyword across all values.
+    Assumes get_all_customer_records already adds 'row_index'.
+    """
+    print(f"DEBUG: get_customer_records_by_keyword called with keyword: {keyword}")
+    all_records = get_all_customer_records() # เรียกใช้ฟังก์ชันที่ดึงข้อมูลทั้งหมดพร้อม row_index
+    filtered_records = [
+        record for record in all_records
+        if any(keyword.lower() in str(value).lower() for value in record.values())
+    ]
+    print(f"DEBUG: get_customer_records_by_keyword returning {len(filtered_records)} records for keyword '{keyword}'")
+    return filtered_records
 def get_customer_records_by_keyword(keyword):
     """
     Retrieves customer records that match the keyword in any relevant text column.
@@ -474,6 +498,7 @@ def enter_customer_data():
 
 # Route for the customer data search page
 @app.route('/search_customer_data', methods=['GET'])
+@app.route('/search_customer_data', methods=['GET'])
 def search_customer_data():
     """
     Handles searching for customer data.
@@ -515,7 +540,9 @@ def search_customer_data():
             flash(f"แสดงข้อมูลลูกค้า {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ' (ค่าเริ่มต้น)", "info")
         # ================================================================
 
-    # --- ส่วน DEBUGGING ที่เพิ่มเข้าไป ---
+    # --- ส่วน DEBUGGING ที่เพิ่มเข้าไป (นำกลับมาเพื่อให้เห็น Flow ทั้งหมด) ---
+    print(f"DEBUG: search_customer_data - Final customer_records before rendering. Contains {len(customer_records)} records. First record (if any): {customer_records[0] if customer_records else 'N/A'}")
+    
     print(f"DEBUG: customer_records list contains {len(customer_records)} records.")
     if customer_records:
         print(f"DEBUG: First record in list: {customer_records[0]}")
