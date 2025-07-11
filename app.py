@@ -140,6 +140,8 @@ def get_all_customer_records():
         # Assume the first row is headers
         headers = all_data[0]
         data_rows = all_data[1:] # All rows after the header
+        print(f"DEBUG: get_all_customer_records - headers: {headers}")
+        print(f"DEBUG: get_all_customer_records - data_rows contains {len(data_rows)} rows. First data row: {data_rows[0] if data_rows else 'N/A'}")
 
         customer_records = []
         for i, row in enumerate(data_rows):
@@ -155,6 +157,7 @@ def get_all_customer_records():
             # i is 0-indexed for data_rows, so i + 2 gives the 1-based row number
             # (1 for 0-indexing + 1 for header row)
             record['row_index'] = i + 2
+
             # ---> บรรทัดที่ 2 ที่เพิ่ม:
             print(f"DEBUG: Added record with row_index {record['row_index']} - Record snippet: {record.get('ชื่อ', '')}, Status: {record.get('สถานะ', '')}")
             
