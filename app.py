@@ -463,7 +463,7 @@ def enter_customer_data():
 
 # Route for the customer data search page
 @app.route('/search_customer_data', methods=['GET'])
-    def search_customer_data():
+def search_customer_data():
         """
         Handles searching for customer data.
         Can search by keyword or filter by 'รอดำเนินการ' status.
