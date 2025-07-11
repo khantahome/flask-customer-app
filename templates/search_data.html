@@ -453,7 +453,7 @@
     {# Only display results container if there are records to show #}
     {% if customer_records %}
     <div class="results-container">
-        <h3>ผลการค้นหา ({{ customer_records|length }} รายการ)</h3>
+        <h3>{{ display_title }}</h3>
         {% for record in customer_records %}
             <div class="customer-record-card">
                 <p><strong>ชื่อ-นามสกุล:</strong> {{ record.ชื่อ }} {{ record.นามสกุล }}</p>

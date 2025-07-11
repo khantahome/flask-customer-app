@@ -106,6 +106,73 @@ except Exception as e:
 
 
 # --- Helper Functions for Google Sheets ---
+def get_customer_records_by_status(status_value):
+    """
+    Retrieves customer records where the 'สถานะ' (Status) column matches the given status_value.
+    """
+    worksheet = get_customer_data_worksheet()
+    if not worksheet:
+        return []
+    try:
+        # Get all records as a list of dictionaries
+        all_records = worksheet.get_all_records()
+
+        # Filter records where 'สถานะ' column contains the status_value
+        filtered_records = [
+            record for record in all_records
+            if record.get('สถานะ') and status_value in record['สถานะ']
+        ]
+        return filtered_records
+    except Exception as e:
+        print(f"Error getting customer records by status: {e}")
+        return []
+
+def get_all_customer_records():
+    """
+    Retrieves all customer records from the worksheet.
+    """
+    worksheet = get_customer_data_worksheet()
+    if not worksheet:
+        return []
+    try:
+        return worksheet.get_all_records()
+    except Exception as e:
+        print(f"Error getting all customer records: {e}")
+        return []
+
+def get_customer_records_by_keyword(keyword):
+    """
+    Retrieves customer records that match the keyword in any relevant text column.
+    """
+    worksheet = get_customer_data_worksheet()
+    if not worksheet:
+        return []
+    try:
+        all_records = worksheet.get_all_records()
+        if not keyword:
+            return all_records # If no keyword, return all records
+
+        # Convert keyword to lowercase for case-insensitive search
+        keyword_lower = keyword.lower()
+
+        matched_records = []
+        for record in all_records:
+            # Check relevant text columns for the keyword
+            # You can customize which columns to search here
+            searchable_columns = [
+                'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
+                'จดทะเบียน', 'ชื่อกิจการ', 'ประเภทธุรกิจ', 'ที่อยู่จดทะเบียน',
+                'สถานะ', 'LINE ID', 'หมายเหตุ'
+            ]
+            for col in searchable_columns:
+                # Ensure the column exists and its value is not None, then convert to string and lower
+                if col in record and record[col] is not None and keyword_lower in str(record[col]).lower():
+                    matched_records.append(record)
+                    break # Move to the next record once a match is found
+        return matched_records
+    except Exception as e:
+        print(f"Error searching customer data: {e}")
+        return []
 
 def load_users():
     """
@@ -380,67 +447,52 @@ def enter_customer_data():
 @app.route('/search_customer_data', methods=['GET'])
 def search_customer_data():
     """
-    Handles customer data search.
+    Handles searching for customer data.
+    Can search by keyword or filter by 'รอดำเนินการ' status.
     Requires user to be logged in.
     """
     if 'username' not in session:
         flash('กรุณาเข้าสู่ระบบก่อน', 'error')
         return redirect(url_for('login'))
-    
+
     logged_in_user = session['username']
-    
+
     search_keyword = request.args.get('search_keyword', '').strip()
+    status_filter = request.args.get('status_filter', '').strip() # NEW: Get status filter
+
     customer_records = []
-    
-    if search_keyword: # Only perform search if a keyword is provided
-        worksheet = get_customer_data_worksheet()
+    display_title = "ค้นหาข้อมูลลูกค้า" # Default title
 
-        if worksheet:
-            try:
-                # Get all values (including header) to get row index
-                all_values = worksheet.get_all_values()
-                
-                if len(all_values) > 1: # Check if there's data beyond headers
-                    headers = all_values[0]
-                    data_rows = all_values[1:] # Exclude header row
-                    
-                    # Convert data_rows to list of dicts, including row_index
-                    # row_index in gspread is 1-based, so for data_rows[i] it's i + 2 (1 for 1-based, 1 for header)
-                    
-                    # Filter records based on search keyword
-                    filtered_records_raw = []
-                    for i, row_values in enumerate(data_rows):
-                        record_dict = dict(zip(headers, row_values))
-                        # Add row_index to the dictionary (1-based sheet row number)
-                        record_dict['row_index'] = i + 2 
-                        
-                        # Check if keyword exists in any of the searchable columns
-                        found_match = False
-                        search_columns = ['ชื่อ', 'นามสกุล', 'เบอร์มือถือ', 'เลขบัตรประชาชน', 'ชื่อกิจการ']
-                        for col in search_columns:
-                            if col in record_dict and search_keyword.lower() in str(record_dict[col]).lower():
-                                found_match = True
-                                break
-                        
-                        if found_match:
-                            customer_records.append(record_dict)
-                    
-                    if not customer_records:
-                        flash('ไม่พบข้อมูลลูกค้าที่ตรงกับเงื่อนไขการค้นหา', 'info')
-                else:
-                    flash('ยังไม่มีข้อมูลลูกค้าในระบบ', 'info')
-
-            except Exception as e:
-                flash(f'เกิดข้อผิดพลาดในการดึงข้อมูลลูกค้า: {e}', 'error')
-                print(f"Error fetching customer data for search: {e}")
+    if status_filter == 'pending':
+        customer_records = get_customer_records_by_status("รอดำเนินการ")
+        display_title = "ข้อมูลลูกค้า: รอดำเนินการ"
+        if not customer_records:
+            flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ'", "info")
         else:
-            flash('ไม่สามารถเข้าถึง Google Sheet สำหรับค้นหาข้อมูลลูกค้าได้', 'error')
-    # else: If no search_keyword, customer_records remains empty, so no results are displayed initially
+            flash(f"พบ {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ'", "success")
+    elif search_keyword:
+        customer_records = get_customer_records_by_keyword(search_keyword)
+        if not customer_records:
+            flash(f"ไม่พบข้อมูลลูกค้าสำหรับ '{search_keyword}'", "info")
+        else:
+            flash(f"พบ {len(customer_records)} รายการสำหรับ '{search_keyword}'", "success")
+    else:
+        # If no search_keyword and no status_filter, display all or none depending on desired default
+        # For now, let's display all if no specific filter/keyword is provided
+        customer_records = get_all_customer_records()
+        if not customer_records:
+            flash("ไม่พบข้อมูลลูกค้าในระบบ", "info")
+        else:
+            flash(f"แสดงข้อมูลลูกค้าทั้งหมด {len(customer_records)} รายการ", "info")
 
-    return render_template('search_data.html', 
-                           username=logged_in_user, 
-                           customer_records=customer_records,
-                           search_keyword=search_keyword) # Pass search_keyword back to pre-fill form
+
+    return render_template(
+        'search_data.html',
+        customer_records=customer_records,
+        search_keyword=search_keyword,
+        username=logged_in_user,
+        display_title=display_title # Pass the dynamic title
+    )
 
 # Route for editing customer data
 @app.route('/edit_customer_data/<int:row_index>', methods=['GET', 'POST'])
