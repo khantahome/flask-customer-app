@@ -108,38 +108,56 @@ except Exception as e:
 # --- Helper Functions for Google Sheets ---
 def get_customer_records_by_status(status_value):
     """
-    Retrieves customer records where the 'สถานะ' (Status) column matches the given status_value.
+    Retrieves customer records where the 'สถานะ' (Status) column matches the given status_value,
+    including their 1-based row index.
     """
-    worksheet = get_customer_data_worksheet()
-    if not worksheet:
-        return []
-    try:
-        # Get all records as a list of dictionaries
-        all_records = worksheet.get_all_records()
+    # Use the function that already retrieves all records with row_index
+    all_records_with_index = get_all_customer_records()
 
-        # Filter records where 'สถานะ' column contains the status_value
-        filtered_records = [
-            record for record in all_records
-            if record.get('สถานะ') and status_value in record['สถานะ']
-        ]
-        return filtered_records
-    except Exception as e:
-        print(f"Error getting customer records by status: {e}")
-        return []
+    # Filter these records based on status
+    filtered_records = [
+        record for record in all_records_with_index
+        if record.get('สถานะ') and status_value in record['สถานะ']
+    ]
+    return filtered_records
 
 def get_all_customer_records():
     """
-    Retrieves all customer records from the worksheet.
+    Retrieves all customer records from the worksheet, including their 1-based row index.
+    Each record will be a dictionary with an additional 'row_index' key.
     """
     worksheet = get_customer_data_worksheet()
     if not worksheet:
         return []
     try:
-        return worksheet.get_all_records()
-    except Exception as e:
-        print(f"Error getting all customer records: {e}")
-        return []
+        # Get all data as a list of lists, including headers
+        all_data = worksheet.get_all_values()
+        if not all_data:
+            return []
 
+        # Assume the first row is headers
+        headers = all_data[0]
+        data_rows = all_data[1:] # All rows after the header
+
+        customer_records = []
+        for i, row in enumerate(data_rows):
+            # Create a dictionary for each row
+            record = {}
+            for j, header in enumerate(headers):
+                if j < len(row): # Ensure index is within bounds of the current row
+                    record[header] = row[j]
+                else:
+                    record[header] = '' # Handle cases where row might be shorter than headers
+
+            # Add the 1-based row index (actual row in Google Sheet)
+            # i is 0-indexed for data_rows, so i + 2 gives the 1-based row number
+            # (1 for 0-indexing + 1 for header row)
+            record['row_index'] = i + 2
+            customer_records.append(record)
+        return customer_records
+    except Exception as e:
+        print(f"Error getting all customer records with row index: {e}")
+        return []
 def get_customer_records_by_keyword(keyword):
     """
     Retrieves customer records that match the keyword in any relevant text column.
