@@ -2,11 +2,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import pandas as pd # pandas is still used in load_users
+import pandas as pd
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 import os
-from datetime import datetime # Removed timedelta as it's no longer used
+from datetime import datetime
 import requests
 import json
 import cloudinary
@@ -32,13 +32,13 @@ USER_LOGIN_WORKSHEET_NAME = 'users'
 SPREADSHEET_NAME = 'data1'
 WORKSHEET_NAME = 'customer_records'
 
+# UPDATED: Define headers for the Loan Transactions worksheet for daily loans
 LOAN_TRANSACTIONS_WORKSHEET_NAME = os.environ.get('LOAN_TRANSACTIONS_WORKSHEET_NAME', 'Loan_Transactions')
-# UPDATED HEADERS FOR LOAN TRANSACTIONS WORKSHEET
 LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
-    'Timestamp', 'ชื่อลูกค้า', 'นามสกุลลูกค้า', 'เลขบัตรประชาชนลูกค้า',
-    'วงเงินกู้', 'ดอกเบี้ย (%)', 'หักดอกหัว-ท้าย (%)', 'ค่าดำเนินการ',
-    'วันที่เริ่มกู้', 'ยอดเงินต้นที่ต้องชำระ', # Changed from 'ยอดที่ต้องชำระรายเดือน'
-    'ยอดชำระแล้ว', 'ยอดค้างชำระ', 'สถานะเงินกู้', 'หมายเหตุเงินกู้', 'ผู้บันทึก'
+    'Timestamp', 'เลขบัตรประชาชนลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
+    'วงเงินกู้', 'ดอกเบี้ย (%)', 'วันที่เริ่มกู้', 'ค่าดำเนินการ',
+    'ยอดที่ต้องชำระรายวัน', 'ยอดชำระแล้ว', 'ยอดค้างชำระ', 
+    'สถานะเงินกู้', 'หมายเหตุเงินกู้', 'ผู้บันทึก'
 ]
 
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
@@ -86,7 +86,72 @@ except Exception as e:
     GSPREAD_CLIENT = None
     DRIVE_CLIENT = None
 
-# --- Helper functions for Google Sheets ---
+
+
+def get_all_customer_records():
+    """
+    Retrieves all customer records from the worksheet, including their 1-based row index.
+    Each record will be a dictionary with an additional 'row_index' key.
+    """
+    worksheet = get_customer_data_worksheet()
+    if not worksheet:
+        return []
+    try:
+        # Get all data as a list of lists, including headers
+        all_data = worksheet.get_all_values()
+        if not all_data:
+            print("DEBUG: Google Sheet 'all_data' is empty or only has headers.")
+            return []
+
+        # Assume the first row is headers
+        headers = all_data[0]
+        data_rows = all_data[1:] # All rows after the header
+        
+        customer_records = []
+        for i, row in enumerate(data_rows):
+            record = {}
+            for j, header in enumerate(headers):
+                if j < len(row): # Ensure index is within bounds of the current row
+                    record[header] = row[j]
+                else:
+                    record[header] = '' # Handle cases where row might be shorter than headers
+            
+            # Add the 1-based row index (actual row in Google Sheet)
+            # i is 0-indexed for data_rows, so i + 2 gives the 1-based row number
+            # (1 for 0-indexing + 1 for header row)
+            record['row_index'] = i + 2
+            
+            customer_records.append(record)
+        return customer_records
+    except Exception as e:
+        print(f"ERROR in get_all_customer_records: {e}")
+        return []
+
+
+def get_customer_records_by_status(status):
+    """
+    Retrieves customer records filtered by status.
+    Assumes get_all_customer_records already adds 'row_index'.
+    """
+    print(f"DEBUG: get_customer_records_by_status called with status: {status}")
+    all_records = get_all_customer_records()
+    filtered_records = [record for record in all_records if record.get('สถานะ') == status]
+    print(f"DEBUG: get_customer_records_by_status returning {len(filtered_records)} records for status '{status}'")
+    return filtered_records
+
+def get_customer_records_by_keyword(keyword):
+    """
+    Retrieves customer records filtered by keyword across all values.
+    Assumes get_all_customer_records already adds 'row_index'.
+    """
+    print(f"DEBUG: get_customer_records_by_keyword called with keyword: {keyword}")
+    all_records = get_all_customer_records()
+    filtered_records = [
+        record for record in all_records
+        if any(keyword.lower() in str(value).lower() for value in record.values())
+    ]
+    print(f"DEBUG: get_customer_records_by_keyword returning {len(filtered_records)} records for keyword '{keyword}'")
+    return filtered_records
 
 def load_users():
     """
@@ -124,6 +189,7 @@ def get_customer_data_worksheet():
         spreadsheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME)
         try:
             worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
+            # Verify headers if worksheet already exists
             existing_headers = worksheet.row_values(1)
             if existing_headers != CUSTOMER_DATA_WORKSHEET_HEADERS:
                 print("Warning: Existing worksheet headers do not match expected headers. Attempting to update headers.")
@@ -139,64 +205,7 @@ def get_customer_data_worksheet():
         print(f"Error accessing/creating customer data worksheet: {e}")
         return None
 
-def get_all_customer_records():
-    """
-    Retrieves all customer records from the worksheet, including their 1-based row index.
-    Each record will be a dictionary with an additional 'row_index' key.
-    """
-    worksheet = get_customer_data_worksheet()
-    if not worksheet:
-        return []
-    try:
-        all_data = worksheet.get_all_values()
-        if not all_data:
-            print("DEBUG: Google Sheet 'all_data' is empty or only has headers.")
-            return []
-
-        headers = all_data[0]
-        data_rows = all_data[1:]
-
-        customer_records = []
-        for i, row in enumerate(data_rows):
-            record = {}
-            for j, header in enumerate(headers):
-                if j < len(row):
-                    record[header] = row[j]
-                else:
-                    record[header] = ''
-
-            record['row_index'] = i + 2
-            customer_records.append(record)
-        return customer_records
-    except Exception as e:
-        print(f"ERROR in get_all_customer_records: {e}")
-        return []
-
-def get_customer_records_by_status(status):
-    """
-    Retrieves customer records filtered by status.
-    Assumes get_all_customer_records already adds 'row_index'.
-    """
-    print(f"DEBUG: get_customer_records_by_status called with status: {status}")
-    all_records = get_all_customer_records()
-    filtered_records = [record for record in all_records if record.get('สถานะ') == status]
-    print(f"DEBUG: get_customer_records_by_status returning {len(filtered_records)} records for status '{status}'")
-    return filtered_records
-
-def get_customer_records_by_keyword(keyword):
-    """
-    Retrieves customer records filtered by keyword across all values.
-    Assumes get_all_customer_records already adds 'row_index'.
-    """
-    print(f"DEBUG: get_customer_records_by_keyword called with keyword: {keyword}")
-    all_records = get_all_customer_records()
-    filtered_records = [
-        record for record in all_records
-        if any(keyword.lower() in str(value).lower() for value in record.values())
-    ]
-    print(f"DEBUG: get_customer_records_by_keyword returning {len(filtered_records)} records for keyword '{keyword}'")
-    return filtered_records
-
+# Helper function to get the Loan Transactions worksheet
 def get_loan_worksheet():
     """
     Gets the Loan_Transactions worksheet.
@@ -206,12 +215,12 @@ def get_loan_worksheet():
         print("Gspread client not initialized. Cannot access Loan Transactions worksheet.")
         return None
     try:
-        spreadsheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME)
+        spreadsheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME) 
 
         try:
             worksheet = spreadsheet.worksheet(LOAN_TRANSACTIONS_WORKSHEET_NAME)
+
             existing_headers = worksheet.row_values(1)
-            # IMPORTANT: Check if headers match the LATEST LOAN_TRANSACTIONS_WORKSHEET_HEADERS
             if not existing_headers or existing_headers != LOAN_TRANSACTIONS_WORKSHEET_HEADERS:
                 print(f"Warning: Loan Transactions worksheet headers do not match expected headers or are empty. Updating headers to: {LOAN_TRANSACTIONS_WORKSHEET_HEADERS}")
                 worksheet.update('A1', [LOAN_TRANSACTIONS_WORKSHEET_HEADERS])
@@ -219,8 +228,8 @@ def get_loan_worksheet():
         except gspread.exceptions.WorksheetNotFound:
             print(f"Worksheet '{LOAN_TRANSACTIONS_WORKSHEET_NAME}' not found. Creating it...")
             worksheet = spreadsheet.add_worksheet(
-                title=LOAN_TRANSACTIONS_WORKSHEET_NAME,
-                rows="100",
+                title=LOAN_TRANSACTIONS_WORKSHEET_NAME, 
+                rows="100", 
                 cols=str(len(LOAN_TRANSACTIONS_WORKSHEET_HEADERS))
             )
             worksheet.append_row(LOAN_TRANSACTIONS_WORKSHEET_HEADERS)
@@ -231,6 +240,8 @@ def get_loan_worksheet():
         print(f"Error accessing or creating Loan Transactions worksheet: {e}")
         return None
 
+
+# NEW: Helper function to get all loan records
 def get_all_loan_records():
     """
     Retrieves all loan transaction records from the worksheet, including their 1-based row index.
@@ -256,13 +267,99 @@ def get_all_loan_records():
                     record[header] = row[j]
                 else:
                     record[header] = ''
-
-            record['row_index'] = i + 2
+            
+            record['row_index'] = i + 2 # 1-based row index in Google Sheet
             loan_records.append(record)
         return loan_records
     except Exception as e:
         print(f"ERROR in get_all_loan_records: {e}")
         return []
+
+# --- Route for Adding New Loan Record ---
+@app.route('/add_loan_record', methods=['POST'])
+def add_loan_record():
+    """
+    Handles form submission for adding a new loan record to the Google Sheet.
+    Calculates daily payment based on provided formula.
+    """
+    if 'username' not in session:
+        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
+        return redirect(url_for('login'))
+
+    logged_in_user = session['username']
+
+    if request.method == 'POST':
+        try:
+            # Get data from the form
+            id_card_number = request.form['id_card_number'].strip()
+            loan_amount = float(request.form['loan_amount'])
+            interest_rate = float(request.form['interest_rate'])
+            start_date_str = request.form['start_date']
+            processing_fee = float(request.form['processing_fee']) # NEW: Get processing fee
+            loan_note = request.form.get('loan_note', '').strip()
+
+            customer_name = ""
+            customer_surname = ""
+            
+            # --- Advanced: Fetch customer name from customer_records worksheet ---
+            customer_worksheet = get_customer_data_worksheet() 
+            if customer_worksheet:
+                customer_records_data = customer_worksheet.get_all_records()
+                found_customer = next((rec for rec in customer_records_data if rec.get('เลขบัตรประชาชน') == id_card_number), None)
+                if found_customer:
+                    customer_name = found_customer.get('ชื่อ', '')
+                    customer_surname = found_customer.get('นามสกุล', '')
+                else:
+                    flash(f"ไม่พบข้อมูลลูกค้าสำหรับเลขบัตรประชาชน {id_card_number} ในระบบ กรุณากรอกข้อมูลลูกค้าก่อน", 'warning')
+            else:
+                flash("ไม่สามารถเชื่อมต่อกับชีทข้อมูลลูกค้าได้", 'error')
+            # --- End Advanced Fetch ---
+
+            # NEW: Calculate Daily Payment based on the provided formula
+            # สูตร: ((วงเงินกู้ - (วงเงินกู้ * ดอกเบี้ย / 100)) * 2) + ค่าดำเนินการ - วงเงินกู้
+            amount_after_interest_deduction = loan_amount - (loan_amount * interest_rate / 100)
+            daily_payment = (amount_after_interest_deduction * 2) + processing_fee - loan_amount
+            daily_payment = round(daily_payment, 2) # Round to 2 decimal places
+
+            # Prepare the data row based on LOAN_TRANSACTIONS_WORKSHEET_HEADERS
+            # Ensure the order matches the headers exactly!
+            row_data = {
+                'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'เลขบัตรประชาชนลูกค้า': id_card_number,
+                'ชื่อลูกค้า': customer_name,
+                'นามสกุลลูกค้า': customer_surname,
+                'วงเงินกู้': loan_amount,
+                'ดอกเบี้ย (%)': interest_rate,
+                'วันที่เริ่มกู้': start_date_str,
+                'ค่าดำเนินการ': processing_fee, # NEW: Include processing fee
+                'ยอดที่ต้องชำระรายวัน': daily_payment, # UPDATED: Daily payment
+                'ยอดชำระแล้ว': 0, # Initial value is 0
+                'ยอดค้างชำระ': loan_amount, # Initially, outstanding is full loan amount (principal)
+                'สถานะเงินกู้': 'รออนุมัติ/ใหม่', # Default status
+                'หมายเหตุเงินกู้': loan_note,
+                'ผู้บันทึก': logged_in_user
+            }
+
+            # Convert dictionary to list in the correct order of headers
+            row_to_append = [row_data.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
+
+            # Get the Loan Transactions worksheet
+            loan_worksheet = get_loan_worksheet()
+            if loan_worksheet:
+                loan_worksheet.append_row(row_to_append)
+                flash('บันทึกรายการเงินกู้ใหม่เรียบร้อยแล้ว!', 'success')
+            else:
+                flash('ไม่สามารถเข้าถึง Worksheet เงินกู้ได้', 'error')
+
+        except ValueError:
+            flash('ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบวงเงิน, ดอกเบี้ย, ค่าดำเนินการ', 'error')
+        except KeyError as e:
+            flash(f'ข้อมูลฟอร์มไม่ครบถ้วน: {e}', 'error')
+        except Exception as e:
+            flash(f'เกิดข้อผิดพลาดในการบันทึกรายการเงินกู้: {e}', 'error')
+            print(f"Error adding loan record: {e}")
+
+    return redirect(url_for('loan_management')) # Redirect back to the loan management page
 
 def upload_image_to_cloudinary(file_stream, original_filename):
     """
@@ -270,6 +367,8 @@ def upload_image_to_cloudinary(file_stream, original_filename):
     Returns the URL of the uploaded file, or None if upload fails.
     """
     try:
+        # Upload the file directly from the stream
+        # The 'folder' parameter allows you to organize images in Cloudinary
         upload_result = cloudinary.uploader.upload(
             file_stream,
             folder="customer_app_images"
@@ -298,8 +397,8 @@ def delete_image_from_cloudinary(image_url):
             print(f"Invalid Cloudinary URL for deletion: {image_url}")
             return False
 
-        public_id_with_folder = "/".join(parts[-2:]).split('.')[0]
-
+        public_id_with_folder = "/".join(parts[-2:]).split('.')[0] 
+        
         if "customer_app_images" in public_id_with_folder:
             public_id_to_delete = public_id_with_folder
         else:
@@ -377,6 +476,8 @@ def enter_customer_data():
     logged_in_user = session['username']
 
     if request.method == 'POST':
+        # Get text data from the form using .get() with a default empty string
+        # Then replace empty strings with "-"
         customer_name = request.form.get('customer_name', '') or '-'
         last_name = request.form.get('last_name', '') or '-'
         id_card_number = request.form.get('id_card_number', '') or '-'
@@ -394,11 +495,12 @@ def enter_customer_data():
         line_id = request.form.get('line_id', '') or '-'
         upfront_interest = request.form.get('upfront_interest', '') or '-'
         processing_fee = request.form.get('processing_fee', '') or '-'
-        application_date = request.form.get('application_date', '') or '-'
+        application_date = request.form.get('application_date', '') or '-' 
         home_location_link = request.form.get('home_location_link', '') or '-'
         work_location_link = request.form.get('work_location_link', '') or '-'
         remarks = request.form.get('remarks', '') or '-'
 
+        # Handle multiple image uploads
         image_urls = []
         if 'customer_images' in request.files:
             files = request.files.getlist('customer_images')
@@ -407,14 +509,17 @@ def enter_customer_data():
                     url = upload_image_to_cloudinary(customer_image.stream, customer_image.filename)
                     if url:
                         image_urls.append(url)
-
+        
+        # Join all image URLs into a single comma-separated string, or "-" if no images
         image_urls_str = ', '.join(image_urls) if image_urls else '-'
 
+        # Get the customer data worksheet
         worksheet = get_customer_data_worksheet()
         if worksheet:
             try:
+                # Prepare the data row, ensuring order matches CUSTOMER_DATA_WORKSHEET_HEADERS
                 row_data = [
-                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'), # Timestamp
                     customer_name,
                     last_name,
                     id_card_number,
@@ -436,12 +541,12 @@ def enter_customer_data():
                     home_location_link,
                     work_location_link,
                     remarks,
-                    image_urls_str,
-                    logged_in_user
+                    image_urls_str, # Comma-separated image URLs
+                    logged_in_user # Logged In User - This is the last item in the row
                 ]
                 worksheet.append_row(row_data)
                 flash('บันทึกข้อมูลลูกค้าเรียบร้อยแล้ว!', 'success')
-                return redirect(url_for('enter_customer_data'))
+                return redirect(url_for('enter_customer_data')) # Redirect to clear form
             except Exception as e:
                 flash(f'เกิดข้อผิดพลาดในการบันทึกข้อมูล: {e}', 'error')
                 print(f"Error saving data to Google Sheet: {e}")
@@ -463,7 +568,7 @@ def search_customer_data():
         return redirect(url_for('login'))
 
     logged_in_user = session['username']
-
+    
     search_keyword = request.args.get('search_keyword', '').strip()
     status_filter = request.args.get('status_filter', '').strip()
 
@@ -536,6 +641,7 @@ def edit_customer_data(row_index):
         return redirect(url_for('search_customer_data'))
 
     if request.method == 'POST':
+        # Get updated text data from the form
         updated_data = {
             'Timestamp': customer_data.get('Timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
             'ชื่อ': request.form.get('customer_name', '') or '-',
@@ -565,7 +671,7 @@ def edit_customer_data(row_index):
 
         kept_image_urls_str = request.form.get('kept_image_urls', '')
         kept_image_urls = [url.strip() for url in kept_image_urls_str.split(',')] if kept_image_urls_str else []
-
+        
         deleted_image_urls = [url for url in current_image_urls if url not in kept_image_urls]
 
         for url_to_delete in deleted_image_urls:
@@ -579,7 +685,7 @@ def edit_customer_data(row_index):
                     url = upload_image_to_cloudinary(new_image.stream, new_image.filename)
                     if url:
                         new_image_urls.append(url)
-
+        
         final_image_urls = kept_image_urls + new_image_urls
         updated_data['Image URLs'] = ', '.join(final_image_urls) if final_image_urls else '-'
 
@@ -593,13 +699,14 @@ def edit_customer_data(row_index):
         except Exception as e:
             flash(f'เกิดข้อผิดพลาดในการบันทึกการแก้ไขข้อมูล: {e}', 'error')
             print(f"Error updating row {row_index} in Google Sheet: {e}")
-
-    return render_template('edit_customer_data.html',
-                           username=logged_in_user,
-                           customer_data=customer_data,
+    
+    return render_template('edit_customer_data.html', 
+                           username=logged_in_user, 
+                           customer_data=customer_data, 
                            row_index=row_index)
 
 
+# NEW: Route for the Loan Management page - Modified to fetch loan_records
 @app.route('/loan_management', methods=['GET'])
 def loan_management():
     """
@@ -609,97 +716,24 @@ def loan_management():
     if 'username' not in session:
         flash('กรุณาเข้าสู่ระบบก่อน', 'error')
         return redirect(url_for('login'))
-
+    
     logged_in_user = session['username']
-
-    loan_records = get_all_loan_records()
-
+    
+    # Fetch all loan records using the new helper function
+    loan_records = get_all_loan_records() 
+    
+    # Optional: You can add flash messages here based on if records are found
     if not loan_records:
         flash('ไม่พบรายการเงินกู้ในระบบ', 'info')
     else:
         flash(f'พบ {len(loan_records)} รายการเงินกู้', 'success')
 
-    return render_template('loan_management.html',
+    return render_template('loan_management.html', 
                            username=logged_in_user,
-                           loan_records=loan_records,
-                           loan_headers=LOAN_TRANSACTIONS_WORKSHEET_HEADERS)
+                           loan_records=loan_records, # Pass fetched loan data to template
+                           loan_headers=LOAN_TRANSACTIONS_WORKSHEET_HEADERS) # Pass headers for table display
 
-@app.route('/add_loan_record', methods=['POST'])
-def add_loan_record():
-    """
-    Handles form submission for adding a new loan record to the Google Sheet.
-    """
-    if 'username' not in session:
-        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
-        return redirect(url_for('login'))
 
-    logged_in_user = session['username']
-
-    if request.method == 'POST':
-        try:
-            # Get data from the form
-            customer_name = request.form['customer_name'].strip()
-            customer_surname = request.form['customer_surname'].strip()
-            # เลขบัตรประชาชน is not directly from form anymore, set to '-' for new records from this form
-            id_card_number_for_sheet = '-'
-
-            loan_amount = float(request.form['loan_amount'])
-            interest_rate = float(request.form['interest_rate']) # Still annual percentage
-            upfront_interest_percent = float(request.form.get('upfront_interest_percent', 0)) # New field
-            processing_fee_amount = float(request.form.get('processing_fee_amount', 0)) # New field
-            start_date_str = request.form['start_date']
-            loan_note = request.form.get('loan_note', '').strip()
-
-            # Calculate the effective principal amount after deductions
-            # This is the 'ยอดเงินต้นที่ต้องชำระ' for the sheet
-            initial_principal_to_pay = loan_amount
-            if upfront_interest_percent > 0:
-                initial_principal_to_pay -= (loan_amount * (upfront_interest_percent / 100))
-            if processing_fee_amount > 0:
-                initial_principal_to_pay -= processing_fee_amount
-            
-            initial_principal_to_pay = round(initial_principal_to_pay, 2)
-
-            # Prepare the data row based on LOAN_TRANSACTIONS_WORKSHEET_HEADERS
-            # Ensure the order matches the headers exactly!
-            row_data = {
-                'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'ชื่อลูกค้า': customer_name,
-                'นามสกุลลูกค้า': customer_surname,
-                'เลขบัตรประชาชนลูกค้า': id_card_number_for_sheet,
-                'วงเงินกู้': loan_amount,
-                'ดอกเบี้ย (%)': interest_rate,
-                'หักดอกหัว-ท้าย (%)': upfront_interest_percent,
-                'ค่าดำเนินการ': processing_fee_amount,
-                'วันที่เริ่มกู้': start_date_str,
-                'ยอดเงินต้นที่ต้องชำระ': initial_principal_to_pay, # This is the new calculated field
-                'ยอดชำระแล้ว': 0, # Initial value is 0
-                'ยอดค้างชำระ': initial_principal_to_pay, # Initially, outstanding is the initial principal to pay
-                'สถานะเงินกู้': 'รออนุมัติ/ใหม่', # Default status
-                'หมายเหตุเงินกู้': loan_note,
-                'ผู้บันทึก': logged_in_user
-            }
-
-            # Convert dictionary to list in the correct order of headers
-            row_to_append = [row_data.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
-
-            # Get the Loan Transactions worksheet
-            loan_worksheet = get_loan_worksheet()
-            if loan_worksheet:
-                loan_worksheet.append_row(row_to_append)
-                flash('บันทึกรายการเงินกู้ใหม่เรียบร้อยแล้ว!', 'success')
-            else:
-                flash('ไม่สามารถเข้าถึง Worksheet เงินกู้ได้', 'error')
-
-        except ValueError:
-            flash('ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบวงเงิน, ดอกเบี้ย, หักดอกหัว-ท้าย, ค่าดำเนินการ', 'error')
-        except KeyError as e:
-            flash(f'ข้อมูลฟอร์มไม่ครบถ้วน: {e}', 'error')
-        except Exception as e:
-            flash(f'เกิดข้อผิดพลาดในการบันทึกรายการเงินกู้: {e}', 'error')
-            print(f"Error adding loan record: {e}")
-
-    return redirect(url_for('loan_management'))
 
 # --- Main execution block ---
 if __name__ == '__main__':
