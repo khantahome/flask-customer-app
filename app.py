@@ -1,13 +1,13 @@
 # Import necessary modules from Flask and other libraries
-from flask import Flask, render_template, request, redirect, url_for, flash, session, Response # Import Response
-import gspread # Library for interacting with Google Sheets
-from oauth2client.service_account import ServiceAccountCredentials # For authenticating with Google APIs
-import pandas as pd # Library for data manipulation, useful for working with tabular data from Google Sheets
-from pydrive.auth import GoogleAuth # For Google Drive authentication
-from pydrive.drive import GoogleDrive # For interacting with Google Drive
-import os # For path manipulation (e.g., getting file extension)
-from datetime import datetime # For getting current timestamp
-import requests # NEW: Import requests library for making HTTP requests (to fetch images)
+from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import pandas as pd
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+import os
+from datetime import datetime
+import requests
 import json
 import cloudinary
 import cloudinary.uploader
@@ -15,41 +15,41 @@ import cloudinary.api
 
 # Initialize the Flask application
 app = Flask(__name__)
-# Set a secret key for Flask sessions (needed for flash messages and session management)
-# *** สำคัญ: เปลี่ยนเป็นคีย์ลับของคุณเองเพื่อความปลอดภัย! ***
 app.secret_key = os.environ.get('SECRET_KEY', 'your_super_secret_key_for_customer_app_2025_new')
 
 # --- Configuration for Google Sheets & Drive API Access ---
-# Define the scope of access for the Google Sheets and Google Drive APIs.
-# 'https://www.googleapis.com/auth/drive' gives full read/write access to Google Drive files and folders.
 GOOGLE_API_SCOPE = [
     'https://spreadsheets.google.com/feeds',
     'https://www.googleapis.com/auth/drive'
 ]
 
-# Path to your service account key file.
-# Make sure 'exclusive.json' is located in the same directory as this app.py file.
 SERVICE_ACCOUNT_KEY_FILE = 'exclusive.json'
 
 # --- Google Sheets Configuration ---
-# *** ส่วนนี้สำหรับข้อมูลผู้ใช้ (Login) ***
-USER_LOGIN_SPREADSHEET_NAME = 'UserLoginData' # Google Sheet สำหรับ User Login
-USER_LOGIN_WORKSHEET_NAME = 'users'           # Worksheet สำหรับ User Login
+USER_LOGIN_SPREADSHEET_NAME = 'UserLoginData'
+USER_LOGIN_WORKSHEET_NAME = 'users'
 
-# *** ส่วนนี้สำหรับข้อมูลลูกค้า (Customer Records) ***
-SPREADSHEET_NAME = 'data1' # Google Sheet สำหรับข้อมูลลูกค้า
-WORKSHEET_NAME = 'customer_records' # Worksheet สำหรับข้อมูลลูกค้า
+SPREADSHEET_NAME = 'data1'
+WORKSHEET_NAME = 'customer_records'
 
-# Define headers for the customer data worksheet.
-# This list must match the order of data you intend to save.
+LOAN_TRANSACTIONS_WORKSHEET_NAME = os.environ.get('LOAN_TRANSACTIONS_WORKSHEET_NAME', 'Loan_Transactions')
+
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
     'Timestamp', 'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
     'จดทะเบียน', 'ชื่อกิจการ', 'ประเภทธุรกิจ', 'ที่อยู่จดทะเบียน', 'สถานะ',
     'วงเงินที่ต้องการ', 'วงเงินที่อนุมัติ', 'เคยขอเข้ามาในเครือหรือยัง', 'เช็ค',
     'ขอเข้ามาทางไหน', 'LINE ID', 'หักดอกหัวท้าย', 'ค่าดำเนินการ',
     'วันที่ขอเข้ามา', 'ลิงค์โลเคชั่นบ้าน', 'ลิงค์โลเคชั่นที่ทำงาน', 'หมายเหตุ',
-    'Image URLs', # This column will store comma-separated URLs of uploaded images
-    'Logged In User' # This is the LAST column for the logged-in username
+    'Image URLs',
+    'Logged In User'
+]
+
+# NEW: Define headers for the Loan Transactions worksheet
+LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
+    'Timestamp', 'เลขบัตรประชาชนลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
+    'วงเงินกู้', 'ดอกเบี้ย (%)', 'ระยะเวลากู้ (เดือน)', 'วันที่เริ่มกู้', 
+    'วันครบกำหนด', 'ยอดที่ต้องชำระรายเดือน', 'ยอดชำระแล้ว', 'ยอดค้างชำระ', 
+    'สถานะเงินกู้', 'หมายเหตุเงินกู้', 'ผู้บันทึก'
 ]
 
 
@@ -65,34 +65,20 @@ GSPREAD_CLIENT = None
 DRIVE_CLIENT = None
 
 try:
-    creds_json = None # This will store the dictionary of the service account key
+    creds_json = None
 
-    # ขั้นแรก: อ่านเนื้อหา JSON ของ Service Account Key ไม่ว่าจะมาจาก Environment Variable หรือไฟล์
-    if os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY_JSON'):
-        creds_json_str = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY_JSON')
-        creds_json = json.loads(creds_json_str) # แปลง string JSON เป็น Python dictionary
+    if os.environ.get('GOOGLE_CREDENTIALS_JSON'):
+        creds_json_str = os.environ.get('GOOGLE_CREDENTIALS_JSON')
+        creds_json = json.loads(creds_json_str)
     else:
-        # ถ้าไม่มี Environment Variable (สำหรับ Dev ในเครื่อง) ให้อ่านจากไฟล์
-        # ตรวจสอบว่าไฟล์ 'exclusive.json' อยู่ในโฟลเดอร์เดียวกันกับ app.py
         with open(SERVICE_ACCOUNT_KEY_FILE, 'r') as f:
             creds_json = json.load(f)
 
-    # ถ้า creds_json ถูกโหลดได้สำเร็จ
     if creds_json:
-        # Create ServiceAccountCredentials object (used by both gspread and PyDrive)
-        # ตัวแปร 'creds' นี้จะถูกใช้สำหรับทั้ง gspread และ PyDrive
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, GOOGLE_API_SCOPE)
-
-        # 1. สำหรับ gspread: Authenticate gspread client
         GSPREAD_CLIENT = gspread.authorize(creds)
-
-        # 2. สำหรับ PyDrive: Initialize PyDrive client
         gauth = GoogleAuth()
-        # กำหนด ServiceAccountCredentials object ให้กับ gauth.credentials โดยตรง
         gauth.credentials = creds
-        # (บรรทัด gauth.Authorize() อาจไม่จำเป็นสำหรับ Service Account แต่อาจช่วยได้ถ้ายังติดปัญหา)
-        # gauth.Authorize() # Un-comment บรรทัดนี้ถ้ายังเจอ error เกี่ยวกับการ authenticate ของ PyDrive
-
         DRIVE_CLIENT = GoogleDrive(gauth)
     else:
         raise ValueError("Service Account credentials could not be loaded from environment or file.")
@@ -104,11 +90,12 @@ except Exception as e:
 
 
 def get_all_customer_records():
+    # ... (code for get_all_customer_records remains the same) ...
     """
     Retrieves all customer records from the worksheet, including their 1-based row index.
     Each record will be a dictionary with an additional 'row_index' key.
     """
-    worksheet = get_customer_data_worksheet()
+    worksheet = get_customer_data_worksheet() # ใช้ฟังก์ชัน get_customer_data_worksheet() ที่ถูกแก้ไขแล้ว
     if not worksheet:
         return []
     try:
@@ -121,12 +108,12 @@ def get_all_customer_records():
         # Assume the first row is headers
         headers = all_data[0]
         data_rows = all_data[1:] # All rows after the header
-        print(f"DEBUG: get_all_customer_records - headers: {headers}")
-        print(f"DEBUG: get_all_customer_records - data_rows contains {len(data_rows)} rows. First data row: {data_rows[0] if data_rows else 'N/A'}")
+        # print(f"DEBUG: get_all_customer_records - headers: {headers}") # Commented out for less verbose logs
+        # print(f"DEBUG: get_all_customer_records - data_rows contains {len(data_rows)} rows. First data row: {data_rows[0] if data_rows else 'N/A'}") # Commented out
 
         customer_records = []
         for i, row in enumerate(data_rows):
-            print(f"DEBUG: Loop entered for i={i}, processing row (snippet): {row[:5]}...") # แสดง 5 องค์ประกอบแรกของแถว
+            # print(f"DEBUG: Loop entered for i={i}, processing row (snippet): {row[:5]}...") # Commented out
             # Create a dictionary for each row
             record = {}
             for j, header in enumerate(headers):
@@ -140,16 +127,18 @@ def get_all_customer_records():
             # (1 for 0-indexing + 1 for header row)
             record['row_index'] = i + 2
 
-            print(f"DEBUG: Added record with row_index {record['row_index']} - Record snippet: {record.get('ชื่อ', '')}, Status: {record.get('สถานะ', '')}")
+            # print(f"DEBUG: Added record with row_index {record['row_index']} - Record snippet: {record.get('ชื่อ', '')}, Status: {record.get('สถานะ', '')}") # Commented out
             
             customer_records.append(record)
-        print(f"DEBUG: get_all_customer_records - Returning {len(customer_records)} records. First record BEFORE return: {customer_records[0] if customer_records else 'N/A'}")
+        # print(f"DEBUG: get_all_customer_records - Returning {len(customer_records)} records. First record BEFORE return: {customer_records[0] if customer_records else 'N/A'}") # Commented out
         return customer_records
     except Exception as e:
         print(f"ERROR in get_all_customer_records: {e}")
         return []
 
+
 def get_customer_records_by_status(status):
+    # ... (code for get_customer_records_by_status remains the same) ...
     """
     Retrieves customer records filtered by status.
     Assumes get_all_customer_records already adds 'row_index'.
@@ -161,6 +150,7 @@ def get_customer_records_by_status(status):
     return filtered_records
 
 def get_customer_records_by_keyword(keyword):
+    # ... (code for get_customer_records_by_keyword remains the same) ...
     """
     Retrieves customer records filtered by keyword across all values.
     Assumes get_all_customer_records already adds 'row_index'.
@@ -175,18 +165,19 @@ def get_customer_records_by_keyword(keyword):
     return filtered_records
 
 def load_users():
+    # ... (code for load_users remains the same) ...
     """
     Loads user IDs and passwords from the specified Google Sheet (UserLoginData).
     It expects the sheet to have columns named 'id' and 'pass'.
     Returns a dictionary where keys are user IDs and values are their passwords.
     Returns an empty dictionary if there's an error or columns are missing.
     """
-    if not GSPREAD_CLIENT:
+    if not GSPREAD_CLIENT: # ใช้ GSPREAD_CLIENT ที่ถูกกำหนดไว้แล้ว
         print("Gspread client not initialized. Cannot load users.")
         return {}
     try:
         # ใช้ USER_LOGIN_SPREADSHEET_NAME และ USER_LOGIN_WORKSHEET_NAME สำหรับการโหลดผู้ใช้
-        sheet = GSPREAD_CLIENT.open(USER_LOGIN_SPREADSHEET_NAME).worksheet(USER_LOGIN_WORKSHEET_NAME)
+        sheet = GSPREAD_CLIENT.open(USER_LOGIN_SPREADSHEET_NAME).worksheet(USER_LOGIN_WORKSHEET_NAME) # ใช้ GSPREAD_CLIENT โดยตรง
         data = sheet.get_all_records()
         df = pd.DataFrame(data)
         if 'id' in df.columns and 'pass' in df.columns:
@@ -200,16 +191,17 @@ def load_users():
         return {}
 
 def get_customer_data_worksheet():
+    # ... (code for get_customer_data_worksheet remains the same) ...
     """
     Gets the customer data worksheet from the 'data1' Google Sheet.
     Creates it if it doesn't exist. Also ensures the header row is present and matches the defined headers.
     """
-    if not GSPREAD_CLIENT:
+    if not GSPREAD_CLIENT: # ใช้ GSPREAD_CLIENT ที่ถูกกำหนดไว้แล้ว
         print("Gspread client not initialized. Cannot access customer data worksheet.")
         return None
     try:
         # ใช้ SPREADSHEET_NAME (ซึ่งคือ 'data1') สำหรับข้อมูลลูกค้า
-        spreadsheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME)
+        spreadsheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME) # ใช้ GSPREAD_CLIENT โดยตรง
         try:
             worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
             # Verify headers if worksheet already exists
@@ -228,12 +220,60 @@ def get_customer_data_worksheet():
         print(f"Error accessing/creating customer data worksheet: {e}")
         return None
 
-# --- Helper Functions for Google Drive ---
+def get_loan_worksheet():
+    # ... (code for get_loan_worksheet remains the same) ...
+    """Authorizes and returns the Loan_Transactions worksheet."""
+    if not GSPREAD_CLIENT: # ใช้ GSPREAD_CLIENT ที่ถูกกำหนดไว้แล้ว
+        print("Gspread client not initialized. Cannot access Loan Transactions worksheet.")
+        return None
+    try:
+        # ใช้ SPREADSHEET_NAME ('data1') เดียวกันกับชีทข้อมูลลูกค้าหลัก
+        spreadsheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME) # ใช้ GSPREAD_CLIENT โดยตรง
+        # ใช้ LOAN_TRANSACTIONS_WORKSHEET_NAME ที่คุณกำหนดไว้ก่อนหน้านี้
+        worksheet = spreadsheet.worksheet(LOAN_TRANSACTIONS_WORKSHEET_NAME)
+        return worksheet
+    except Exception as e:
+        print(f"Error accessing Loan Transactions worksheet: {e}")
+        return None
 
 
+# NEW: Helper function to get all loan records
+def get_all_loan_records():
+    """
+    Retrieves all loan transaction records from the worksheet, including their 1-based row index.
+    Each record will be a dictionary with an additional 'row_index' key.
+    """
+    worksheet = get_loan_worksheet()
+    if not worksheet:
+        return []
+    try:
+        all_data = worksheet.get_all_values()
+        if not all_data:
+            print("DEBUG: Google Sheet 'Loan Transactions' data is empty or only has headers.")
+            return []
+
+        headers = all_data[0]
+        data_rows = all_data[1:]
+
+        loan_records = []
+        for i, row in enumerate(data_rows):
+            record = {}
+            for j, header in enumerate(headers):
+                if j < len(row):
+                    record[header] = row[j]
+                else:
+                    record[header] = ''
+            
+            record['row_index'] = i + 2 # 1-based row index in Google Sheet
+            loan_records.append(record)
+        return loan_records
+    except Exception as e:
+        print(f"ERROR in get_all_loan_records: {e}")
+        return []
 
 
 def upload_image_to_cloudinary(file_stream, original_filename):
+    # ... (code for upload_image_to_cloudinary remains the same) ...
     """
     Uploads an image file stream to Cloudinary.
     Returns the URL of the uploaded file, or None if upload fails.
@@ -257,6 +297,7 @@ def upload_image_to_cloudinary(file_stream, original_filename):
         return None
 
 def delete_image_from_cloudinary(image_url):
+    # ... (code for delete_image_from_cloudinary remains the same) ...
     """
     Deletes an image from Cloudinary using its URL.
     """
@@ -302,9 +343,9 @@ def delete_image_from_cloudinary(image_url):
 
 # --- Flask Routes Definition ---
 
-# Route for the login page.
 @app.route('/', methods=['GET', 'POST'])
 def login():
+    # ... (code for login remains the same) ...
     """
     Handles user login functionality.
     """
@@ -322,9 +363,9 @@ def login():
             error = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"
     return render_template('login.html', error=error)
 
-# Route for the dashboard page, which serves as the main menu.
-@app.route('/dashboard') # No username in URL anymore, retrieve from session
+@app.route('/dashboard')
 def dashboard():
+    # ... (code for dashboard remains the same) ...
     """
     Displays the main menu page after successful login.
     Requires user to be logged in.
@@ -335,9 +376,9 @@ def dashboard():
     username = session['username']
     return render_template('main_menu.html', username=username)
 
-# Route for logging out
 @app.route('/logout')
 def logout():
+    # ... (code for logout remains the same) ...
     """
     Logs out the user by clearing the session.
     """
@@ -345,9 +386,9 @@ def logout():
     flash('คุณได้ออกจากระบบแล้ว', 'success')
     return redirect(url_for('login'))
 
-# Route for the customer data entry page
 @app.route('/enter_customer_data', methods=['GET', 'POST'])
 def enter_customer_data():
+    # ... (code for enter_customer_data remains the same) ...
     """
     Handles customer data entry.
     - GET request: Displays the data entry form.
@@ -400,7 +441,7 @@ def enter_customer_data():
         image_urls_str = ', '.join(image_urls) if image_urls else '-'
 
         # Get the customer data worksheet
-        worksheet = get_customer_data_worksheet()
+        worksheet = get_customer_data_worksheet() # ใช้ get_customer_data_worksheet() ที่ถูกแก้ไขแล้ว
         if worksheet:
             try:
                 # Prepare the data row, ensuring order matches CUSTOMER_DATA_WORKSHEET_HEADERS
@@ -442,9 +483,9 @@ def enter_customer_data():
 
     return render_template('data_entry.html', username=logged_in_user) # Pass username to template
 
-# Route for the customer data search page
 @app.route('/search_customer_data', methods=['GET'])
 def search_customer_data():
+    # ... (code for search_customer_data remains the same) ...
     """
     Handles searching for customer data.
     Can search by keyword or filter by 'รอดำเนินการ' status.
@@ -486,15 +527,15 @@ def search_customer_data():
         # ================================================================
 
     # --- ส่วน DEBUGGING ที่เพิ่มเข้าไป ---
-    print(f"DEBUG: search_customer_data - Final customer_records before rendering. Contains {len(customer_records)} records. First record (if any): {customer_records[0] if customer_records else 'N/A'}")
+    # print(f"DEBUG: search_customer_data - Final customer_records before rendering. Contains {len(customer_records)} records. First record (if any): {customer_records[0] if customer_records else 'N/A'}") # Commented out
     
-    print(f"DEBUG: customer_records list contains {len(customer_records)} records.")
-    if customer_records:
-        print(f"DEBUG: First record in list: {customer_records[0]}")
-        if 'row_index' in customer_records[0]:
-            print(f"DEBUG: First record HAS 'row_index': {customer_records[0]['row_index']}")
-        else:
-            print("DEBUG: First record DOES NOT HAVE 'row_index'. THIS IS THE PROBLEM.")
+    # print(f"DEBUG: customer_records list contains {len(customer_records)} records.") # Commented out
+    # if customer_records:
+    #     print(f"DEBUG: First record in list: {customer_records[0]}")
+    #     if 'row_index' in customer_records[0]:
+    #         print(f"DEBUG: First record HAS 'row_index': {customer_records[0]['row_index']}")
+    #     else:
+    #         print("DEBUG: First record DOES NOT HAVE 'row_index'. THIS IS THE PROBLEM.")
     # --- สิ้นสุดส่วน DEBUGGING ---
 
     return render_template(
@@ -505,9 +546,9 @@ def search_customer_data():
         display_title=display_title # Pass the dynamic title
     )
 
-# Route for editing customer data
 @app.route('/edit_customer_data/<int:row_index>', methods=['GET', 'POST'])
 def edit_customer_data(row_index):
+    # ... (code for edit_customer_data remains the same) ...
     """
     Handles editing of a specific customer record.
     - GET request: Displays the pre-filled edit form.
@@ -521,7 +562,7 @@ def edit_customer_data(row_index):
     logged_in_user = session['username']
     customer_data = {} # Initialize as empty, will be populated below
 
-    worksheet = get_customer_data_worksheet()
+    worksheet = get_customer_data_worksheet() # ใช้ get_customer_data_worksheet() ที่ถูกแก้ไขแล้ว
     if not worksheet:
         flash('ไม่สามารถเข้าถึง Google Sheet สำหรับแก้ไขข้อมูลลูกค้าได้', 'error')
         return redirect(url_for('search_customer_data'))
@@ -623,9 +664,35 @@ def edit_customer_data(row_index):
                            row_index=row_index)
 
 
+# NEW: Route for the Loan Management page - Modified to fetch loan_records
+@app.route('/loan_management', methods=['GET'])
+def loan_management():
+    """
+    Displays the loan management dashboard with all loan records.
+    Requires user to be logged in.
+    """
+    if 'username' not in session:
+        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
+        return redirect(url_for('login'))
+    
+    logged_in_user = session['username']
+    
+    # Fetch all loan records using the new helper function
+    loan_records = get_all_loan_records() 
+    
+    # Optional: You can add flash messages here based on if records are found
+    if not loan_records:
+        flash('ไม่พบรายการเงินกู้ในระบบ', 'info')
+    else:
+        flash(f'พบ {len(loan_records)} รายการเงินกู้', 'success')
+
+    return render_template('loan_management.html', 
+                           username=logged_in_user,
+                           loan_records=loan_records, # ส่งข้อมูลเงินกู้ที่ดึงมาแล้วไปที่เทมเพลต
+                           loan_headers=LOAN_TRANSACTIONS_WORKSHEET_HEADERS) # ส่ง headers ไปด้วยเพื่อใช้แสดงในตาราง
+
+
 # --- Main execution block ---
 if __name__ == '__main__':
-    # Get port from environment variable, default to 5000 for local development
     port = int(os.environ.get('PORT', 5000))
-    # Run the Flask application. Disable debug mode in production.
     app.run(host='0.0.0.0', port=port, debug=False)

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการเงินกู้</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Define CSS variables for easy theme customization */
+        :root {
+            --primary-color: #4A90E2; /* Main blue color */
+            --secondary-color: #50E3C2; /* Secondary mint green color */
+            --background-color: #F0F2F5; /* Light background color */
+            --card-background: #FFFFFF; /* Background color for the card */
+            --text-color: #333333; /* General text color */
+            --border-color: #DDDDDD; /* Border color for input fields */
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow for the card */
+            --success-color: #28A745; /* Green for success messages */
+            --error-color: #DC3545; /* Red for error messages */
+            --info-color: #17A2B8; /* Blue for info messages */
+            --button-hover-color: #357ABD; /* Darker primary for hover */
+            --header-bg-color: #E0E0E0; /* Table header background */
+        }
+
+        /* Basic styles for the body to center content and set font */
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for longer content */
+            min-height: 100vh; /* Minimum height of viewport */
+            margin: 0;
+            padding: 20px; /* Add some padding around the content */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /* Container for the menu card */
+        .loan-management-container {
+            background-color: var(--card-background);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
+            text-align: center;
+            width: 100%;
+            max-width: 1200px; /* Increased max-width for table */
+            box-sizing: border-box;
+            margin-top: 20px; /* Space from top */
+            margin-bottom: 20px; /* Space at bottom */
+        }
+
+        .loan-management-container h2 {
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            font-weight: 600; /* Semi-bold */
+        }
+
+        .welcome-message {
+            color: var(--text-color);
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .current-date {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 30px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically */
+            gap: 15px; /* Space between buttons */
+            margin-top: 30px;
+            margin-bottom: 30px; /* Space below buttons */
+        }
+
+        .menu-button {
+            display: block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: 400;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .menu-button:hover {
+            background-color: var(--button-hover-color);
+            transform: translateY(-2px);
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 25px;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.95em;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        /* Styles for flash messages */
+        .flash-message {
+            padding: 10px 20px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-weight: 400;
+            text-align: left; /* Align text inside flash message */
+            color: white; /* Default text color */
+        }
+
+        .flash-message.success {
+            background-color: var(--success-color);
+        }
+
+        .flash-message.error {
+            background-color: var(--error-color);
+        }
+
+        .flash-message.info {
+            background-color: var(--info-color);
+        }
+
+        /* Table styles */
+        .data-table-container {
+            width: 100%;
+            overflow-x: auto; /* Enable horizontal scrolling for tables on small screens */
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse; /* Collapse borders between cells */
+            table-layout: auto; /* Allow column widths to adjust to content */
+            min-width: 800px; /* Ensure table has a minimum width for better scrolling */
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            white-space: nowrap; /* Prevent text wrapping in table cells */
+        }
+
+        .data-table th {
+            background-color: var(--header-bg-color);
+            color: var(--text-color);
+            font-weight: 600;
+            position: sticky; /* Make header sticky */
+            top: 0;
+            z-index: 10; /* Ensure header is above scrolling content */
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9; /* Zebra striping */
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #eef; /* Highlight row on hover */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .loan-management-container {
+                padding: 25px;
+                margin: 10px;
+            }
+            .loan-management-container h2 {
+                font-size: 1.8em;
+            }
+            .menu-button {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+            .data-table-container {
+                margin-left: -20px; /* Adjust for body padding */
+                margin-right: -20px;
+                width: calc(100% + 40px); /* Fill screen width */
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loan-management-container">
+        <h2>จัดการเงินกู้</h2>
+        <p class="welcome-message">สวัสดีครับคุณ {{ username }}</p>
+        <p class="current-date" id="dateDisplay"></p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages-container">
+                    {% for category, message in messages %}
+                        <p class="flash-message {{ category }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="button-group">
+            <a href="#" class="menu-button">ดูรายการเงินกู้ทั้งหมด</a>
+            <a href="#" class="menu-button">บันทึกการชำระเงิน</a>
+            </div>
+
+        {% if loan_records %}
+        <div class="data-table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        {% for header in loan_headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in loan_records %}
+                    <tr>
+                        {% for header in loan_headers %}
+                            <td>{{ record.get(header, '-') }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p>ยังไม่มีรายการเงินกู้ในระบบ</p>
+        {% endif %}
+
+
+        <a href="{{ url_for('dashboard') }}" class="back-button">กลับสู่เมนูหลัก</a>
+    </div>
+
+    <script>
+        // JavaScript to display the current date
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateOptions = {
+                weekday: 'long', 
+                year: 'numeric',   
+                month: 'long',     
+                day: 'numeric'     
+            };
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('th-TH', dateOptions);
+            document.getElementById('dateDisplay').textContent = formattedDate;
+        });
+    </script>
+</body>
+</html>
