@@ -2,11 +2,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import pandas as pd
+import pandas as pd # pandas is still used in load_users
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 import os
-from datetime import datetime, timedelta # Import timedelta
+from datetime import datetime # Removed timedelta as it's no longer used
 import requests
 import json
 import cloudinary
@@ -33,13 +33,12 @@ SPREADSHEET_NAME = 'data1'
 WORKSHEET_NAME = 'customer_records'
 
 LOAN_TRANSACTIONS_WORKSHEET_NAME = os.environ.get('LOAN_TRANSACTIONS_WORKSHEET_NAME', 'Loan_Transactions')
-
-# UPDATED: LOAN_TRANSACTIONS_WORKSHEET_HEADERS
+# UPDATED HEADERS FOR LOAN TRANSACTIONS WORKSHEET
 LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
-    'Timestamp', 'เลขบัตรประชาชนลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
-    'วงเงินกู้', 'หักดอกหัวท้าย', 'ค่าดำเนินการ', 'ดอกเบี้ย (%)', 'วันที่เริ่มกู้',
-    'ยอดที่ต้องชำระ', 'ยอดชำระแล้ว', 'ยอดค้างชำระ',
-    'สถานะเงินกู้', 'หมายเหตุเงินกู้', 'ผู้บันทึก'
+    'Timestamp', 'ชื่อลูกค้า', 'นามสกุลลูกค้า', 'เลขบัตรประชาชนลูกค้า',
+    'วงเงินกู้', 'ดอกเบี้ย (%)', 'หักดอกหัว-ท้าย (%)', 'ค่าดำเนินการ',
+    'วันที่เริ่มกู้', 'ยอดเงินต้นที่ต้องชำระ', # Changed from 'ยอดที่ต้องชำระรายเดือน'
+    'ยอดชำระแล้ว', 'ยอดค้างชำระ', 'สถานะเงินกู้', 'หมายเหตุเงินกู้', 'ผู้บันทึก'
 ]
 
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
@@ -212,7 +211,7 @@ def get_loan_worksheet():
         try:
             worksheet = spreadsheet.worksheet(LOAN_TRANSACTIONS_WORKSHEET_NAME)
             existing_headers = worksheet.row_values(1)
-            # UPDATED: Check if headers match the new LOAN_TRANSACTIONS_WORKSHEET_HEADERS
+            # IMPORTANT: Check if headers match the LATEST LOAN_TRANSACTIONS_WORKSHEET_HEADERS
             if not existing_headers or existing_headers != LOAN_TRANSACTIONS_WORKSHEET_HEADERS:
                 print(f"Warning: Loan Transactions worksheet headers do not match expected headers or are empty. Updating headers to: {LOAN_TRANSACTIONS_WORKSHEET_HEADERS}")
                 worksheet.update('A1', [LOAN_TRANSACTIONS_WORKSHEET_HEADERS])
@@ -638,74 +637,53 @@ def add_loan_record():
 
     if request.method == 'POST':
         try:
-            # UPDATED: Changed from id_card_number to customer_name and customer_surname
-            customer_name_input = request.form['customer_name_loan'].strip()
-            customer_surname_input = request.form['customer_surname_loan'].strip()
-            loan_amount = float(request.form['loan_amount'])
-            interest_rate = float(request.form['interest_rate'])
-            # NEW: Upfront interest deduction and processing fee
-            upfront_interest_deduction = float(request.form.get('upfront_interest_deduction', 0))
-            processing_fee = float(request.form.get('processing_fee', 0))
+            # Get data from the form
+            customer_name = request.form['customer_name'].strip()
+            customer_surname = request.form['customer_surname'].strip()
+            # เลขบัตรประชาชน is not directly from form anymore, set to '-' for new records from this form
+            id_card_number_for_sheet = '-'
 
+            loan_amount = float(request.form['loan_amount'])
+            interest_rate = float(request.form['interest_rate']) # Still annual percentage
+            upfront_interest_percent = float(request.form.get('upfront_interest_percent', 0)) # New field
+            processing_fee_amount = float(request.form.get('processing_fee_amount', 0)) # New field
             start_date_str = request.form['start_date']
             loan_note = request.form.get('loan_note', '').strip()
 
-            id_card_number = ""
-            customer_name = customer_name_input
-            customer_surname = customer_surname_input
+            # Calculate the effective principal amount after deductions
+            # This is the 'ยอดเงินต้นที่ต้องชำระ' for the sheet
+            initial_principal_to_pay = loan_amount
+            if upfront_interest_percent > 0:
+                initial_principal_to_pay -= (loan_amount * (upfront_interest_percent / 100))
+            if processing_fee_amount > 0:
+                initial_principal_to_pay -= processing_fee_amount
+            
+            initial_principal_to_pay = round(initial_principal_to_pay, 2)
 
-            # --- Fetch customer ID_Card_Number from customer_records worksheet using name and surname ---
-            customer_worksheet = get_customer_data_worksheet()
-            if customer_worksheet:
-                customer_records_data = customer_worksheet.get_all_records()
-                # Find customer by name and surname
-                found_customer = next((
-                    rec for rec in customer_records_data
-                    if rec.get('ชื่อ') == customer_name_input and rec.get('นามสกุล') == customer_surname_input
-                ), None)
-
-                if found_customer:
-                    id_card_number = found_customer.get('เลขบัตรประชาชน', '')
-                else:
-                    flash(f"ไม่พบข้อมูลลูกค้าสำหรับชื่อ-นามสกุล '{customer_name_input} {customer_surname_input}' ในระบบ กรุณากรอกข้อมูลลูกค้าก่อน", 'warning')
-                    return redirect(url_for('loan_management'))
-            else:
-                flash("ไม่สามารถเชื่อมต่อกับชีทข้อมูลลูกค้าได้", 'error')
-                return redirect(url_for('loan_management'))
-            # --- End Customer ID Lookup ---
-
-            start_date_dt = datetime.strptime(start_date_str, '%Y-%m-%d')
-
-            # REMOVED: loan_term_months and end_date_dt calculation as per request
-            # REMOVED: monthly_payment calculation
-
-            # NEW: Calculate 'ยอดที่ต้องชำระ' (Total Amount Due at loan initiation)
-            # This is the principal + upfront interest + processing fee
-            # The daily interest accrual would be a conceptual calculation or handled in a more advanced system.
-            total_amount_due = loan_amount + upfront_interest_deduction + processing_fee
-
+            # Prepare the data row based on LOAN_TRANSACTIONS_WORKSHEET_HEADERS
+            # Ensure the order matches the headers exactly!
             row_data = {
                 'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'เลขบัตรประชาชนลูกค้า': id_card_number,
                 'ชื่อลูกค้า': customer_name,
                 'นามสกุลลูกค้า': customer_surname,
+                'เลขบัตรประชาชนลูกค้า': id_card_number_for_sheet,
                 'วงเงินกู้': loan_amount,
-                'หักดอกหัวท้าย': upfront_interest_deduction, # NEW FIELD
-                'ค่าดำเนินการ': processing_fee, # NEW FIELD
-                'ดอกเบี้ย (%)': interest_rate, # RENAMED
-                # REMOVED: 'ระยะเวลากู้ (เดือน)'
+                'ดอกเบี้ย (%)': interest_rate,
+                'หักดอกหัว-ท้าย (%)': upfront_interest_percent,
+                'ค่าดำเนินการ': processing_fee_amount,
                 'วันที่เริ่มกู้': start_date_str,
-                # REMOVED: 'วันครบกำหนด'
-                'ยอดที่ต้องชำระ': total_amount_due, # NEW FIELD, calculated
-                'ยอดชำระแล้ว': 0,
-                'ยอดค้างชำระ': total_amount_due, # Starts as total_amount_due
-                'สถานะเงินกู้': 'รออนุมัติ/ใหม่',
+                'ยอดเงินต้นที่ต้องชำระ': initial_principal_to_pay, # This is the new calculated field
+                'ยอดชำระแล้ว': 0, # Initial value is 0
+                'ยอดค้างชำระ': initial_principal_to_pay, # Initially, outstanding is the initial principal to pay
+                'สถานะเงินกู้': 'รออนุมัติ/ใหม่', # Default status
                 'หมายเหตุเงินกู้': loan_note,
                 'ผู้บันทึก': logged_in_user
             }
 
+            # Convert dictionary to list in the correct order of headers
             row_to_append = [row_data.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
 
+            # Get the Loan Transactions worksheet
             loan_worksheet = get_loan_worksheet()
             if loan_worksheet:
                 loan_worksheet.append_row(row_to_append)
@@ -714,7 +692,7 @@ def add_loan_record():
                 flash('ไม่สามารถเข้าถึง Worksheet เงินกู้ได้', 'error')
 
         except ValueError:
-            flash('ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบวงเงิน, ดอกเบี้ย, ค่าหักดอกหัวท้าย, และค่าดำเนินการ', 'error')
+            flash('ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบวงเงิน, ดอกเบี้ย, หักดอกหัว-ท้าย, ค่าดำเนินการ', 'error')
         except KeyError as e:
             flash(f'ข้อมูลฟอร์มไม่ครบถ้วน: {e}', 'error')
         except Exception as e:
