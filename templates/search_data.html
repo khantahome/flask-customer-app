@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ค้นหาข้อมูลลูกค้า</title>
-    <!-- Import Google Fonts (Kanit) for a modern Thai font -->
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         /* Define CSS variables for easy theme customization */
@@ -295,13 +294,13 @@
             padding: 5px 10px;
             cursor: pointer;
             border-radius: 50%; /* Changed to circle */
-            font-size: 1.2em;
-            user-select: none;
             width: 30px; /* Make it a clear circle */
             height: 30px;
             display: flex;
             justify-content: center;
             align-items: center;
+            font-size: 1.2em;
+            user-select: none;
         }
         .lightbox-zoom-controls {
             position: absolute;
@@ -371,7 +370,7 @@
             max-width: 300px;
             box-sizing: border-box;
             font-weight: 600;
-            text-align: center; /* เพิ่มบรรทัดนี้ */
+            text-align: center;
         }
         .back-to-main-menu:hover {
             background-color: #5a6268;
@@ -428,7 +427,6 @@
         <h2>ค้นหาข้อมูลลูกค้า</h2>
         <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
 
-        <!-- Flash messages display here -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -459,11 +457,19 @@
                 <p><strong>ชื่อ-นามสกุล:</strong> {{ record.ชื่อ }} {{ record.นามสกุล }}</p>
                 <p><strong>เบอร์มือถือ:</strong> {{ record.เบอร์มือถือ }}</p>
                 <p><strong>เลขบัตรประชาชน:</strong> {{ record.เลขบัตรประชาชน }}</p>
+                <p><strong>จดทะเบียน:</strong> {{ record['จดทะเบียน'] }}</p>
                 <p><strong>ชื่อกิจการ:</strong> {{ record.ชื่อกิจการ }}</p>
+                <p><strong>ประเภทธุรกิจ:</strong> {{ record['ประเภทธุรกิจ'] }}</p>
+                <p><strong>ที่อยู่จดทะเบียน:</strong> {{ record['ที่อยู่จดทะเบียน'] }}</p>
                 <p><strong>สถานะ:</strong> {{ record.สถานะ }}</p>
                 <p><strong>วงเงินที่ต้องการ:</strong> {{ record['วงเงินที่ต้องการ'] }}</p>
                 <p><strong>วงเงินที่อนุมัติ:</strong> {{ record['วงเงินที่อนุมัติ'] }}</p>
+                <p><strong>เคยขอเข้ามาในเครือหรือยัง:</strong> {{ record['เคยขอเข้ามาในเครือหรือยัง'] }}</p>
+                <p><strong>เช็ค:</strong> {{ record['เช็ค'] }}</p>
                 <p><strong>LINE ID:</strong> {{ record['LINE ID'] }}</p>
+                <p><strong>ขอเข้ามาทางไหน:</strong> {{ record['ขอเข้ามาทางไหน'] }}</p>
+                <p><strong>หักดอกหัวท้าย:</strong> {{ record['หักดอกหัวท้าย'] }}</p>
+                <p><strong>ค่าดำเนินการ:</strong> {{ record['ค่าดำเนินการ'] }}</p>
                 <p><strong>วันที่ขอเข้ามา:</strong> {{ record['วันที่ขอเข้ามา'] }}</p>
                 <p><strong>ลิงค์โลเคชั่นบ้าน:</strong> <a href="{{ record['ลิงค์โลเคชั่นบ้าน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นบ้าน'] }}</a></p>
                 <p><strong>ลิงค์โลเคชั่นที่ทำงาน:</strong> <a href="{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}</a></p>
@@ -501,7 +507,6 @@
 
     <a href="{{ url_for('dashboard') }}" class="back-to-main-menu">กลับสู่เมนูหลัก</a>
 
-    <!-- Lightbox/Modal HTML Structure -->
     <div class="lightbox-overlay" id="lightboxOverlay">
         <div class="lightbox-content">
             {# Use Flask proxy route for lightbox image src #}
