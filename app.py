@@ -33,10 +33,12 @@ SPREADSHEET_NAME = 'data1'
 WORKSHEET_NAME = 'customer_records'
 
 LOAN_TRANSACTIONS_WORKSHEET_NAME = os.environ.get('LOAN_TRANSACTIONS_WORKSHEET_NAME', 'Loan_Transactions')
+
+# UPDATED: LOAN_TRANSACTIONS_WORKSHEET_HEADERS
 LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
     'Timestamp', 'เลขบัตรประชาชนลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
-    'วงเงินกู้', 'ดอกเบี้ย (%)', 'ระยะเวลากู้ (เดือน)', 'วันที่เริ่มกู้',
-    'วันครบกำหนด', 'ยอดที่ต้องชำระรายเดือน', 'ยอดชำระแล้ว', 'ยอดค้างชำระ',
+    'วงเงินกู้', 'หักดอกหัวท้าย', 'ค่าดำเนินการ', 'ดอกเบี้ย (%)', 'วันที่เริ่มกู้',
+    'ยอดที่ต้องชำระ', 'ยอดชำระแล้ว', 'ยอดค้างชำระ',
     'สถานะเงินกู้', 'หมายเหตุเงินกู้', 'ผู้บันทึก'
 ]
 
@@ -210,6 +212,7 @@ def get_loan_worksheet():
         try:
             worksheet = spreadsheet.worksheet(LOAN_TRANSACTIONS_WORKSHEET_NAME)
             existing_headers = worksheet.row_values(1)
+            # UPDATED: Check if headers match the new LOAN_TRANSACTIONS_WORKSHEET_HEADERS
             if not existing_headers or existing_headers != LOAN_TRANSACTIONS_WORKSHEET_HEADERS:
                 print(f"Warning: Loan Transactions worksheet headers do not match expected headers or are empty. Updating headers to: {LOAN_TRANSACTIONS_WORKSHEET_HEADERS}")
                 worksheet.update('A1', [LOAN_TRANSACTIONS_WORKSHEET_HEADERS])
@@ -635,51 +638,51 @@ def add_loan_record():
 
     if request.method == 'POST':
         try:
-            id_card_number = request.form['id_card_number'].strip()
+            # UPDATED: Changed from id_card_number to customer_name and customer_surname
+            customer_name_input = request.form['customer_name_loan'].strip()
+            customer_surname_input = request.form['customer_surname_loan'].strip()
             loan_amount = float(request.form['loan_amount'])
             interest_rate = float(request.form['interest_rate'])
-            loan_term_months = int(request.form['loan_term_months'])
+            # NEW: Upfront interest deduction and processing fee
+            upfront_interest_deduction = float(request.form.get('upfront_interest_deduction', 0))
+            processing_fee = float(request.form.get('processing_fee', 0))
+
             start_date_str = request.form['start_date']
             loan_note = request.form.get('loan_note', '').strip()
 
-            customer_name = ""
-            customer_surname = ""
+            id_card_number = ""
+            customer_name = customer_name_input
+            customer_surname = customer_surname_input
 
-            # --- Advanced: Fetch customer name from customer_records worksheet ---
-            # FIX: Changed get_worksheet() to get_customer_data_worksheet()
-            customer_worksheet = get_customer_data_worksheet() # This is your general customer data worksheet
+            # --- Fetch customer ID_Card_Number from customer_records worksheet using name and surname ---
+            customer_worksheet = get_customer_data_worksheet()
             if customer_worksheet:
                 customer_records_data = customer_worksheet.get_all_records()
-                found_customer = next((rec for rec in customer_records_data if rec.get('เลขบัตรประชาชน') == id_card_number), None)
+                # Find customer by name and surname
+                found_customer = next((
+                    rec for rec in customer_records_data
+                    if rec.get('ชื่อ') == customer_name_input and rec.get('นามสกุล') == customer_surname_input
+                ), None)
+
                 if found_customer:
-                    customer_name = found_customer.get('ชื่อ', '')
-                    customer_surname = found_customer.get('นามสกุล', '')
+                    id_card_number = found_customer.get('เลขบัตรประชาชน', '')
                 else:
-                    flash(f"ไม่พบข้อมูลลูกค้าสำหรับเลขบัตรประชาชน {id_card_number} ในระบบ กรุณากรอกข้อมูลลูกค้าก่อน", 'warning')
+                    flash(f"ไม่พบข้อมูลลูกค้าสำหรับชื่อ-นามสกุล '{customer_name_input} {customer_surname_input}' ในระบบ กรุณากรอกข้อมูลลูกค้าก่อน", 'warning')
+                    return redirect(url_for('loan_management'))
             else:
                 flash("ไม่สามารถเชื่อมต่อกับชีทข้อมูลลูกค้าได้", 'error')
-            # --- End Advanced Fetch ---
+                return redirect(url_for('loan_management'))
+            # --- End Customer ID Lookup ---
 
             start_date_dt = datetime.strptime(start_date_str, '%Y-%m-%d')
-            # Calculate end date robustly
-            end_date_dt = start_date_dt + pd.DateOffset(months=loan_term_months)
-            # Adjust to end of month if start date was end of month and target month is shorter
-            if start_date_dt.day == pd.Period(start_date_dt, freq='D').days_in_month and \
-               end_date_dt.day != pd.Period(end_date_dt, freq='D').days_in_month:
-                end_date_dt = end_date_dt.replace(day=pd.Period(end_date_dt, freq='D').days_in_month)
 
+            # REMOVED: loan_term_months and end_date_dt calculation as per request
+            # REMOVED: monthly_payment calculation
 
-            end_date_str = end_date_dt.strftime('%Y-%m-%d')
-
-            monthly_payment = 0
-            if loan_term_months > 0:
-                monthly_interest_rate = (interest_rate / 100) / 12
-                if monthly_interest_rate > 0:
-                    # Annuity formula: P = (r * PV) / (1 - (1 + r)^-n)
-                    monthly_payment = (loan_amount * monthly_interest_rate) / (1 - (1 + monthly_interest_rate)**(-loan_term_months))
-                else:
-                    monthly_payment = loan_amount / loan_term_months
-            monthly_payment = round(monthly_payment, 2)
+            # NEW: Calculate 'ยอดที่ต้องชำระ' (Total Amount Due at loan initiation)
+            # This is the principal + upfront interest + processing fee
+            # The daily interest accrual would be a conceptual calculation or handled in a more advanced system.
+            total_amount_due = loan_amount + upfront_interest_deduction + processing_fee
 
             row_data = {
                 'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -687,13 +690,15 @@ def add_loan_record():
                 'ชื่อลูกค้า': customer_name,
                 'นามสกุลลูกค้า': customer_surname,
                 'วงเงินกู้': loan_amount,
-                'ดอกเบี้ย (%)': interest_rate,
-                'ระยะเวลากู้ (เดือน)': loan_term_months,
+                'หักดอกหัวท้าย': upfront_interest_deduction, # NEW FIELD
+                'ค่าดำเนินการ': processing_fee, # NEW FIELD
+                'ดอกเบี้ย (%)': interest_rate, # RENAMED
+                # REMOVED: 'ระยะเวลากู้ (เดือน)'
                 'วันที่เริ่มกู้': start_date_str,
-                'วันครบกำหนด': end_date_str,
-                'ยอดที่ต้องชำระรายเดือน': monthly_payment,
+                # REMOVED: 'วันครบกำหนด'
+                'ยอดที่ต้องชำระ': total_amount_due, # NEW FIELD, calculated
                 'ยอดชำระแล้ว': 0,
-                'ยอดค้างชำระ': loan_amount,
+                'ยอดค้างชำระ': total_amount_due, # Starts as total_amount_due
                 'สถานะเงินกู้': 'รออนุมัติ/ใหม่',
                 'หมายเหตุเงินกู้': loan_note,
                 'ผู้บันทึก': logged_in_user
@@ -709,7 +714,7 @@ def add_loan_record():
                 flash('ไม่สามารถเข้าถึง Worksheet เงินกู้ได้', 'error')
 
         except ValueError:
-            flash('ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบวงเงิน, ดอกเบี้ย, ระยะเวลา', 'error')
+            flash('ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบวงเงิน, ดอกเบี้ย, ค่าหักดอกหัวท้าย, และค่าดำเนินการ', 'error')
         except KeyError as e:
             flash(f'ข้อมูลฟอร์มไม่ครบถ้วน: {e}', 'error')
         except Exception as e:
