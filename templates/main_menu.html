@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เมนูหลัก</title>
-    <!-- Import Google Fonts (Kanit) for a modern Thai font -->
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         /* Define CSS variables for easy theme customization */
@@ -12,68 +11,86 @@
             --primary-color: #4A90E2; /* Main blue color */
             --secondary-color: #50E3C2; /* Secondary mint green color */
             --background-color: #F0F2F5; /* Light background color */
-            --card-background: #FFFFFF; /* Background color for the menu card */
+            --card-background: #FFFFFF; /* Background color for cards/containers */
             --text-color: #333333; /* General text color */
-            --border-color: #DDDDDD; /* Border color */
-            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow for the card */
+            --border-color: #DDDDDD; /* Border color for elements */
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow */
         }
 
         /* Basic styles for the body to center content and set font */
         body {
             font-family: 'Kanit', sans-serif; /* Use Kanit font */
-            background-color: var(--background-color);
+            background-image: url('/static/images/your_background_image.jpg'); /* <-- ตรงนี้ใส่ URL จริงของรูปภาพพื้นหลังของคุณ */
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-color: var(--background-color); /* Fallback color */
+
             display: flex; /* Use Flexbox for centering */
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
+            flex-direction: column; /* Stack content vertically */
+            justify-content: flex-start; /* Align content to the top */
+            align-items: center; /* Center horizontally */
             min-height: 100vh; /* Ensure body takes full viewport height */
             margin: 0;
+            padding: 20px; /* Add padding around the content */
             color: var(--text-color);
             line-height: 1.6; /* Improve readability */
+            box-sizing: border-box; /* Include padding in element's total width and height */
         }
 
-        /* Styles for the main menu container (the "card") */
-        .menu-container {
+        /* Styles for the main container */
+        .main-container {
             background-color: var(--card-background);
             padding: 40px;
-            border-radius: 12px; /* Rounded corners */
-            box-shadow: var(--shadow-light); /* Subtle shadow */
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
             text-align: center;
             width: 100%;
-            max-width: 500px; /* Max width for larger screens */
-            box-sizing: border-box; /* Include padding and border in element's total width and height */
+            max-width: 600px; /* Max width for larger screens */
+            box-sizing: border-box;
+            margin-bottom: 20px; /* Space below the container */
+            
+            /* หากต้องการให้ card เป็นแบบโปร่งใสเพื่อเห็นพื้นหลัง */
+            /* background-color: rgba(255, 255, 255, 0.8); */ 
         }
 
         /* Styles for the heading */
-        .menu-container h2 {
+        .main-container h2 {
             color: var(--primary-color);
-            margin-bottom: 15px; /* Adjust margin */
+            margin-bottom: 30px;
             font-weight: 600;
             font-size: 2em;
         }
 
-        /* Styles for the welcome message */
-        .welcome-message {
-            font-size: 1.2em;
-            color: var(--text-color);
-            margin-bottom: 10px; /* Adjust margin */
+        /* Styles for flash messages */
+        .flash-message {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            text-align: center;
+            background-color: #D4EDDA; /* Light green */
+            color: #155724; /* Dark green */
+            border: 1px solid #C3E6CB;
         }
 
-        /* Styles for the date display */
-        .current-date {
+        /* Styles for the logged-in user display */
+        .logged-in-user {
             font-size: 0.9em;
-            color: #666666; /* Slightly lighter text for date */
-            margin-bottom: 30px; /* Space before buttons */
+            color: #666;
+            margin-bottom: 20px;
         }
 
-        /* Styles for the button group */
-        .button-group {
-            display: flex; /* Use flexbox to arrange buttons */
+        /* Styles for action buttons */
+        .action-button-group {
+            display: flex;
             flex-direction: column; /* Stack buttons vertically */
             gap: 15px; /* Space between buttons */
+            margin-top: 30px;
         }
 
-        /* Styles for the menu buttons */
-        .menu-button {
+        .action-button {
             background-color: var(--primary-color);
             color: white;
             padding: 15px 25px;
@@ -81,37 +98,43 @@
             border-radius: 8px;
             font-size: 1.1em;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transitions */
+            transition: background-color 0.3s ease, transform 0.2s ease;
             text-decoration: none; /* Remove underline for links */
-            display: block; /* Make links behave like block elements for full width */
+            display: inline-flex; /* Allow content to be centered */
+            align-items: center; /* Center content vertically */
+            justify-content: center; /* Center content horizontally */
             font-weight: 600;
             letter-spacing: 0.5px;
         }
 
-        /* Styles for menu buttons on hover */
-        .menu-button:hover {
-            background-color: #3A7BBF; /* Darker shade on hover */
-            transform: translateY(-2px); /* Slight lift effect on hover */
+        .action-button.logout {
+            background-color: #DC3545; /* Red color for logout */
         }
 
-        /* Styles for menu buttons when active (clicked) */
-        .menu-button:active {
-            transform: translateY(0); /* Return to original position on click */
+        .action-button:hover {
+            transform: translateY(-2px);
+        }
+        .action-button:active {
+            transform: translateY(0);
         }
 
-        /* Responsive adjustments for smaller screens (e.g., mobile phones) */
+        .action-button.logout:hover {
+            background-color: #C82333; /* Darker red on hover */
+        }
+
+        /* Responsive adjustments */
         @media (max-width: 600px) {
-            .menu-container {
-                margin: 20px; /* Add margin on smaller screens */
-                padding: 30px;
+            body {
+                padding: 10px;
             }
-            .menu-container h2 {
+            .main-container {
+                padding: 30px;
+                margin-bottom: 15px;
+            }
+            .main-container h2 {
                 font-size: 1.8em;
             }
-            .welcome-message, .current-date {
-                font-size: 1em;
-            }
-            .menu-button {
+            .action-button {
                 padding: 12px 20px;
                 font-size: 1em;
             }
@@ -119,34 +142,24 @@
     </style>
 </head>
 <body>
-    <div class="menu-container">
+    <div class="main-container">
         <h2>เมนูหลัก</h2>
-        <p class="welcome-message">ยินดีต้อนรับคุณ {{ username }}</p>
-        <!-- Element to display the current date -->
-        <p id="dateDisplay" class="current-date"></p>
 
-        <div class="button-group">
-            <!-- Link to the data entry page (will create this route next) -->
-            <a href="{{ url_for('enter_customer_data') }}" class="menu-button">กรอกข้อมูลลูกค้า</a>
-            <!-- Link to the customer search page (will create this route next) -->
-            <a href="{{ url_for('search_customer_data') }}" class="menu-button">ค้นหาข้อมูลลูกค้า</a>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
+
+        <div class="action-button-group">
+            <a href="{{ url_for('data_entry') }}" class="action-button">กรอกข้อมูลลูกค้าใหม่</a>
+            <a href="{{ url_for('search_customer_data') }}" class="action-button">ค้นหาข้อมูลลูกค้า</a>
+            <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
         </div>
     </div>
-
-    <script>
-        // JavaScript to display the current date
-        document.addEventListener('DOMContentLoaded', function() {
-            const dateOptions = {
-                weekday: 'long', // Full weekday name (e.g., วันจันทร์)
-                year: 'numeric',   // Full year (e.g., 2568)
-                month: 'long',     // Full month name (e.g., กรกฎาคม)
-                day: 'numeric'     // Day of the month (e.g., 4)
-            };
-            const today = new Date();
-            // Format the date for Thai locale
-            const formattedDate = today.toLocaleDateString('th-TH', dateOptions);
-            document.getElementById('dateDisplay').textContent = `วันที่: ${formattedDate}`;
-        });
-    </script>
 </body>
 </html>

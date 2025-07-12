@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ</title>
-    <!-- Import Google Fonts (Kanit) for a modern Thai font -->
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         /* Define CSS variables for easy theme customization */
@@ -22,7 +21,13 @@
         /* Basic styles for the body to center content and set font */
         body {
             font-family: 'Kanit', sans-serif; /* Use Kanit font */
-            background-color: var(--background-color);
+            background-image: url('/static/images/your_background_image.jpg'); /* <-- ตรงนี้ใส่ URL จริงของรูปภาพพื้นหลังของคุณ */
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-color: #f0f2f5; /* เพิ่มสีพื้นหลังสำรอง เผื่อรูปภาพโหลดไม่ติด */
+
             display: flex; /* Use Flexbox for centering */
             justify-content: center; /* Center horizontally */
             align-items: center; /* Center vertically */
@@ -139,7 +144,6 @@
     <div class="login-container">
         <h2>เข้าสู่ระบบ</h2>
 
-        <!-- Display error message if present -->
         {% if error %}
             <p class="error-message">{{ error }}</p>
         {% endif %}
