@@ -33,6 +33,12 @@ SPREADSHEET_NAME = 'data1'
 WORKSHEET_NAME = 'customer_records'
 
 LOAN_TRANSACTIONS_WORKSHEET_NAME = os.environ.get('LOAN_TRANSACTIONS_WORKSHEET_NAME', 'Loan_Transactions')
+LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
+    'Timestamp', 'เลขบัตรประชาชนลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
+    'วงเงินกู้', 'ดอกเบี้ย (%)', 'ระยะเวลากู้ (เดือน)', 'วันที่เริ่มกู้', 
+    'วันครบกำหนด', 'ยอดที่ต้องชำระรายเดือน', 'ยอดชำระแล้ว', 'ยอดค้างชำระ', 
+    'สถานะเงินกู้', 'หมายเหตุเงินกู้', 'ผู้บันทึก'
+]
 
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
     'Timestamp', 'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
@@ -220,20 +226,43 @@ def get_customer_data_worksheet():
         print(f"Error accessing/creating customer data worksheet: {e}")
         return None
 
+# Helper function to get the Loan Transactions worksheet
 def get_loan_worksheet():
-    # ... (code for get_loan_worksheet remains the same) ...
-    """Authorizes and returns the Loan_Transactions worksheet."""
-    if not GSPREAD_CLIENT: # ใช้ GSPREAD_CLIENT ที่ถูกกำหนดไว้แล้ว
+    """
+    Gets the Loan_Transactions worksheet.
+    Creates it if it doesn't exist and ensures headers are correct.
+    """
+    if not GSPREAD_CLIENT:
         print("Gspread client not initialized. Cannot access Loan Transactions worksheet.")
         return None
     try:
         # ใช้ SPREADSHEET_NAME ('data1') เดียวกันกับชีทข้อมูลลูกค้าหลัก
-        spreadsheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME) # ใช้ GSPREAD_CLIENT โดยตรง
-        # ใช้ LOAN_TRANSACTIONS_WORKSHEET_NAME ที่คุณกำหนดไว้ก่อนหน้านี้
-        worksheet = spreadsheet.worksheet(LOAN_TRANSACTIONS_WORKSHEET_NAME)
+        spreadsheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME) 
+
+        try:
+            # พยายามเข้าถึง Worksheet ที่มีอยู่
+            worksheet = spreadsheet.worksheet(LOAN_TRANSACTIONS_WORKSHEET_NAME)
+
+            # ตรวจสอบ Headers หาก Worksheet มีอยู่แล้ว
+            existing_headers = worksheet.row_values(1)
+            if not existing_headers or existing_headers != LOAN_TRANSACTIONS_WORKSHEET_HEADERS:
+                print(f"Warning: Loan Transactions worksheet headers do not match expected headers or are empty. Updating headers to: {LOAN_TRANSACTIONS_WORKSHEET_HEADERS}")
+                worksheet.update('A1', [LOAN_TRANSACTIONS_WORKSHEET_HEADERS])
+                print(f"Worksheet '{LOAN_TRANSACTIONS_WORKSHEET_NAME}' headers updated.")
+        except gspread.exceptions.WorksheetNotFound:
+            print(f"Worksheet '{LOAN_TRANSACTIONS_WORKSHEET_NAME}' not found. Creating it...")
+            # สร้าง Worksheet ใหม่พร้อม Headers
+            worksheet = spreadsheet.add_worksheet(
+                title=LOAN_TRANSACTIONS_WORKSHEET_NAME, 
+                rows="100", # กำหนดจำนวนแถวเริ่มต้น (ปรับได้ตามต้องการ)
+                cols=str(len(LOAN_TRANSACTIONS_WORKSHEET_HEADERS)) # กำหนดจำนวนคอลัมน์ตาม Headers
+            )
+            worksheet.append_row(LOAN_TRANSACTIONS_WORKSHEET_HEADERS) # เพิ่ม Headers
+            print(f"Worksheet '{LOAN_TRANSACTIONS_WORKSHEET_NAME}' created with headers.")
+
         return worksheet
     except Exception as e:
-        print(f"Error accessing Loan Transactions worksheet: {e}")
+        print(f"Error accessing or creating Loan Transactions worksheet: {e}")
         return None
 
 
