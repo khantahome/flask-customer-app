@@ -23,7 +23,7 @@ GOOGLE_API_SCOPE = [
     'https://www.googleapis.com/auth/drive'
 ]
 
-SERVICE_ACCOUNT_KEY_FILE = 'exclusive.json'
+SERVICE_ACCOUNT_KEY_FILE = 'firebase-service-account.json' # ใช้ชื่อไฟล์ที่คุณมีจริงๆ
 
 # --- Google Sheets Configuration ---
 USER_LOGIN_SPREADSHEET_NAME = 'UserLoginData'
