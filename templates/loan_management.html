@@ -174,24 +174,107 @@
             background-color: #eef; /* Highlight row on hover */
         }
 
-        /* Responsive adjustments */
+        /* --- Form Specific Styles --- */
+        .form-section {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            text-align: left; /* Align form content to the left */
+        }
+
+        .form-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .data-form {
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically */
+            gap: 15px; /* Space between form groups */
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two columns */
+            gap: 20px; /* Space between grid items */
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-size: 0.95em;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="date"],
+        .form-group textarea {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1em;
+            color: var(--text-color);
+            background-color: var(--background-color); /* Light background for inputs */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
+        .form-group input[type="date"]:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); /* Light blue shadow on focus */
+            outline: none;
+        }
+
+        .form-group textarea {
+            resize: vertical; /* Allow vertical resizing */
+            min-height: 80px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2; /* Span across both columns */
+        }
+
+        .submit-button {
+            display: block; /* Make button take full width of its container */
+            width: 100%;
+            padding: 15px;
+            background-color: var(--secondary-color); /* Use secondary color for submit */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .submit-button:hover {
+            background-color: #43C6B7; /* Slightly darker mint on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Responsive adjustments for form */
         @media (max-width: 600px) {
-            .loan-management-container {
-                padding: 25px;
-                margin: 10px;
+            .form-grid {
+                grid-template-columns: 1fr; /* Single column on small screens */
             }
-            .loan-management-container h2 {
-                font-size: 1.8em;
-            }
-            .menu-button {
-                padding: 12px 20px;
-                font-size: 1em;
-            }
-            .data-table-container {
-                margin-left: -20px; /* Adjust for body padding */
-                margin-right: -20px;
-                width: calc(100% + 40px); /* Fill screen width */
-                border-radius: 0;
+            .form-group.full-width {
+                grid-column: span 1; /* Reset span for single column */
             }
         }
     </style>
@@ -215,7 +298,59 @@
         <div class="button-group">
             <a href="#" class="menu-button">ดูรายการเงินกู้ทั้งหมด</a>
             <a href="#" class="menu-button">บันทึกการชำระเงิน</a>
-            </div>
+        </div>
+
+       
+        <div class="form-section">
+            <h3>บันทึกรายการเงินกู้ใหม่</h3>
+            <form action="{{ url_for('add_loan_record') }}" method="POST" class="data-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="id_card_number">เลขบัตรประชาชนลูกค้า:</label>
+                        <input type="text" id="id_card_number" name="id_card_number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loan_amount">วงเงินกู้ (บาท):</label>
+                        <input type="number" id="loan_amount" name="loan_amount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="interest_rate">ดอกเบี้ย (% ต่อปี):</label>
+                        <input type="number" id="interest_rate" name="interest_rate" step="0.01" min="0" max="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loan_term_months">ระยะเวลากู้ (เดือน):</label>
+                        <input type="number" id="loan_term_months" name="loan_term_months" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="start_date">วันที่เริ่มกู้:</label>
+                        <input type="date" id="start_date" name="start_date" required>
+                    </div>
+                   
+                    <div class="form-group">
+                        <label for="end_date">วันครบกำหนด (คำนวณอัตโนมัติ):</label>
+                        <input type="date" id="end_date" name="end_date" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="monthly_payment">ยอดที่ต้องชำระรายเดือน (คำนวณอัตโนมัติ):</label>
+                        <input type="number" id="monthly_payment" name="monthly_payment" step="0.01" readonly>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="loan_note">หมายเหตุเงินกู้:</label>
+                        <textarea id="loan_note" name="loan_note" rows="3"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="submit-button">บันทึกรายการเงินกู้ใหม่</button>
+            </form>
+        </div>
+
+        <hr style="margin: 40px 0; border: 0; border-top: 1px solid var(--border-color);">
+
+       
+        <div class="existing-records-section">
+            <h3>รายการเงินกู้ทั้งหมด</h3>
+           
+            <p>เมื่อมีข้อมูลเงินกู้ถูกบันทึก จะแสดงเป็นตารางที่นี่</p>
+        </div>
 
         {% if loan_records %}
         <div class="data-table-container">
@@ -247,13 +382,67 @@
     </div>
 
     <script>
-        // JavaScript to display the current date
+        // JavaScript for loan calculation
         document.addEventListener('DOMContentLoaded', function() {
+            const loanAmountInput = document.getElementById('loan_amount');
+            const interestRateInput = document.getElementById('interest_rate');
+            const loanTermMonthsInput = document.getElementById('loan_term_months');
+            const startDateInput = document.getElementById('start_date');
+            const endDateInput = document.getElementById('end_date');
+            const monthlyPaymentInput = document.getElementById('monthly_payment');
+
+            function calculateLoanDetails() {
+                const loanAmount = parseFloat(loanAmountInput.value);
+                const interestRate = parseFloat(interestRateInput.value) / 100; // Convert to decimal
+                const loanTermMonths = parseInt(loanTermMonthsInput.value);
+                const startDateStr = startDateInput.value;
+
+                if (startDateStr && loanTermMonths && loanAmount > 0 && interestRate >= 0) {
+                    // Calculate End Date
+                    const startDate = new Date(startDateStr);
+                    const endDate = new Date(startDate);
+                    endDate.setMonth(endDate.getMonth() + loanTermMonths);
+                    // Adjust day to ensure it's the last day of the month if original was last day, or handles month overflow
+                    endDate.setDate(endDate.getDate()); // No change, just to ensure valid date
+
+                    // Format end date for input field
+                    const formattedEndDate = endDate.toISOString().split('T')[0];
+                    endDateInput.value = formattedEndDate;
+
+                    // Calculate Monthly Payment (simple interest for now, can be adjusted for compound)
+                    // Assuming monthly interest payment is calculated from annual rate divided by 12
+                    let monthlyPayment = 0;
+                    if (interestRate > 0) {
+                        const monthlyInterestRate = interestRate / 12;
+                        // Formula for fixed monthly payment (annuity formula)
+                        monthlyPayment = (loanAmount * monthlyInterestRate) / (1 - Math.pow(1 + monthlyInterestRate, -loanTermMonths));
+                    } else {
+                        // If interest rate is 0, simply principal / months
+                        monthlyPayment = loanAmount / loanTermMonths;
+                    }
+                    
+                    monthlyPaymentInput.value = monthlyPayment.toFixed(2); // Display with 2 decimal places
+                } else {
+                    endDateInput.value = '';
+                    monthlyPaymentInput.value = '';
+                }
+            }
+
+            // Attach event listeners to inputs
+            loanAmountInput.addEventListener('input', calculateLoanDetails);
+            interestRateInput.addEventListener('input', calculateLoanDetails);
+            loanTermMonthsInput.addEventListener('input', calculateLoanDetails);
+            startDateInput.addEventListener('change', calculateLoanDetails); // Use 'change' for date input
+
+            // Initial calculation if values are pre-filled (e.g., after a refresh with existing data)
+            calculateLoanDetails();
+
+            // Existing date display script
             const dateOptions = {
-                weekday: 'long', 
-                year: 'numeric',   
-                month: 'long',     
-                day: 'numeric'     
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             };
             const today = new Date();
             const formattedDate = today.toLocaleDateString('th-TH', dateOptions);
