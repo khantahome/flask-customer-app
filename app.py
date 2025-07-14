@@ -65,7 +65,7 @@ LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
 LOAN_PAYMENT_HISTORY_WORKSHEET_NAME = 'Loan_Payment_History'
 LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS = [
     'Timestamp', 'รหัสเงินกู้', 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
-    'จำนวนเงินที่ชำระดอกลอย', 'จำนวนเงินที่ชำระคืนต้น', 'วันที่ชำระ', 'หมายเหตุการชำระ', 'ผู้บันทึก'
+    'จำนวนเงินที่ชำระดอกลอย', 'จำนวนเงินที่ชำระคืนต้น', 'ยอดเพิ่มวงเงิน', 'วันที่ชำระ', 'หมายเหตุการชำระ', 'ผู้บันทึก'
 ]
 
 # --- Cloudinary Configuration ---
@@ -393,6 +393,7 @@ def update_loan_details():
     """
     Handles updating an existing loan record, including top-up functionality.
     Updates 'วงเงินกู้', 'ยอดเงินต้นที่ต้องคืน', 'ยอดค้างชำระ', 'ยอดที่ต้องชำระรายวัน', and 'หมายเหตุเงินกู้'.
+    Also records top-up details to Loan_Payment_History sheet.
     """
     if 'username' not in session:
         flash('กรุณาเข้าสู่ระบบก่อน', 'error')
@@ -448,7 +449,7 @@ def update_loan_details():
             else:
                 new_loan_note_combined = current_loan_note # Keep original note if no new note
 
-            # Update the record dictionary
+            # Update the record dictionary for Loan_Transactions sheet
             current_loan_record['วงเงินกู้'] = new_total_loan_amount
             current_loan_record['ยอดเงินต้นที่ต้องคืน'] = new_principal_to_return
             current_loan_record['ยอดค้างชำระ'] = new_outstanding_amount
@@ -460,6 +461,29 @@ def update_loan_details():
 
             # Update the row in Google Sheet
             loan_worksheet.update(f'A{row_index}', [updated_row_values])
+
+            # NEW: Append top-up details to Loan_Payment_History sheet
+            if top_up_amount > 0: # Only record if there was an actual top-up
+                payment_history_worksheet = get_loan_payment_history_worksheet()
+                if payment_history_worksheet:
+                    top_up_row = {
+                        'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'รหัสเงินกู้': loan_id,
+                        'รหัสลูกค้า': current_loan_record.get('รหัสลูกค้า', ''),
+                        'ชื่อลูกค้า': current_loan_record.get('ชื่อลูกค้า', ''),
+                        'นามสกุลลูกค้า': current_loan_record.get('นามสกุลลูกค้า', ''),
+                        'จำนวนเงินที่ชำระดอกลอย': 0, # No floating interest payment for top-up
+                        'จำนวนเงินที่ชำระคืนต้น': 0, # No principal repayment for top-up
+                        'ยอดเพิ่มวงเงิน': top_up_amount, # Record the top-up amount
+                        'วันที่ชำระ': datetime.now().strftime('%Y-%m-%d'), # Use current date for top-up record
+                        'หมายเหตุการชำระ': edit_loan_note if edit_loan_note else 'เพิ่มยอดวงเงินสินเชื่อ',
+                        'ผู้บันทึก': logged_in_user
+                    }
+                    payment_history_worksheet.append_row([top_up_row.get(h, '-') for h in LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS])
+                    flash('บันทึกการเพิ่มยอดในประวัติการชำระเงินเรียบร้อยแล้ว!', 'success')
+                else:
+                    flash('ไม่สามารถบันทึกการเพิ่มยอดในประวัติการชำระเงินได้', 'warning')
+
 
             flash(f'บันทึกการแก้ไข/เพิ่มยอดสินเชื่อ {loan_id} เรียบร้อยแล้ว!', 'success')
             return redirect(url_for('loan_management'))
