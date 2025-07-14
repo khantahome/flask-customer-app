@@ -500,6 +500,89 @@ def add_loan_record():
 
     return redirect(url_for('loan_management')) # Redirect back to the loan management page
 
+@app.route('/record_payment', methods=['POST'])
+def record_payment():
+    """
+    Handles payment submission for a specific loan record.
+    Updates 'ยอดชำระแล้ว', 'ยอดค้างชำระ', and recalculates 'ยอดที่ต้องชำระรายวัน'.
+    """
+    if 'username' not in session:
+        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
+        return redirect(url_for('login'))
+
+    logged_in_user = session['username']
+
+    if request.method == 'POST':
+        try:
+            loan_id = request.form['loan_id']
+            row_index = int(request.form['row_index']) # Row index from the table (1-based)
+            payment_amount = float(request.form['payment_amount'])
+            payment_date = request.form['payment_date']
+            payment_note = request.form.get('payment_note', '').strip()
+            
+            # Get current values from hidden fields (these are from the table row)
+            current_amount_paid = float(request.form['current_amount_paid'])
+            current_outstanding_amount = float(request.form['current_outstanding_amount'])
+
+            loan_worksheet = get_loan_worksheet()
+            if not loan_worksheet:
+                flash('ไม่สามารถเชื่อมต่อกับ Worksheet เงินกู้ได้', 'error')
+                return redirect(url_for('loan_management'))
+
+            # Get the specific row to update
+            # row_index มาจาก loop.index + 1 ใน HTML ซึ่งตรงกับ row number ใน Google Sheet
+            loan_record_values = loan_worksheet.row_values(row_index)
+            
+            if not loan_record_values:
+                flash('ไม่พบรายการเงินกู้ที่ระบุ', 'error')
+                return redirect(url_for('loan_management'))
+
+            # Convert row_values to a dictionary for easier access
+            current_loan_record = dict(zip(LOAN_TRANSACTIONS_WORKSHEET_HEADERS, loan_record_values))
+
+            # Update 'ยอดชำระแล้ว'
+            new_amount_paid = current_amount_paid + payment_amount
+
+            # Update 'ยอดค้างชำระ'
+            new_outstanding_amount = current_outstanding_amount - payment_amount
+            if new_outstanding_amount < 0:
+                new_outstanding_amount = 0 # Ensure outstanding doesn't go below zero
+
+            # Recalculate 'ยอดที่ต้องชำระรายวัน' based on new outstanding principal
+            # สูตร: ยอดเงินต้นที่ต้องคืนที่เหลืออยู่ (Outstanding Principal) × ดอกเบี้ย ÷ 100
+            interest_rate_percent = float(current_loan_record.get('ดอกเบี้ย (%)', 0))
+            new_daily_payment = round(new_outstanding_amount * (interest_rate_percent / 100), 2)
+            
+            # Update 'สถานะเงินกู้' if fully paid
+            new_loan_status = current_loan_record.get('สถานะเงินกู้', 'อยู่ระหว่างผ่อนชำระ')
+            if new_outstanding_amount <= 0.01: # Use a small epsilon for floating point comparison
+                new_loan_status = 'ปิดบัญชี'
+
+            # Prepare the updated row data
+            # Make sure to update the dictionary with new values
+            current_loan_record['ยอดชำระแล้ว'] = new_amount_paid
+            current_loan_record['ยอดค้างชำระ'] = new_outstanding_amount
+            current_loan_record['ยอดที่ต้องชำระรายวัน'] = new_daily_payment
+            current_loan_record['สถานะเงินกู้'] = new_loan_status
+            
+            updated_row_values = [current_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
+
+            # Update the row in Google Sheet
+            loan_worksheet.update(f'A{row_index}', [updated_row_values])
+
+            flash('บันทึกการชำระเงินเรียบร้อยแล้ว!', 'success')
+            return redirect(url_for('loan_management'))
+
+        except ValueError as e:
+            flash(f'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบรูปแบบตัวเลขและวันที่: {e}', 'error')
+        except KeyError as e:
+            flash(f'ข้อมูลฟอร์มไม่ครบถ้วน: {e}', 'error')
+        except Exception as e:
+            flash(f'เกิดข้อผิดพลาดในการบันทึกการชำระเงิน: {e}', 'error')
+            print(f"Error recording payment: {e}")
+
+    return redirect(url_for('loan_management'))
+
 def upload_image_to_cloudinary(file_stream, original_filename):
     """
     Uploads an image file stream to Cloudinary.

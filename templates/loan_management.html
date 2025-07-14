@@ -267,6 +267,116 @@
         .text-center {
             text-align: center;
         }
+
+        /* Modal Styles - IMPROVED */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Darker overlay */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0; /* Start hidden for animation */
+            transition: opacity 0.3s ease-out;
+        }
+        .modal.show {
+            opacity: 1; /* Show with fade in */
+        }
+
+        .modal-content {
+            background-color: #ffffff; /* White background */
+            padding: 30px;
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); /* Stronger, softer shadow */
+            width: 90%;
+            max-width: 550px; /* Slightly wider modal */
+            position: relative;
+            transform: scale(0.95); /* Start slightly smaller for animation */
+            transition: transform 0.3s ease-out;
+        }
+        .modal.show .modal-content {
+            transform: scale(1); /* Scale up on show */
+        }
+
+        .close-button {
+            color: #888;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 30px; /* Larger close button */
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .modal-title {
+            color: #28a745;
+            text-align: center;
+            margin-bottom: 30px; /* More space below title */
+            font-size: 2em; /* Larger title */
+            font-weight: 700;
+        }
+
+        /* Modal specific form styles - IMPROVED LAYOUT */
+        .modal .form-group {
+            margin-bottom: 18px;
+            display: flex; /* Make it a flex container */
+            align-items: center; /* Vertically align items in the center */
+            gap: 15px; /* Space between label and input */
+        }
+
+        .modal .form-label {
+            flex-shrink: 0; /* Prevent label from shrinking */
+            width: 150px; /* Give labels a fixed width for alignment on desktop */
+            text-align: right; /* Align labels to the right */
+            margin-bottom: 0; /* Remove bottom margin if on same line */
+            font-size: 0.95em;
+            color: #444;
+        }
+
+        .modal .form-input {
+            flex-grow: 1; /* Allow input to take remaining space */
+            padding: 10px 12px;
+            font-size: 0.95em;
+            border-radius: 6px;
+        }
+
+        /* Responsive adjustments for modal form on smaller screens */
+        @media (max-width: 600px) {
+            .modal .form-group {
+                flex-direction: column; /* Stack label and input vertically on small screens */
+                align-items: flex-start; /* Align items to the start when stacked */
+                gap: 5px; /* Smaller gap when stacked */
+            }
+            .modal .form-label {
+                width: auto; /* Auto width for labels when stacked */
+                text-align: left; /* Align labels to the left when stacked */
+                margin-bottom: 5px; /* Add back bottom margin for labels when stacked */
+            }
+        }
+
+        .modal .btn-primary {
+            margin-top: 25px; /* More space above modal submit button */
+            padding: 12px 20px;
+            font-size: 1.1em;
+            border-radius: 8px; /* More rounded button */
+            box-shadow: 0 4px 10px rgba(40,167,69,0.2); /* Subtle shadow for button */
+        }
+        .modal .btn-primary:hover {
+            box-shadow: 0 6px 15px rgba(40,167,69,0.3);
+        }
     </style>
 </head>
 <body>
@@ -365,13 +475,8 @@
                 <thead>
                     <tr>
                         {# Headers will be dynamically rendered from loan_headers passed by Flask #}
-                        {# We expect loan_headers to contain 'รหัสลูกค้า', 'ชื่อลูกค้า', and 'นามสกุลลูกค้า' #}
                         {% for header in loan_headers %}
-                            {% if header == 'เลขบัตรประชาชนลูกค้า' %}
-                                {# Skip 'เลขบัตรประชาชนลูกค้า' header as it's replaced by 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า' #}
-                            {% else %}
-                                <th>{{ header }}</th>
-                            {% endif %}
+                            <th>{{ header }}</th>
                         {% endfor %}
                         <th>ดำเนินการ</th>
                     </tr>
@@ -383,12 +488,9 @@
                                 {# Display data based on loan_headers order #}
                                 <td>{{ record.get('Timestamp', '-') }}</td>
                                 <td>{{ record.get('รหัสเงินกู้', '-') }}</td>
-                                <td>{{ record.get('รหัสลูกค้า', '-') }}</td> {# Display new customer ID #}
-
-                                {# Display Customer Name and Surname from the record directly #}
+                                <td>{{ record.get('รหัสลูกค้า', '-') }}</td>
                                 <td>{{ record.get('ชื่อลูกค้า', '-') }}</td>
                                 <td>{{ record.get('นามสกุลลูกค้า', '-') }}</td>
-                                
                                 <td>{{ record.get('วงเงินกู้', '-') }}</td>
                                 <td>{{ record.get('ดอกเบี้ย (%)', '-') }}</td>
                                 <td>{{ record.get('วันที่เริ่มกู้', '-') }}</td>
@@ -403,16 +505,38 @@
                                 <td>{{ record.get('ผู้บันทึก', '-') }}</td>
                                 <td>
                                     {# TODO: Add edit/update/payment functionality here #}
-                                    <button class="btn btn-info">แก้ไข</button>
-                                    <button class="btn btn-success">บันทึกชำระ</button>
+                                    <button class="btn btn-info edit-loan-btn"
+                                            data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
+                                            data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
+                                            data-loan-amount="{{ record.get('วงเงินกู้', '') }}"
+                                            data-interest-rate="{{ record.get('ดอกเบี้ย (%)', '') }}"
+                                            data-start-date="{{ record.get('วันที่เริ่มกู้', '') }}"
+                                            data-processing-fee="{{ record.get('ค่าดำเนินการ', '') }}"
+                                            data-upfront-interest="{{ record.get('หักดอกหัวท้าย', '') }}"
+                                            data-principal-to-return="{{ record.get('ยอดเงินต้นที่ต้องคืน', '') }}"
+                                            data-daily-payment="{{ record.get('ยอดที่ต้องชำระรายวัน', '') }}"
+                                            data-amount-paid="{{ record.get('ยอดชำระแล้ว', '') }}"
+                                            data-outstanding-amount="{{ record.get('ยอดค้างชำระ', '') }}"
+                                            data-loan-status="{{ record.get('สถานะเงินกู้', '') }}"
+                                            data-loan-note="{{ record.get('หมายเหตุเงินกู้', '') }}"
+                                            data-timestamp="{{ record.get('Timestamp', '') }}"
+                                            data-recorder="{{ record.get('ผู้บันทึก', '') }}"
+                                            >แก้ไข</button>
+                                    <button class="btn btn-success record-payment-btn"
+                                            data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
+                                            data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
+                                            data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
+                                            data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
+                                            data-outstanding-amount="{{ record.get('ยอดค้างชำระ', '') }}"
+                                            data-amount-paid="{{ record.get('ยอดชำระแล้ว', '') }}"
+                                            data-row-index="{{ loop.index + 1 }}" {# +1 because loop.index is 0-based, and headers are row 1 #}
+                                            >บันทึกชำระ</button>
                                 </td>
                             </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            {# Adjusted colspan: original loan_headers length + 2 (for รหัสลูกค้า, and the existing ดำเนินการ) #}
-                            {# This assumes loan_headers will be updated in app.py to include 'รหัสลูกค้า' and remove 'เลขบัตรประชาชนลูกค้า' #}
-                            <td colspan="{{ loan_headers|length + 2 }}" class="text-center">ไม่พบรายการเงินกู้</td>
+                            <td colspan="{{ loan_headers|length + 1 }}" class="text-center">ไม่พบรายการเงินกู้</td>
                         </tr>
                     {% endif %}
                 </tbody>
@@ -420,8 +544,54 @@
         </div>
     </div>
 
+    {# Payment Modal Structure #}
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h4 class="modal-title">บันทึกการชำระเงิน</h4>
+            <form id="paymentForm" action="{{ url_for('record_payment') }}" method="POST">
+                <input type="hidden" id="modal_loan_id" name="loan_id">
+                <input type="hidden" id="modal_row_index" name="row_index">
+                <input type="hidden" id="modal_current_amount_paid" name="current_amount_paid">
+                <input type="hidden" id="modal_current_outstanding_amount" name="current_outstanding_amount">
+
+                <div class="form-group">
+                    <label for="modal_customer_info" class="form-label">ลูกค้า:</label>
+                    <input type="text" class="form-input" id="modal_customer_info" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="modal_outstanding_display" class="form-label">ยอดค้างชำระปัจจุบัน:</label>
+                    <input type="text" class="form-input" id="modal_outstanding_display" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="payment_amount" class="form-label">จำนวนเงินที่ชำระ (บาท):</label>
+                    <input type="number" class="form-input" id="payment_amount" name="payment_amount" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="payment_date" class="form-label">วันที่ชำระ:</label>
+                    <input type="date" class="form-input" id="payment_date" name="payment_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="payment_note" class="form-label">หมายเหตุการชำระ:</label>
+                    <textarea class="form-input" id="payment_note" name="payment_note" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">บันทึกการชำระ</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default for 'start_date' field
+            const startDateField = document.getElementById('start_date');
+            if (startDateField) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = (today.getMonth() + 1).toString().padStart(2, '0');
+                const day = today.getDate().toString().padStart(2, '0');
+                startDateField.value = `${year}-${month}-${day}`;
+            }
+
             // Get references to input fields for calculation
             const loanAmountField = document.getElementById('loan_amount');
             const interestRateField = document.getElementById('interest_rate');
@@ -430,10 +600,10 @@
             const principalToReturnField = document.getElementById('principal_to_return');
             const dailyAmountToReturnField = document.getElementById('daily_amount_to_return');
 
-            // Add event listeners for input changes to trigger calculations
-            loanAmountField.addEventListener('input', calculateLoanValues);
-            interestRateField.addEventListener('input', calculateLoanValues);
-            processingFeeField.addEventListener('input', calculateLoanValues);
+            // NEW: References for new customer fields
+            const customerNewIdField = document.getElementById('customer_new_id');
+            const newCustomerNameField = document.getElementById('new_customer_name');
+            const newCustomerSurnameField = document.getElementById('new_customer_surname');
 
             // Function to perform calculations
             function calculateLoanValues() {
@@ -451,7 +621,7 @@
 
                 // 2. Calculate "ยอดเงินต้นที่ต้องคืน" (Principal to Return)
                 // สูตร: (วงเงินกู้ - หักดอกหัวท้าย) - ค่าดำเนินการ
-                const principalToReturn = (loanAmount - upfrontInterestDeduction) - processingFee; // <--- แก้ไขบรรทัดนี้
+                const principalToReturn = (loanAmount - upfrontInterestDeduction) - processingFee; 
                 principalToReturnField.value = principalToReturn.toFixed(2);
 
                 // 3. Calculate "ยอดเงินต้องคืนรายวัน" (Daily Amount to Return)
@@ -459,8 +629,129 @@
                 dailyAmountToReturnField.value = simpleInterest.toFixed(2);
             }
 
+            // Attach event listeners to relevant input fields to trigger calculations
+            loanAmountField.addEventListener('input', calculateLoanValues);
+            interestRateField.addEventListener('input', calculateLoanValues);
+            processingFeeField.addEventListener('input', calculateLoanValues);
+            // frontBackInterestDeductionField is readonly, no need for listener
+            // principalToReturnField is readonly, no need for listener
+            // dailyAmountToReturnField is readonly, no need for listener
+
+            // NEW: Logic for customer ID / New Customer Name fields
+            customerNewIdField.addEventListener('input', function() {
+                if (customerNewIdField.value.trim() !== '') {
+                    // If customer ID is entered/selected, clear new customer name fields
+                    newCustomerNameField.value = '';
+                    newCustomerSurnameField.value = '';
+                    newCustomerNameField.removeAttribute('required'); // Remove required if ID is present
+                    newCustomerSurnameField.removeAttribute('required');
+                } else {
+                    // If customer ID is empty, make new customer name fields required
+                    newCustomerNameField.setAttribute('required', 'required');
+                    newCustomerSurnameField.setAttribute('required', 'required');
+                }
+            });
+
+            newCustomerNameField.addEventListener('input', function() {
+                if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
+                    // If new customer name is entered, clear customer ID field
+                    customerNewIdField.value = '';
+                    customerNewIdField.removeAttribute('required'); // Remove required if new name is present
+                } else {
+                    // If new customer name is empty, make customer ID field required
+                    customerNewIdField.setAttribute('required', 'required');
+                }
+            });
+
+            newCustomerSurnameField.addEventListener('input', function() {
+                if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
+                    // If new customer surname is entered, clear customer ID field
+                    customerNewIdField.value = '';
+                    customerNewIdField.removeAttribute('required'); // Remove required if new surname is present
+                } else {
+                    // If new customer surname is empty, make customer ID field required
+                    customerNewIdField.setAttribute('required', 'required');
+                }
+            });
+
+            // Initial check on page load for required attributes
+            // This ensures that if the page loads with an empty customer ID field,
+            // the new customer name/surname fields are marked as required.
+            // Conversely, if an ID is pre-filled (e.g., from a previous submission),
+            // the new customer name/surname fields are not required.
+            if (customerNewIdField.value.trim() === '') {
+                newCustomerNameField.setAttribute('required', 'required');
+                newCustomerSurnameField.setAttribute('required', 'required');
+            } else {
+                customerNewIdField.removeAttribute('required'); // If ID is pre-filled, it's not required to fill new name
+                newCustomerNameField.removeAttribute('required');
+                newCustomerSurnameField.removeAttribute('required');
+            }
+
+
             // Initial calculation on page load if values are already present
             calculateLoanValues();
+
+            // --- Payment Modal Logic ---
+            const paymentModal = document.getElementById('paymentModal');
+            const closeButton = paymentModal.querySelector('.close-button');
+            const paymentButtons = document.querySelectorAll('.record-payment-btn');
+            const modalLoanId = document.getElementById('modal_loan_id');
+            const modalRowIndex = document.getElementById('modal_row_index');
+            const modalCustomerInfo = document.getElementById('modal_customer_info');
+            const modalOutstandingDisplay = document.getElementById('modal_outstanding_display');
+            const modalCurrentAmountPaid = document.getElementById('modal_current_amount_paid');
+            const modalCurrentOutstandingAmount = document.getElementById('modal_current_outstanding_amount');
+            const paymentAmountField = document.getElementById('payment_amount');
+            const paymentDateField = document.getElementById('payment_date');
+
+            // Set today's date for payment date field
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = (today.getMonth() + 1).toString().padStart(2, '0');
+            const day = today.getDate().toString().padStart(2, '0');
+            paymentDateField.value = `${year}-${month}-${day}`;
+
+            paymentButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const loanId = this.dataset.loanId;
+                    const customerId = this.dataset.customerId;
+                    const customerName = this.dataset.customerName;
+                    const customerSurname = this.dataset.customerSurname;
+                    const outstandingAmount = this.dataset.outstandingAmount;
+                    const amountPaid = this.dataset.amountPaid;
+                    const rowIndex = this.dataset.rowIndex; // Get the row index from data attribute
+
+                    // Populate modal fields
+                    modalLoanId.value = loanId;
+                    modalRowIndex.value = rowIndex; // Set the row index
+                    modalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
+                    modalOutstandingDisplay.value = parseFloat(outstandingAmount).toFixed(2) + ' บาท';
+                    modalCurrentAmountPaid.value = parseFloat(amountPaid); // Store current paid amount
+                    modalCurrentOutstandingAmount.value = parseFloat(outstandingAmount); // Store current outstanding
+
+                    // Clear previous payment amount and set today's date
+                    paymentAmountField.value = '';
+                    paymentDateField.value = `${year}-${month}-${day}`;
+
+                    // Add 'show' class to trigger fade-in and scale-up animation
+                    paymentModal.style.display = 'flex'; 
+                    setTimeout(() => paymentModal.classList.add('show'), 10); // Small delay for transition
+                });
+            });
+
+            closeButton.addEventListener('click', function() {
+                paymentModal.classList.remove('show'); // Remove 'show' class to trigger fade-out
+                setTimeout(() => paymentModal.style.display = 'none', 300); // Hide after animation
+            });
+
+            // Close modal if clicking outside the modal content
+            window.addEventListener('click', function(event) {
+                if (event.target == paymentModal) {
+                    paymentModal.classList.remove('show'); // Remove 'show' class to trigger fade-out
+                    setTimeout(() => paymentModal.style.display = 'none', 300); // Hide after animation
+                }
+            });
         });
     </script>
 </body>
