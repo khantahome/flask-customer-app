@@ -377,6 +377,34 @@
         .modal .btn-primary:hover {
             box-shadow: 0 6px 15px rgba(40,167,69,0.3);
         }
+
+        /* New Modal for Payment History */
+        #paymentHistoryModal .modal-content {
+            max-width: 800px; /* Wider for table content */
+            padding: 20px 30px;
+        }
+        #paymentHistoryModal .modal-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        #paymentHistoryModal .table-container {
+            margin-top: 0; /* Override default table margin */
+            max-height: 400px; /* Limit height for scrollable table */
+            overflow-y: auto; /* Enable vertical scrolling */
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        #paymentHistoryModal .data-table {
+            width: 100%; /* Ensure table fills container */
+            margin-bottom: 0; /* Remove bottom margin */
+            box-shadow: none; /* Remove shadow as container has it */
+            border-radius: 0; /* Remove border-radius as container has it */
+        }
+        #paymentHistoryModal .data-table th,
+        #paymentHistoryModal .data-table td {
+            white-space: nowrap; /* Prevent wrapping in history table */
+            padding: 10px 12px;
+        }
     </style>
 </head>
 <body>
@@ -504,24 +532,10 @@
                                 <td>{{ record.get('หมายเหตุเงินกู้', '-') }}</td>
                                 <td>{{ record.get('ผู้บันทึก', '-') }}</td>
                                 <td>
-                                    {# TODO: Add edit/update/payment functionality here #}
-                                    <button class="btn btn-info edit-loan-btn"
+                                    {# NEW: Changed "แก้ไข" button to "ดูบันทึกการชำระ" #}
+                                    <button class="btn btn-info view-payment-history-btn"
                                             data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
-                                            data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
-                                            data-loan-amount="{{ record.get('วงเงินกู้', '') }}"
-                                            data-interest-rate="{{ record.get('ดอกเบี้ย (%)', '') }}"
-                                            data-start-date="{{ record.get('วันที่เริ่มกู้', '') }}"
-                                            data-processing-fee="{{ record.get('ค่าดำเนินการ', '') }}"
-                                            data-upfront-interest="{{ record.get('หักดอกหัวท้าย', '') }}"
-                                            data-principal-to-return="{{ record.get('ยอดเงินต้นที่ต้องคืน', '') }}"
-                                            data-daily-payment="{{ record.get('ยอดที่ต้องชำระรายวัน', '') }}"
-                                            data-amount-paid="{{ record.get('ยอดชำระแล้ว', '') }}"
-                                            data-outstanding-amount="{{ record.get('ยอดค้างชำระ', '') }}"
-                                            data-loan-status="{{ record.get('สถานะเงินกู้', '') }}"
-                                            data-loan-note="{{ record.get('หมายเหตุเงินกู้', '') }}"
-                                            data-timestamp="{{ record.get('Timestamp', '') }}"
-                                            data-recorder="{{ record.get('ผู้บันทึก', '') }}"
-                                            >แก้ไข</button>
+                                            >ดูบันทึกการชำระ</button>
                                     <button class="btn btn-success record-payment-btn"
                                             data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
                                             data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
@@ -564,13 +578,13 @@
                     <input type="text" class="form-input" id="modal_outstanding_display" readonly>
                 </div>
                 
-                {# Changed label back to "จำนวนเงินที่ชำระ (บาท)" #}
+                {# Field for Floating Interest Payment #}
                 <div class="form-group">
                     <label for="payment_amount" class="form-label">จำนวนเงินที่ชำระ (บาท):</label>
                     <input type="number" class="form-input" id="payment_amount" name="payment_amount" step="0.01" value="0">
                 </div>
 
-                {# NEW: Field for Principal Repayment #}
+                {# Field for Principal Repayment #}
                 <div class="form-group">
                     <label for="principal_payment_amount" class="form-label">จำนวนเงินที่ชำระคืนต้น (บาท):</label>
                     <input type="number" class="form-input" id="principal_payment_amount" name="principal_payment_amount" step="0.01" value="0">
@@ -586,6 +600,27 @@
                 </div>
                 <button type="submit" class="btn btn-primary">บันทึกการชำระ</button>
             </form>
+        </div>
+    </div>
+
+    {# NEW: Payment History Modal Structure #}
+    <div id="paymentHistoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button history-close-button">&times;</span>
+            <h4 class="modal-title">บันทึกการชำระเงินสำหรับ <span id="history_loan_id_display"></span></h4>
+            <div class="table-container">
+                <table class="data-table" id="paymentHistoryTable">
+                    <thead>
+                        <tr>
+                            {# Headers will be dynamically loaded by JS #}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# Payment history data will be dynamically loaded by JS #}
+                    </tbody>
+                </table>
+            </div>
+            <p id="noPaymentHistoryMessage" style="text-align: center; color: #666; margin-top: 20px; display: none;">ไม่พบประวัติการชำระเงินสำหรับสินเชื่อนี้</p>
         </div>
     </div>
 
@@ -679,7 +714,7 @@
                     customerNewIdField.removeAttribute('required'); // Remove required if new surname is present
                 } else {
                     // If new customer surname is empty, make customer ID field required
-                    customerNewIdField.setAttribute('required', 'required');
+                    newCustomerNewIdField.setAttribute('required', 'required');
                 }
             });
 
@@ -764,6 +799,83 @@
                 if (event.target == paymentModal) {
                     paymentModal.classList.remove('show'); // Remove 'show' class to trigger fade-out
                     setTimeout(() => paymentModal.style.display = 'none', 300); // Hide after animation
+                }
+            });
+
+            // --- Payment History Modal Logic ---
+            const paymentHistoryModal = document.getElementById('paymentHistoryModal');
+            const historyCloseButton = paymentHistoryModal.querySelector('.history-close-button');
+            const viewHistoryButtons = document.querySelectorAll('.view-payment-history-btn'); // Targets the new button class
+            const historyLoanIdDisplay = document.getElementById('history_loan_id_display');
+            const paymentHistoryTable = document.getElementById('paymentHistoryTable');
+            const noPaymentHistoryMessage = document.getElementById('noPaymentHistoryMessage');
+
+            viewHistoryButtons.forEach(button => {
+                button.addEventListener('click', async function() {
+                    const loanId = this.dataset.loanId;
+                    historyLoanIdDisplay.textContent = loanId; // Display loan ID in modal title
+
+                    // Clear previous table content
+                    paymentHistoryTable.querySelector('thead tr').innerHTML = '';
+                    paymentHistoryTable.querySelector('tbody').innerHTML = '';
+                    noPaymentHistoryMessage.style.display = 'none'; // Hide no history message
+
+                    // Show loading indicator (optional, but good UX)
+                    paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center;">กำลังโหลดประวัติการชำระเงิน...</td></tr>';
+
+                    try {
+                        const response = await fetch(`/get_payment_history/${loanId}`);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data = await response.json();
+
+                        if (data.payments && data.payments.length > 0) {
+                            // Populate table headers
+                            const headerRow = paymentHistoryTable.querySelector('thead tr');
+                            data.headers.forEach(header => {
+                                const th = document.createElement('th');
+                                th.textContent = header;
+                                headerRow.appendChild(th);
+                            });
+
+                            // Populate table body
+                            const tbody = paymentHistoryTable.querySelector('tbody');
+                            tbody.innerHTML = ''; // Clear loading message
+                            data.payments.forEach(payment => {
+                                const tr = document.createElement('tr');
+                                data.headers.forEach(header => {
+                                    const td = document.createElement('td');
+                                    td.textContent = payment[header] || '-'; // Display value or '-' if empty
+                                    tr.appendChild(td);
+                                });
+                                tbody.appendChild(tr);
+                            });
+                        } else {
+                            noPaymentHistoryMessage.style.display = 'block'; // Show no history message
+                            paymentHistoryTable.querySelector('tbody').innerHTML = ''; // Clear loading message
+                        }
+                    } catch (error) {
+                        console.error('Error fetching payment history:', error);
+                        paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; color: red;">ไม่สามารถโหลดประวัติการชำระเงินได้</td></tr>';
+                    }
+
+                    // Show the history modal
+                    paymentHistoryModal.style.display = 'flex';
+                    setTimeout(() => paymentHistoryModal.classList.add('show'), 10);
+                });
+            });
+
+            historyCloseButton.addEventListener('click', function() {
+                paymentHistoryModal.classList.remove('show');
+                setTimeout(() => paymentHistoryModal.style.display = 'none', 300);
+            });
+
+            // Close history modal if clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target == paymentHistoryModal) {
+                    paymentHistoryModal.classList.remove('show');
+                    setTimeout(() => paymentHistoryModal.style.display = 'none', 300);
                 }
             });
         });
