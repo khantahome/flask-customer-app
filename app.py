@@ -397,19 +397,15 @@ def add_loan_record():
             upfront_interest_deduction = round(loan_amount * interest_rate / 100, 2)
 
             # 2. ยอดเงินต้นที่ต้องคืน (Principal to Return)
-            # Formula: วงเงินกู้ - หักดอกหัวท้าย
-            principal_to_return = round(loan_amount - upfront_interest_deduction, 2)
+            # สูตรใหม่: (วงเงินกู้ * (ดอกเบี้ย / 100) * 2) - วงเงินกู้ - ค่าดำเนินการ
+            calculated_interest_for_principal = loan_amount * (interest_rate / 100)
+            calculated_total_payment = calculated_interest_for_principal * 2
+            net_gain = calculated_total_payment - loan_amount
+            principal_to_return = round(net_gain - processing_fee, 2) # <--- แก้ไขตรงนี้
             
             # 3. ยอดที่ต้องชำระรายวัน (Daily Payment)
-            # แก้ไขตรงนี้: เปลี่ยนสูตรการคำนวณตามที่คุณต้องการ
-            daily_payment = upfront_interest_deduction # <--- แก้ไขบรรทัดนี้
-
-            # โค้ดเดิมที่ถูกแทนที่:
-            # CONTRACT_DAYS = 180 
-            # if CONTRACT_DAYS == 0: # Avoid division by zero
-            #     daily_payment = 0
-            # else:
-            #     daily_payment = round((principal_to_return + processing_fee) / CONTRACT_DAYS, 2)
+            # สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ upfront_interest_deduction)
+            daily_payment = upfront_interest_deduction # <--- แก้ไขตรงนี้
 
             # Prepare the data row for Loan Transactions sheet
             row_data = {
@@ -422,7 +418,7 @@ def add_loan_record():
                 'ดอกเบี้ย (%)': interest_rate,
                 'วันที่เริ่มกู้': start_date_str,
                 'หักดอกหัวท้าย': upfront_interest_deduction,
-                'ยอดเงินต้นที่ต้องคืน': principal_to_return,
+                'ยอดเงินต้นที่ต้องคืน': principal_to_return, # ใช้ค่าที่คำนวณใหม่
                 'ค่าดำเนินการ': processing_fee,
                 'ยอดที่ต้องชำระรายวัน': daily_payment, # ใช้ค่าที่คำนวณใหม่
                 'ยอดชำระแล้ว': 0, # Initial value is 0
@@ -431,7 +427,6 @@ def add_loan_record():
                 'หมายเหตุเงินกู้': loan_note,
                 'ผู้บันทึก': logged_in_user
             }
-
 
             # Convert dictionary to list in the correct order of headers
             row_to_append = [row_data.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]

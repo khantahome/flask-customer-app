@@ -422,8 +422,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ... (โค้ด JavaScript ส่วนต้น) ...
-
             // Get references to input fields for calculation
             const loanAmountField = document.getElementById('loan_amount');
             const interestRateField = document.getElementById('interest_rate');
@@ -432,7 +430,10 @@
             const principalToReturnField = document.getElementById('principal_to_return');
             const dailyAmountToReturnField = document.getElementById('daily_amount_to_return');
 
-            // ... (References for new customer fields and other variables) ...
+            // Add event listeners for input changes to trigger calculations
+            loanAmountField.addEventListener('input', calculateLoanValues);
+            interestRateField.addEventListener('input', calculateLoanValues);
+            processingFeeField.addEventListener('input', calculateLoanValues);
 
             // Function to perform calculations
             function calculateLoanValues() {
@@ -446,22 +447,16 @@
                 frontBackInterestDeductionField.value = upfrontInterestDeduction.toFixed(2);
 
                 // 2. Calculate "ยอดเงินต้นที่ต้องคืน" (Principal to Return)
-                // Formula: วงเงินกู้ - หักดอกหัวท้าย
-                const principalToReturn = loanAmount - upfrontInterestDeduction;
+                // สูตรใหม่: (วงเงินกู้ * (ดอกเบี้ย / 100) * 2) - วงเงินกู้ - ค่าดำเนินการ
+                const calculatedInterestForPrincipal = loanAmount * (interestRate / 100);
+                const calculatedTotalPayment = calculatedInterestForPrincipal * 2;
+                const netGain = calculatedTotalPayment - loanAmount;
+                const principalToReturn = netGain - processingFee; 
                 principalToReturnField.value = principalToReturn.toFixed(2);
 
                 // 3. Calculate "ยอดเงินต้องคืนรายวัน" (Daily Amount to Return)
-                // เปลี่ยนสูตรการคำนวณตามที่คุณต้องการ: วงเงินกู้ × ดอกเบี้ย ÷ 100
-                // ซึ่งค่านี้คือค่าเดียวกับ upfrontInterestDeduction
-                dailyAmountToReturnField.value = upfrontInterestDeduction.toFixed(2); // <--- แก้ไขบรรทัดนี้
-
-                // โค้ดเดิมที่ถูกแทนที่ (ถ้ามี):
-                // const CONTRACT_DAYS = 180;
-                // let dailyAmountToReturn = 0;
-                // if (CONTRACT_DAYS > 0) {
-                //     dailyAmountToReturn = (principalToReturn + processingFee) / CONTRACT_DAYS;
-                // }
-                // dailyAmountToReturnField.value = dailyAmountToReturn.toFixed(2);
+                // สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ upfrontInterestDeduction)
+                dailyAmountToReturnField.value = upfrontInterestDeduction.toFixed(2); 
             }
 
             // Initial calculation on page load if values are already present
