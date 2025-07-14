@@ -400,8 +400,8 @@ def add_loan_record():
             upfront_interest_deduction = round(simple_interest * 2, 2)
 
             # 2. ยอดเงินต้นที่ต้องคืน (Principal to Return)
-            # สูตร: วงเงินกู้ - หักดอกหัวท้าย (ไม่รวมค่าดำเนินการ)
-            principal_to_return = round(loan_amount - upfront_interest_deduction, 2) # <--- แก้ไขบรรทัดนี้
+            # สูตร: (วงเงินกู้ - หักดอกหัวท้าย) - ค่าดำเนินการ
+            principal_to_return = round((loan_amount - upfront_interest_deduction) - processing_fee, 2) # <--- แก้ไขบรรทัดนี้
             
             # 3. ยอดที่ต้องชำระรายวัน (Daily Payment)
             # สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ simple_interest)

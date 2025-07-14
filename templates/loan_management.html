@@ -450,8 +450,8 @@
                 frontBackInterestDeductionField.value = upfrontInterestDeduction.toFixed(2);
 
                 // 2. Calculate "ยอดเงินต้นที่ต้องคืน" (Principal to Return)
-                // สูตร: วงเงินกู้ - หักดอกหัวท้าย (ไม่รวมค่าดำเนินการ)
-                const principalToReturn = loanAmount - upfrontInterestDeduction; // <--- แก้ไขบรรทัดนี้
+                // สูตร: (วงเงินกู้ - หักดอกหัวท้าย) - ค่าดำเนินการ
+                const principalToReturn = (loanAmount - upfrontInterestDeduction) - processingFee; // <--- แก้ไขบรรทัดนี้
                 principalToReturnField.value = principalToReturn.toFixed(2);
 
                 // 3. Calculate "ยอดเงินต้องคืนรายวัน" (Daily Amount to Return)
