@@ -196,7 +196,7 @@ def get_all_customer_records():
         return []
 
 
-def get_all_loan_customer_records():
+def get_all_loan_records():
     """
     NEW: Retrieves all loan-specific customer records from the Loan_Customers worksheet.
     Each record will be a dictionary.
@@ -401,8 +401,8 @@ def add_loan_record():
                     flash("ไม่สามารถเชื่อมต่อกับชีทข้อมูลลูกค้าเงินกู้ได้", 'error')
                     return redirect(url_for('loan_management'))
 
-                all_loan_customers_data = get_all_loan_customer_records()
-                found_loan_customer = next((rec for rec in all_loan_customers_data if rec.get('รหัสลูกค้า') == customer_loan_id), None)
+                loan_records = get_all_loan_records()
+                found_loan_customer = next((rec for rec in loan_records if rec.get('รหัสลูกค้า') == customer_loan_id), None)
 
                 if found_loan_customer:
                     final_customer_id = customer_loan_id
@@ -878,9 +878,9 @@ def loan_management():
     logged_in_user = session['username']
     
     # Fetch all loan records
-    loan_records = get_all_loan_customer_records() # <--- Error reported here
+    loan_records = loan_records = get_all_loan_records() # <--- Error reported here
     # Fetch all loan-specific customer records to populate datalist and display names
-    all_loan_customers = get_all_loan_customer_records() 
+    all_loan_customers = loan_records = get_all_loan_records() 
     
     if not loan_records:
         flash('ไม่พบรายการเงินกู้ในระบบ', 'info')
