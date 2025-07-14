@@ -136,7 +136,15 @@ def get_customer_data_worksheet():
 
 def get_loan_worksheet():
     """Returns the Loan_Transactions worksheet."""
-    return get_worksheet(SPREADSHEET_NAME, LOAN_TRANSACTIONS_WORKSHEET_NAME, LOAN_TRANSACTIONS_WORKSHEET_HEADERS)
+    # เพิ่ม print statement ตรงนี้: เพื่อดูว่าพยายามเข้าถึงชีทชื่ออะไร
+    print(f"DEBUG: Attempting to get loan worksheet: Spreadsheet='{SPREADSHEET_NAME}', Worksheet='{LOAN_TRANSACTIONS_WORKSHEET_NAME}'")
+    
+    worksheet = get_worksheet(SPREADSHEET_NAME, LOAN_TRANSACTIONS_WORKSHEET_NAME, LOAN_TRANSACTIONS_WORKSHEET_HEADERS)
+    
+    # เพิ่ม print statement ตรงนี้: เพื่อดูว่า get_worksheet คืนค่าเป็น None หรือไม่
+    if not worksheet:
+        print("DEBUG: get_loan_worksheet returned None.")
+    return worksheet
 
 def get_customer_id_counter_worksheet():
     """NEW: Gets or creates the worksheet for loan customer ID counter."""

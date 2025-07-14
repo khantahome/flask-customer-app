@@ -22,24 +22,18 @@
             font-family: 'Kanit', sans-serif; /* Use Kanit font */
             background-image: url('/static/images/your_background_image.jpg'); /* <-- ตรงนี้ใส่ URL จริงของรูปภาพพื้นหลังของคุณ */
             background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
+            background-position: center;
             background-attachment: fixed;
-            background-color: var(--background-color); /* Fallback color */
-
-            display: flex; /* Use Flexbox for centering */
-            flex-direction: column; /* Stack content vertically */
-            justify-content: flex-start; /* Align content to the top */
-            align-items: center; /* Center horizontally */
-            min-height: 100vh; /* Ensure body takes full viewport height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             margin: 0;
-            padding: 20px; /* Add padding around the content */
-            color: var(--text-color);
-            line-height: 1.6; /* Improve readability */
-            box-sizing: border-box; /* Include padding in element's total width and height */
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        /* Styles for the main container */
+        /* Main container for the menu */
         .main-container {
             background-color: var(--card-background);
             padding: 40px;
@@ -47,75 +41,82 @@
             box-shadow: var(--shadow-light);
             text-align: center;
             width: 100%;
-            max-width: 600px; /* Max width for larger screens */
-            box-sizing: border-box;
-            margin-bottom: 20px; /* Space below the container */
-            
-            /* หากต้องการให้ card เป็นแบบโปร่งใสเพื่อเห็นพื้นหลัง */
-            /* background-color: rgba(255, 255, 255, 0.8); */ 
+            max-width: 500px;
+            animation: fadeIn 0.8s ease-out;
         }
 
-        /* Styles for the heading */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Heading style */
         .main-container h2 {
             color: var(--primary-color);
             margin-bottom: 30px;
+            font-size: 2.2em;
             font-weight: 600;
-            font-size: 2em;
         }
 
-        /* Styles for flash messages */
+        /* Logged in user info */
+        .logged-in-user {
+            color: var(--text-color);
+            margin-bottom: 25px;
+            font-size: 1.1em;
+            font-weight: 400;
+        }
+
+        /* Flash messages styling */
         .flash-message {
-            padding: 10px 15px;
+            background-color: #d4edda; /* Light green for success */
+            color: #155724; /* Dark green text */
+            border: 1px solid #c3e6cb;
+            padding: 12px 20px;
             border-radius: 8px;
             margin-bottom: 20px;
+            font-size: 1em;
             font-weight: 500;
-            text-align: center;
-            background-color: #D4EDDA; /* Light green */
-            color: #155724; /* Dark green */
-            border: 1px solid #C3E6CB;
+            text-align: left;
+            animation: slideIn 0.5s ease-out;
         }
 
-        /* Styles for the logged-in user display */
-        .logged-in-user {
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 20px;
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Styles for action buttons */
+        /* Action button group */
         .action-button-group {
             display: flex;
-            flex-direction: column; /* Stack buttons vertically */
+            flex-direction: column;
             gap: 15px; /* Space between buttons */
             margin-top: 30px;
         }
 
+        /* Individual action button style */
         .action-button {
+            display: block; /* Make buttons take full width */
+            padding: 15px 25px;
             background-color: var(--primary-color);
             color: white;
-            padding: 15px 25px;
-            border: none;
+            text-decoration: none;
             border-radius: 8px;
             font-size: 1.1em;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            text-decoration: none; /* Remove underline for links */
-            display: inline-flex; /* Allow content to be centered */
-            align-items: center; /* Center content vertically */
-            justify-content: center; /* Center content horizontally */
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        .action-button.logout {
-            background-color: #DC3545; /* Red color for logout */
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         .action-button:hover {
-            transform: translateY(-2px);
+            background-color: #3a7bd5; /* Slightly darker blue on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
-        .action-button:active {
-            transform: translateY(0);
+
+        /* Logout button specific style */
+        .action-button.logout {
+            background-color: #DC3545; /* Red for logout */
+            margin-top: 25px; /* More space above logout */
         }
 
         .action-button.logout:hover {
@@ -156,9 +157,10 @@
         <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
 
         <div class="action-button-group">
-            <a href="{{ url_for('enter_search_customer_data') }}" class="action-button">กรอกข้อมูลลูกค้าใหม่</a>
-            <a href="{{ url_for('search_search_customer_data') }}" class="action-button">ค้นหาข้อมูลลูกค้า</a>
-            <a href="{{ url_for('loan_management') }}" class="action-button">จัดการเงินกู้</a>
+            <a href="{{ url_for('enter_customer_data') }}" class="action-button">กรอกข้อมูลลูกค้าใหม่</a>
+            {# แก้ไขตรงนี้: ลบ 'search_' ที่ซ้ำออก #}
+            <a href="{{ url_for('search_customer_data') }}" class="action-button">ค้นหาข้อมูลลูกค้า</a>
+            <a href="{{ url_for('loan_management') }}" class="action-button">จัดการสินเชื่อ</a>
             <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
         </div>
     </div>
