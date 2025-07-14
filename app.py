@@ -160,7 +160,7 @@ def get_loan_customer_data_worksheet():
 def get_all_customer_records():
     """
     Retrieves all customer records from the original customer_records worksheet.
-    Each record will be a dictionary.
+    Each record will be a dictionary, now including its row_index.
     """
     worksheet = get_customer_data_worksheet()
     if not worksheet:
@@ -175,18 +175,26 @@ def get_all_customer_records():
         data_rows = all_data[1:]
         
         customer_records = []
-        for row in data_rows:
+        # เริ่มต้นการวนลูปด้วย index (i) เพื่อใช้ในการคำนวณ row_index
+        for i, row in enumerate(data_rows): # <--- แก้ไขตรงนี้: เพิ่ม enumerate(data_rows)
             record = {}
             for j, header in enumerate(headers):
                 if j < len(row):
                     record[header] = row[j]
                 else:
                     record[header] = ''
+            
+            # เพิ่มบรรทัดนี้: กำหนด row_index ให้กับแต่ละ record
+            # i คือ index ที่เริ่มจาก 0 สำหรับ data_rows (ซึ่งคือแถวที่ 2 ของชีทจริง)
+            # ดังนั้น row_index ใน Google Sheet คือ i + 2
+            record['row_index'] = i + 2 
+            
             customer_records.append(record)
         return customer_records
     except Exception as e:
         print(f"ERROR in get_all_customer_records (original customer_records): {e}")
         return []
+
 
 def get_all_loan_customer_records():
     """
