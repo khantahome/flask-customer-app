@@ -237,6 +237,47 @@ def get_all_loan_customer_records():
         print(f"ERROR in get_all_loan_customer_records: {e}")
         return []
 
+def get_all_loan_records():
+    """
+    Retrieves all loan records from the Loan_Transactions worksheet.
+    Each record will be a dictionary.
+    """
+    worksheet = get_loan_worksheet()
+    if not worksheet:
+        print("ERROR: Loan transactions worksheet not available in get_all_loan_records.")
+        return []
+    try:
+        all_data = worksheet.get_all_values()
+        # Debug print: แสดง 2 แถวแรกของข้อมูลดิบที่ดึงมา
+        print(f"DEBUG: Raw data from Loan_Transactions (first 2 rows): {all_data[:2]}")
+        
+        if not all_data or len(all_data) < 2:
+            print("DEBUG: Google Sheet 'Loan_Transactions' is empty or only has headers.")
+            return []
+
+        headers = all_data[0]
+        # Debug print: แสดง Headers ที่ดึงมาได้
+        print(f"DEBUG: Headers from Loan_Transactions: {headers}")
+        
+        data_rows = all_data[1:]
+        
+        loan_records = []
+        for i, row in enumerate(data_rows):
+            record = {}
+            for j, header in enumerate(headers):
+                if j < len(row):
+                    record[header] = row[j]
+                else:
+                    record[header] = ''
+            loan_records.append(record)
+            # Debug print: แสดงตัวอย่าง 2 record แรกที่ถูกสร้าง
+            if i < 2: 
+                print(f"DEBUG: Sample loan record {i+1}: {record}")
+        return loan_records
+    except Exception as e:
+        print(f"ERROR in get_all_loan_records: {e}")
+        return []
+
 
 def generate_next_customer_id():
     """
