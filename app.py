@@ -392,20 +392,20 @@ def add_loan_record():
                 return redirect(url_for('loan_management'))
 
             # CALCULATIONS
+            # คำนวณดอกเบี้ยแบบเดี่ยว (วงเงินกู้ * ดอกเบี้ย / 100)
+            simple_interest = loan_amount * (interest_rate / 100)
+
             # 1. หักดอกหัวท้าย (Upfront Interest Deduction)
-            # Formula: วงเงินกู้ * ดอกเบี้ย / 100
-            upfront_interest_deduction = round(loan_amount * interest_rate / 100, 2)
+            # สูตร: วงเงินกู้ * ดอกเบี้ย / 100 * 2
+            upfront_interest_deduction = round(simple_interest * 2, 2) # <--- แก้ไขบรรทัดนี้
 
             # 2. ยอดเงินต้นที่ต้องคืน (Principal to Return)
-            # สูตรใหม่: (วงเงินกู้ * (ดอกเบี้ย / 100) * 2) - วงเงินกู้ - ค่าดำเนินการ
-            calculated_interest_for_principal = loan_amount * (interest_rate / 100)
-            calculated_total_payment = calculated_interest_for_principal * 2
-            net_gain = calculated_total_payment - loan_amount
-            principal_to_return = round(net_gain - processing_fee, 2) # <--- แก้ไขตรงนี้
+            # กลับไปใช้สูตร: วงเงินกู้ - หักดอกหัวท้าย
+            principal_to_return = round(loan_amount - upfront_interest_deduction, 2) # <--- แก้ไขบรรทัดนี้
             
             # 3. ยอดที่ต้องชำระรายวัน (Daily Payment)
-            # สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ upfront_interest_deduction)
-            daily_payment = upfront_interest_deduction # <--- แก้ไขตรงนี้
+            # สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ simple_interest)
+            daily_payment = round(simple_interest, 2) # <--- แก้ไขบรรทัดนี้
 
             # Prepare the data row for Loan Transactions sheet
             row_data = {
@@ -417,7 +417,7 @@ def add_loan_record():
                 'วงเงินกู้': loan_amount,
                 'ดอกเบี้ย (%)': interest_rate,
                 'วันที่เริ่มกู้': start_date_str,
-                'หักดอกหัวท้าย': upfront_interest_deduction,
+                'หักดอกหัวท้าย': upfront_interest_deduction, # ใช้ค่าที่คำนวณใหม่
                 'ยอดเงินต้นที่ต้องคืน': principal_to_return, # ใช้ค่าที่คำนวณใหม่
                 'ค่าดำเนินการ': processing_fee,
                 'ยอดที่ต้องชำระรายวัน': daily_payment, # ใช้ค่าที่คำนวณใหม่

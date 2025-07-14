@@ -441,22 +441,22 @@
                 const interestRate = parseFloat(interestRateField.value) || 0;
                 const processingFee = parseFloat(processingFeeField.value) || 0;
 
+                // คำนวณดอกเบี้ยแบบเดี่ยว (วงเงินกู้ * ดอกเบี้ย / 100)
+                const simpleInterest = loanAmount * (interestRate / 100);
+
                 // 1. Calculate "หักดอกหัวท้าย" (Upfront Interest Deduction)
-                // Formula: วงเงินกู้ * ดอกเบี้ย / 100
-                const upfrontInterestDeduction = loanAmount * (interestRate / 100);
+                // สูตร: วงเงินกู้ * ดอกเบี้ย / 100 * 2
+                const upfrontInterestDeduction = simpleInterest * 2; // <--- แก้ไขบรรทัดนี้
                 frontBackInterestDeductionField.value = upfrontInterestDeduction.toFixed(2);
 
                 // 2. Calculate "ยอดเงินต้นที่ต้องคืน" (Principal to Return)
-                // สูตรใหม่: (วงเงินกู้ * (ดอกเบี้ย / 100) * 2) - วงเงินกู้ - ค่าดำเนินการ
-                const calculatedInterestForPrincipal = loanAmount * (interestRate / 100);
-                const calculatedTotalPayment = calculatedInterestForPrincipal * 2;
-                const netGain = calculatedTotalPayment - loanAmount;
-                const principalToReturn = netGain - processingFee; 
+                // กลับไปใช้สูตร: วงเงินกู้ - หักดอกหัวท้าย
+                const principalToReturn = loanAmount - upfrontInterestDeduction; // <--- แก้ไขบรรทัดนี้
                 principalToReturnField.value = principalToReturn.toFixed(2);
 
                 // 3. Calculate "ยอดเงินต้องคืนรายวัน" (Daily Amount to Return)
-                // สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ upfrontInterestDeduction)
-                dailyAmountToReturnField.value = upfrontInterestDeduction.toFixed(2); 
+                // สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ simpleInterest)
+                dailyAmountToReturnField.value = simpleInterest.toFixed(2); // <--- แก้ไขบรรทัดนี้
             }
 
             // Initial calculation on page load if values are already present
