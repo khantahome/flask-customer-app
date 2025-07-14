@@ -422,15 +422,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Set today's date as default for 'start_date' field
-            const startDateField = document.getElementById('start_date');
-            if (startDateField) {
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = (today.getMonth() + 1).toString().padStart(2, '0');
-                const day = today.getDate().toString().padStart(2, '0');
-                startDateField.value = `${year}-${month}-${day}`;
-            }
+            // ... (โค้ด JavaScript ส่วนต้น) ...
 
             // Get references to input fields for calculation
             const loanAmountField = document.getElementById('loan_amount');
@@ -440,10 +432,7 @@
             const principalToReturnField = document.getElementById('principal_to_return');
             const dailyAmountToReturnField = document.getElementById('daily_amount_to_return');
 
-            // NEW: References for new customer fields
-            const customerNewIdField = document.getElementById('customer_new_id');
-            const newCustomerNameField = document.getElementById('new_customer_name');
-            const newCustomerSurnameField = document.getElementById('new_customer_surname');
+            // ... (References for new customer fields and other variables) ...
 
             // Function to perform calculations
             function calculateLoanValues() {
@@ -462,74 +451,18 @@
                 principalToReturnField.value = principalToReturn.toFixed(2);
 
                 // 3. Calculate "ยอดเงินต้องคืนรายวัน" (Daily Amount to Return)
-                // Formula: (ยอดเงินต้นที่ต้องคืน + ค่าดำเนินการ) / จำนวนวันของสัญญา (สมมติ 180 วัน)
-                const CONTRACT_DAYS = 180; // Assuming a fixed contract duration for client-side display
-                let dailyAmountToReturn = 0;
-                if (CONTRACT_DAYS > 0) {
-                    dailyAmountToReturn = (principalToReturn + processingFee) / CONTRACT_DAYS;
-                }
-                dailyAmountToReturnField.value = dailyAmountToReturn.toFixed(2);
+                // เปลี่ยนสูตรการคำนวณตามที่คุณต้องการ: วงเงินกู้ × ดอกเบี้ย ÷ 100
+                // ซึ่งค่านี้คือค่าเดียวกับ upfrontInterestDeduction
+                dailyAmountToReturnField.value = upfrontInterestDeduction.toFixed(2); // <--- แก้ไขบรรทัดนี้
+
+                // โค้ดเดิมที่ถูกแทนที่ (ถ้ามี):
+                // const CONTRACT_DAYS = 180;
+                // let dailyAmountToReturn = 0;
+                // if (CONTRACT_DAYS > 0) {
+                //     dailyAmountToReturn = (principalToReturn + processingFee) / CONTRACT_DAYS;
+                // }
+                // dailyAmountToReturnField.value = dailyAmountToReturn.toFixed(2);
             }
-
-            // Attach event listeners to relevant input fields to trigger calculations
-            loanAmountField.addEventListener('input', calculateLoanValues);
-            interestRateField.addEventListener('input', calculateLoanValues);
-            processingFeeField.addEventListener('input', calculateLoanValues);
-            // frontBackInterestDeductionField is readonly, no need for listener
-            // principalToReturnField is readonly, no need for listener
-            // dailyAmountToReturnField is readonly, no need for listener
-
-            // NEW: Logic for customer ID / New Customer Name fields
-            customerNewIdField.addEventListener('input', function() {
-                if (customerNewIdField.value.trim() !== '') {
-                    // If customer ID is entered/selected, clear new customer name fields
-                    newCustomerNameField.value = '';
-                    newCustomerSurnameField.value = '';
-                    newCustomerNameField.removeAttribute('required'); // Remove required if ID is present
-                    newCustomerSurnameField.removeAttribute('required');
-                } else {
-                    // If customer ID is empty, make new customer name fields required
-                    newCustomerNameField.setAttribute('required', 'required');
-                    newCustomerSurnameField.setAttribute('required', 'required');
-                }
-            });
-
-            newCustomerNameField.addEventListener('input', function() {
-                if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
-                    // If new customer name is entered, clear customer ID field
-                    customerNewIdField.value = '';
-                    customerNewIdField.removeAttribute('required'); // Remove required if new name is present
-                } else {
-                    // If new customer name is empty, make customer ID field required
-                    customerNewIdField.setAttribute('required', 'required');
-                }
-            });
-
-            newCustomerSurnameField.addEventListener('input', function() {
-                if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
-                    // If new customer surname is entered, clear customer ID field
-                    customerNewIdField.value = '';
-                    customerNewIdField.removeAttribute('required'); // Remove required if new surname is present
-                } else {
-                    // If new customer surname is empty, make customer ID field required
-                    customerNewIdField.setAttribute('required', 'required');
-                }
-            });
-
-            // Initial check on page load for required attributes
-            // This ensures that if the page loads with an empty customer ID field,
-            // the new customer name/surname fields are marked as required.
-            // Conversely, if an ID is pre-filled (e.g., from a previous submission),
-            // the new customer name/surname fields are not required.
-            if (customerNewIdField.value.trim() === '') {
-                newCustomerNameField.setAttribute('required', 'required');
-                newCustomerSurnameField.setAttribute('required', 'required');
-            } else {
-                customerNewIdField.removeAttribute('required'); // If ID is pre-filled, it's not required to fill new name
-                newCustomerNameField.removeAttribute('required');
-                newCustomerSurnameField.removeAttribute('required');
-            }
-
 
             // Initial calculation on page load if values are already present
             calculateLoanValues();

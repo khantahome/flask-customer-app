@@ -232,6 +232,7 @@ def generate_next_customer_id():
     """
     NEW: Generates the next sequential customer ID for loan customers (e.g., 000001, 000002).
     Reads the last ID from a dedicated counter sheet, increments it, and updates the sheet.
+    This version is more robust to initial empty cell A1.
     """
     worksheet = get_customer_id_counter_worksheet()
     if not worksheet:
@@ -241,25 +242,27 @@ def generate_next_customer_id():
     try:
         # Try to read the last ID from cell A1
         last_id_str = worksheet.acell('A1').value
+        print(f"DEBUG: Current value in loan_customer_id_counter A1: '{last_id_str}'") # Debug print
+
+        last_id_num = 0 # Default to 0 if A1 is empty or invalid
         if last_id_str:
             try:
                 last_id_num = int(last_id_str)
             except ValueError:
-                print(f"Warning: Invalid customer ID format '{last_id_str}' in counter sheet. Resetting to 0.")
-                last_id_num = 0
-        else:
-            last_id_num = 0 # No ID found, start from 0
-
+                print(f"Warning: Invalid customer ID format '{last_id_str}' in counter sheet A1. Resetting to 0 for calculation.")
+                last_id_num = 0 # Reset to 0 if value is not an integer
+        
         next_id_num = last_id_num + 1
         next_id_str = f"{next_id_num:06d}" # Format as 000001, 000002, etc.
 
-        # Update the worksheet with the new last ID
-        worksheet.update('A1', next_id_str)
-        print(f"Generated new loan customer ID: {next_id_str}")
+        # Update the worksheet with the new last ID using update_acell for direct cell update
+        worksheet.update_acell('A1', next_id_str) # <--- แก้ไขตรงนี้: ใช้ update_acell
+        print(f"DEBUG: Updated loan_customer_id_counter A1 to: '{next_id_str}'") # Debug print
         return next_id_str
     except Exception as e:
         print(f"ERROR generating next loan customer ID: {e}")
         return None
+
 
 def load_users():
     """
@@ -397,12 +400,16 @@ def add_loan_record():
             # Formula: วงเงินกู้ - หักดอกหัวท้าย
             principal_to_return = round(loan_amount - upfront_interest_deduction, 2)
             
-            # 3. ยอดที่ต้องชำระรายวัน (Daily Payment) - Assuming 180 days contract duration for now
-            CONTRACT_DAYS = 180 
-            if CONTRACT_DAYS == 0: # Avoid division by zero
-                daily_payment = 0
-            else:
-                daily_payment = round((principal_to_return + processing_fee) / CONTRACT_DAYS, 2)
+            # 3. ยอดที่ต้องชำระรายวัน (Daily Payment)
+            # แก้ไขตรงนี้: เปลี่ยนสูตรการคำนวณตามที่คุณต้องการ
+            daily_payment = upfront_interest_deduction # <--- แก้ไขบรรทัดนี้
+
+            # โค้ดเดิมที่ถูกแทนที่:
+            # CONTRACT_DAYS = 180 
+            # if CONTRACT_DAYS == 0: # Avoid division by zero
+            #     daily_payment = 0
+            # else:
+            #     daily_payment = round((principal_to_return + processing_fee) / CONTRACT_DAYS, 2)
 
             # Prepare the data row for Loan Transactions sheet
             row_data = {
@@ -417,13 +424,14 @@ def add_loan_record():
                 'หักดอกหัวท้าย': upfront_interest_deduction,
                 'ยอดเงินต้นที่ต้องคืน': principal_to_return,
                 'ค่าดำเนินการ': processing_fee,
-                'ยอดที่ต้องชำระรายวัน': daily_payment,
+                'ยอดที่ต้องชำระรายวัน': daily_payment, # ใช้ค่าที่คำนวณใหม่
                 'ยอดชำระแล้ว': 0, # Initial value is 0
                 'ยอดค้างชำระ': principal_to_return, # Initially, outstanding is principal to return
                 'สถานะเงินกู้': 'รออนุมัติ/ใหม่', # Default status
                 'หมายเหตุเงินกู้': loan_note,
                 'ผู้บันทึก': logged_in_user
             }
+
 
             # Convert dictionary to list in the correct order of headers
             row_to_append = [row_data.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
