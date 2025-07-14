@@ -300,9 +300,29 @@
             <h4 class="card-title">เพิ่มรายการเงินกู้ใหม่</h4>
             <form action="{{ url_for('add_loan_record') }}" method="POST">
                 <div class="form-group">
-                    <label for="id_card_number" class="form-label">เลขบัตรประชาชนลูกค้า:</label>
-                    <input type="text" class="form-input" id="id_card_number" name="id_card_number" required>
+                    <label for="customer_new_id" class="form-label">รหัสลูกค้า (เลือกหรือกรอกใหม่):</label>
+                    <input type="text" class="form-input" id="customer_new_id" name="customer_new_id" placeholder="เลือกจากรายการ หรือเว้นว่างเพื่อกรอกชื่อใหม่" list="customer_suggestions">
+                    {# Datalist for customer suggestions - This will be populated by Flask (all_customers) #}
+                    <datalist id="customer_suggestions">
+                        {% if all_customers %}
+                            {% for customer in all_customers %}
+                                {# The value sent to the backend will be the 'รหัสลูกค้า' #}
+                                {# The displayed text will be 'ชื่อ' and 'นามสกุล' #}
+                                <option value="{{ customer.get('รหัสลูกค้า', '') }}">{{ customer.get('ชื่อ', '') }} {{ customer.get('นามสกุล', '') }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </datalist>
                 </div>
+
+                <div class="form-group">
+                    <label for="new_customer_name" class="form-label">ชื่อลูกค้าใหม่ (กรอกหากไม่มีรหัสลูกค้า):</label>
+                    <input type="text" class="form-input" id="new_customer_name" name="new_customer_name" placeholder="กรอกชื่อลูกค้าใหม่">
+                </div>
+                <div class="form-group">
+                    <label for="new_customer_surname" class="form-label">นามสกุลลูกค้าใหม่ (กรอกหากไม่มีรหัสลูกค้า):</label>
+                    <input type="text" class="form-input" id="new_customer_surname" name="new_customer_surname" placeholder="กรอกนามสกุลลูกค้าใหม่">
+                </div>
+
                 <div class="form-group">
                     <label for="loan_amount" class="form-label">วงเงินกู้ (บาท):</label>
                     <input type="number" class="form-input" id="loan_amount" name="loan_amount" step="0.01" required>
@@ -314,6 +334,18 @@
                 <div class="form-group">
                     <label for="processing_fee" class="form-label">ค่าดำเนินการ (บาท):</label>
                     <input type="number" class="form-input" id="processing_fee" name="processing_fee" step="0.01" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="front_back_interest_deduction" class="form-label">หักดอกหัวท้าย (บาท):</label>
+                    <input type="number" class="form-input" id="front_back_interest_deduction" name="front_back_interest_deduction" step="0.01" value="0" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="principal_to_return" class="form-label">ยอดเงินต้นที่ต้องคืน (บาท):</label>
+                    <input type="text" class="form-input" id="principal_to_return" name="principal_to_return" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="daily_amount_to_return" class="form-label">ยอดเงินต้องคืนรายวัน (บาท):</label>
+                    <input type="text" class="form-input" id="daily_amount_to_return" name="daily_amount_to_return" readonly>
                 </div>
                 <div class="form-group">
                     <label for="start_date" class="form-label">วันที่เริ่มกู้:</label>
@@ -332,8 +364,14 @@
             <table class="data-table">
                 <thead>
                     <tr>
+                        {# Headers will be dynamically rendered from loan_headers passed by Flask #}
+                        {# We expect loan_headers to contain 'รหัสลูกค้า', 'ชื่อลูกค้า', and 'นามสกุลลูกค้า' #}
                         {% for header in loan_headers %}
-                            <th>{{ header }}</th>
+                            {% if header == 'เลขบัตรประชาชนลูกค้า' %}
+                                {# Skip 'เลขบัตรประชาชนลูกค้า' header as it's replaced by 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า' #}
+                            {% else %}
+                                <th>{{ header }}</th>
+                            {% endif %}
                         {% endfor %}
                         <th>ดำเนินการ</th>
                     </tr>
@@ -342,14 +380,20 @@
                     {% if loan_records %}
                         {% for record in loan_records %}
                             <tr>
-                                {# เปลี่ยน 'เลขบัตรประชาชนลูกค้า' เป็น 'ชื่อลูกค้า' และ 'นามสกุลลูกค้า' #}
+                                {# Display data based on loan_headers order #}
                                 <td>{{ record.get('Timestamp', '-') }}</td>
-                                <td>{{ record.get('เลขบัตรประชาชนลูกค้า', '-') }}</td>
+                                <td>{{ record.get('รหัสเงินกู้', '-') }}</td>
+                                <td>{{ record.get('รหัสลูกค้า', '-') }}</td> {# Display new customer ID #}
+
+                                {# Display Customer Name and Surname from the record directly #}
                                 <td>{{ record.get('ชื่อลูกค้า', '-') }}</td>
                                 <td>{{ record.get('นามสกุลลูกค้า', '-') }}</td>
+                                
                                 <td>{{ record.get('วงเงินกู้', '-') }}</td>
                                 <td>{{ record.get('ดอกเบี้ย (%)', '-') }}</td>
                                 <td>{{ record.get('วันที่เริ่มกู้', '-') }}</td>
+                                <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td> 
+                                <td>{{ record.get('ยอดเงินต้นที่ต้องคืน', '-') }}</td> 
                                 <td>{{ record.get('ค่าดำเนินการ', '-') }}</td>
                                 <td>{{ record.get('ยอดที่ต้องชำระรายวัน', '-') }}</td>
                                 <td>{{ record.get('ยอดชำระแล้ว', '-') }}</td>
@@ -366,7 +410,9 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="{{ loan_headers|length + 1 }}" class="text-center">ไม่พบรายการเงินกู้</td>
+                            {# Adjusted colspan: original loan_headers length + 2 (for รหัสลูกค้า, and the existing ดำเนินการ) #}
+                            {# This assumes loan_headers will be updated in app.py to include 'รหัสลูกค้า' and remove 'เลขบัตรประชาชนลูกค้า' #}
+                            <td colspan="{{ loan_headers|length + 2 }}" class="text-center">ไม่พบรายการเงินกู้</td>
                         </tr>
                     {% endif %}
                 </tbody>
@@ -375,8 +421,8 @@
     </div>
 
     <script>
-        // Set today's date as default for 'start_date' field
         document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default for 'start_date' field
             const startDateField = document.getElementById('start_date');
             if (startDateField) {
                 const today = new Date();
@@ -385,6 +431,108 @@
                 const day = today.getDate().toString().padStart(2, '0');
                 startDateField.value = `${year}-${month}-${day}`;
             }
+
+            // Get references to input fields for calculation
+            const loanAmountField = document.getElementById('loan_amount');
+            const interestRateField = document.getElementById('interest_rate');
+            const processingFeeField = document.getElementById('processing_fee');
+            const frontBackInterestDeductionField = document.getElementById('front_back_interest_deduction');
+            const principalToReturnField = document.getElementById('principal_to_return');
+            const dailyAmountToReturnField = document.getElementById('daily_amount_to_return');
+
+            // NEW: References for new customer fields
+            const customerNewIdField = document.getElementById('customer_new_id');
+            const newCustomerNameField = document.getElementById('new_customer_name');
+            const newCustomerSurnameField = document.getElementById('new_customer_surname');
+
+            // Function to perform calculations
+            function calculateLoanValues() {
+                const loanAmount = parseFloat(loanAmountField.value) || 0;
+                const interestRate = parseFloat(interestRateField.value) || 0;
+                const processingFee = parseFloat(processingFeeField.value) || 0;
+
+                // 1. Calculate "หักดอกหัวท้าย" (Upfront Interest Deduction)
+                // Formula: วงเงินกู้ * ดอกเบี้ย / 100
+                const upfrontInterestDeduction = loanAmount * (interestRate / 100);
+                frontBackInterestDeductionField.value = upfrontInterestDeduction.toFixed(2);
+
+                // 2. Calculate "ยอดเงินต้นที่ต้องคืน" (Principal to Return)
+                // Formula: วงเงินกู้ - หักดอกหัวท้าย
+                const principalToReturn = loanAmount - upfrontInterestDeduction;
+                principalToReturnField.value = principalToReturn.toFixed(2);
+
+                // 3. Calculate "ยอดเงินต้องคืนรายวัน" (Daily Amount to Return)
+                // Formula: (ยอดเงินต้นที่ต้องคืน + ค่าดำเนินการ) / จำนวนวันของสัญญา (สมมติ 180 วัน)
+                const CONTRACT_DAYS = 180; // Assuming a fixed contract duration for client-side display
+                let dailyAmountToReturn = 0;
+                if (CONTRACT_DAYS > 0) {
+                    dailyAmountToReturn = (principalToReturn + processingFee) / CONTRACT_DAYS;
+                }
+                dailyAmountToReturnField.value = dailyAmountToReturn.toFixed(2);
+            }
+
+            // Attach event listeners to relevant input fields to trigger calculations
+            loanAmountField.addEventListener('input', calculateLoanValues);
+            interestRateField.addEventListener('input', calculateLoanValues);
+            processingFeeField.addEventListener('input', calculateLoanValues);
+            // frontBackInterestDeductionField is readonly, no need for listener
+            // principalToReturnField is readonly, no need for listener
+            // dailyAmountToReturnField is readonly, no need for listener
+
+            // NEW: Logic for customer ID / New Customer Name fields
+            customerNewIdField.addEventListener('input', function() {
+                if (customerNewIdField.value.trim() !== '') {
+                    // If customer ID is entered/selected, clear new customer name fields
+                    newCustomerNameField.value = '';
+                    newCustomerSurnameField.value = '';
+                    newCustomerNameField.removeAttribute('required'); // Remove required if ID is present
+                    newCustomerSurnameField.removeAttribute('required');
+                } else {
+                    // If customer ID is empty, make new customer name fields required
+                    newCustomerNameField.setAttribute('required', 'required');
+                    newCustomerSurnameField.setAttribute('required', 'required');
+                }
+            });
+
+            newCustomerNameField.addEventListener('input', function() {
+                if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
+                    // If new customer name is entered, clear customer ID field
+                    customerNewIdField.value = '';
+                    customerNewIdField.removeAttribute('required'); // Remove required if new name is present
+                } else {
+                    // If new customer name is empty, make customer ID field required
+                    customerNewIdField.setAttribute('required', 'required');
+                }
+            });
+
+            newCustomerSurnameField.addEventListener('input', function() {
+                if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
+                    // If new customer surname is entered, clear customer ID field
+                    customerNewIdField.value = '';
+                    customerNewIdField.removeAttribute('required'); // Remove required if new surname is present
+                } else {
+                    // If new customer surname is empty, make customer ID field required
+                    customerNewIdField.setAttribute('required', 'required');
+                }
+            });
+
+            // Initial check on page load for required attributes
+            // This ensures that if the page loads with an empty customer ID field,
+            // the new customer name/surname fields are marked as required.
+            // Conversely, if an ID is pre-filled (e.g., from a previous submission),
+            // the new customer name/surname fields are not required.
+            if (customerNewIdField.value.trim() === '') {
+                newCustomerNameField.setAttribute('required', 'required');
+                newCustomerSurnameField.setAttribute('required', 'required');
+            } else {
+                customerNewIdField.removeAttribute('required'); // If ID is pre-filled, it's not required to fill new name
+                newCustomerNameField.removeAttribute('required');
+                newCustomerSurnameField.removeAttribute('required');
+            }
+
+
+            // Initial calculation on page load if values are already present
+            calculateLoanValues();
         });
     </script>
 </body>
