@@ -203,11 +203,7 @@ def get_payment_records_by_loan_id(loan_id):
         print(f"ERROR in get_payment_records_by_loan_id: {e}")
         return []
 
-# --- Route for Adding New Loan Record ---
-@app.route('/add_loan_record', methods=['POST'])
-def add_loan_record():
-    # ... (โค้ด add_loan_record ที่มีอยู่แล้ว) ...
-    pass # โค้ดจริงของ add_loan_record จะอยู่ที่นี่
+
 
 # Route for recording payments (MODIFIED)
 @app.route('/record_payment', methods=['POST'])
