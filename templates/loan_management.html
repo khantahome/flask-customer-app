@@ -532,7 +532,20 @@
                                 <td>{{ record.get('หมายเหตุเงินกู้', '-') }}</td>
                                 <td>{{ record.get('ผู้บันทึก', '-') }}</td>
                                 <td>
-                                    {# NEW: Changed "แก้ไข" button to "ดูบันทึกการชำระ" #}
+                                    {# NEW: Button for Edit/Top-up Loan #}
+                                    <button class="btn btn-info edit-topup-loan-btn"
+                                            data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
+                                            data-row-index="{{ loop.index + 1 }}"
+                                            data-loan-amount="{{ record.get('วงเงินกู้', '') }}"
+                                            data-interest-rate="{{ record.get('ดอกเบี้ย (%)', '') }}"
+                                            data-principal-to-return="{{ record.get('ยอดเงินต้นที่ต้องคืน', '') }}"
+                                            data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
+                                            data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
+                                            data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
+                                            data-loan-note="{{ record.get('หมายเหตุเงินกู้', '') }}"
+                                            >แก้ไข/เพิ่มยอด</button>
+                                    
+                                    {# Button for View Payment History #}
                                     <button class="btn btn-info view-payment-history-btn"
                                             data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
                                             >ดูบันทึกการชำระ</button>
@@ -603,7 +616,7 @@
         </div>
     </div>
 
-    {# NEW: Payment History Modal Structure #}
+    {# Payment History Modal Structure #}
     <div id="paymentHistoryModal" class="modal">
         <div class="modal-content">
             <span class="close-button history-close-button">&times;</span>
@@ -621,6 +634,51 @@
                 </table>
             </div>
             <p id="noPaymentHistoryMessage" style="text-align: center; color: #666; margin-top: 20px; display: none;">ไม่พบประวัติการชำระเงินสำหรับสินเชื่อนี้</p>
+        </div>
+    </div>
+
+    {# NEW: Edit/Top-up Loan Modal Structure #}
+    <div id="editLoanModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button edit-loan-close-button">&times;</span>
+            <h4 class="modal-title">แก้ไข/เพิ่มยอดสินเชื่อ</h4>
+            <form id="editLoanForm" action="{{ url_for('update_loan_details') }}" method="POST">
+                <input type="hidden" id="edit_modal_loan_id" name="loan_id">
+                <input type="hidden" id="edit_modal_row_index" name="row_index">
+                <input type="hidden" id="edit_modal_original_loan_amount" name="original_loan_amount"> {# Store original loan amount #}
+                <input type="hidden" id="edit_modal_original_interest_rate" name="original_interest_rate"> {# Store original interest rate #}
+                <input type="hidden" id="edit_modal_original_principal_to_return" name="original_principal_to_return"> {# Store original principal to return (current outstanding principal) #}
+
+
+                <div class="form-group">
+                    <label for="edit_modal_customer_info" class="form-label">ลูกค้า:</label>
+                    <input type="text" class="form-input" id="edit_modal_customer_info" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="edit_modal_current_loan_amount" class="form-label">วงเงินกู้ปัจจุบัน:</label>
+                    <input type="text" class="form-input" id="edit_modal_current_loan_amount" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="edit_modal_current_interest_rate" class="form-label">ดอกเบี้ยปัจจุบัน (%):</label>
+                    <input type="text" class="form-input" id="edit_modal_current_interest_rate" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="edit_modal_current_outstanding_principal" class="form-label">ยอดเงินต้นคงเหลือ:</label>
+                    <input type="text" class="form-input" id="edit_modal_current_outstanding_principal" readonly>
+                </div>
+                
+                <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
+
+                <div class="form-group">
+                    <label for="top_up_amount" class="form-label">จำนวนเงินที่ต้องการเพิ่ม (บาท):</label>
+                    <input type="number" class="form-input" id="top_up_amount" name="top_up_amount" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="edit_loan_note" class="form-label">หมายเหตุ (เพิ่มยอด):</label>
+                    <textarea class="form-input" id="edit_loan_note" name="edit_loan_note" rows="2" placeholder="ระบุเหตุผลในการเพิ่มยอดหรือแก้ไข"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">บันทึกการแก้ไข/เพิ่มยอด</button>
+            </form>
         </div>
     </div>
 
@@ -805,7 +863,7 @@
             // --- Payment History Modal Logic ---
             const paymentHistoryModal = document.getElementById('paymentHistoryModal');
             const historyCloseButton = paymentHistoryModal.querySelector('.history-close-button');
-            const viewHistoryButtons = document.querySelectorAll('.view-payment-history-btn'); // Targets the new button class
+            const viewHistoryButtons = document.querySelectorAll('.view-payment-history-btn'); 
             const historyLoanIdDisplay = document.getElementById('history_loan_id_display');
             const paymentHistoryTable = document.getElementById('paymentHistoryTable');
             const noPaymentHistoryMessage = document.getElementById('noPaymentHistoryMessage');
@@ -876,6 +934,72 @@
                 if (event.target == paymentHistoryModal) {
                     paymentHistoryModal.classList.remove('show');
                     setTimeout(() => paymentHistoryModal.style.display = 'none', 300);
+                }
+            });
+
+            // --- NEW: Edit/Top-up Loan Modal Logic ---
+            const editLoanModal = document.getElementById('editLoanModal');
+            const editLoanCloseButton = editLoanModal.querySelector('.edit-loan-close-button');
+            const editTopupLoanButtons = document.querySelectorAll('.edit-topup-loan-btn');
+
+            const editModalLoanId = document.getElementById('edit_modal_loan_id');
+            const editModalRowIndex = document.getElementById('edit_modal_row_index');
+            const editModalOriginalLoanAmount = document.getElementById('edit_modal_original_loan_amount');
+            const editModalOriginalInterestRate = document.getElementById('edit_modal_original_interest_rate');
+            const editModalOriginalPrincipalToReturn = document.getElementById('edit_modal_original_principal_to_return');
+
+            const editModalCustomerInfo = document.getElementById('edit_modal_customer_info');
+            const editModalCurrentLoanAmount = document.getElementById('edit_modal_current_loan_amount');
+            const editModalCurrentInterestRate = document.getElementById('edit_modal_current_interest_rate');
+            const editModalCurrentOutstandingPrincipal = document.getElementById('edit_modal_current_outstanding_principal');
+            const topUpAmountField = document.getElementById('top_up_amount');
+            const editLoanNoteField = document.getElementById('edit_loan_note');
+
+            editTopupLoanButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const loanId = this.dataset.loanId;
+                    const rowIndex = this.dataset.rowIndex;
+                    const loanAmount = this.dataset.loanAmount;
+                    const interestRate = this.dataset.interestRate;
+                    const principalToReturn = this.dataset.principalToReturn; // This is the current outstanding principal
+                    const customerName = this.dataset.customerName;
+                    const customerSurname = this.dataset.customerSurname;
+                    const customerId = this.dataset.customerId;
+                    const loanNote = this.dataset.loanNote;
+
+                    // Populate hidden fields
+                    editModalLoanId.value = loanId;
+                    editModalRowIndex.value = rowIndex;
+                    editModalOriginalLoanAmount.value = parseFloat(loanAmount);
+                    editModalOriginalInterestRate.value = parseFloat(interestRate);
+                    editModalOriginalPrincipalToReturn.value = parseFloat(principalToReturn);
+
+                    // Populate display fields
+                    editModalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
+                    editModalCurrentLoanAmount.value = parseFloat(loanAmount).toFixed(2) + ' บาท';
+                    editModalCurrentInterestRate.value = parseFloat(interestRate).toFixed(2) + ' %';
+                    editModalCurrentOutstandingPrincipal.value = parseFloat(principalToReturn).toFixed(2) + ' บาท';
+                    
+                    // Reset top-up amount and pre-fill note
+                    topUpAmountField.value = '0';
+                    editLoanNoteField.value = loanNote; // Show existing note
+
+                    // Show the edit modal
+                    editLoanModal.style.display = 'flex';
+                    setTimeout(() => editLoanModal.classList.add('show'), 10);
+                });
+            });
+
+            editLoanCloseButton.addEventListener('click', function() {
+                editLoanModal.classList.remove('show');
+                setTimeout(() => editLoanModal.style.display = 'none', 300);
+            });
+
+            // Close modal if clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target == editLoanModal) {
+                    editLoanModal.classList.remove('show');
+                    setTimeout(() => editLoanModal.style.display = 'none', 300);
                 }
             });
         });
