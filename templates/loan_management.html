@@ -405,9 +405,58 @@
             white-space: nowrap; /* Prevent wrapping in history table */
             padding: 10px 12px;
         }
+
+        /* Loading Overlay Styles */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* Above everything else */
+            transition: opacity 0.3s ease-out;
+            opacity: 1; /* Start visible */
+        }
+
+        #loadingOverlay.hidden {
+            opacity: 0;
+            pointer-events: none; /* Allow clicks through when hidden */
+        }
+
+        .spinner {
+            border: 6px solid #f3f3f3; /* Light grey */
+            border-top: 6px solid #28a745; /* Green */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
+    {# NEW: Loading Overlay #}
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">กำลังโหลดข้อมูล...</div>
+    </div>
+
     <nav class="navbar">
         <a class="navbar-brand" href="{{ url_for('dashboard') }}">หน้าหลัก</a>
         <div class="navbar-links">
@@ -436,7 +485,7 @@
 
         <div class="card">
             <h4 class="card-title">เพิ่มรายการเงินกู้ใหม่</h4>
-            <form action="{{ url_for('add_loan_record') }}" method="POST">
+            <form id="addLoanForm" action="{{ url_for('add_loan_record') }}" method="POST">
                 <div class="form-group">
                     <label for="customer_new_id" class="form-label">รหัสลูกค้า (เลือกหรือกรอกใหม่):</label>
                     <input type="text" class="form-input" id="customer_new_id" name="customer_new_id" placeholder="เลือกจากรายการ หรือเว้นว่างเพื่อกรอกชื่อใหม่" list="customer_suggestions">
@@ -493,7 +542,7 @@
                     <label for="loan_note" class="form-label">หมายเหตุเงินกู้:</label>
                     <textarea class="form-input" id="loan_note" name="loan_note" rows="3"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">บันทึกรายการเงินกู้</button>
+                <button type="submit" class="btn btn-primary" id="addLoanSubmitBtn">บันทึกรายการเงินกู้</button>
             </form>
         </div>
 
@@ -538,7 +587,7 @@
                                             data-row-index="{{ loop.index + 1 }}"
                                             data-loan-amount="{{ record.get('วงเงินกู้', '') }}"
                                             data-interest-rate="{{ record.get('ดอกเบี้ย (%)', '') }}"
-                                            data-principal-to-return="{{ record.get('ยอดเงินต้นที่ต้องคืน', '') }}"
+                                            data-principal-to-return="{{ record.get('ยอดค้างชำระ', '') }}" {# Use outstanding amount as current principal #}
                                             data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
                                             data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
                                             data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
@@ -611,7 +660,7 @@
                     <label for="payment_note" class="form-label">หมายเหตุการชำระ:</label>
                     <textarea class="form-input" id="payment_note" name="payment_note" rows="2"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">บันทึกการชำระ</button>
+                <button type="submit" class="btn btn-primary" id="paymentSubmitBtn">บันทึกการชำระ</button>
             </form>
         </div>
     </div>
@@ -677,13 +726,55 @@
                     <label for="edit_loan_note" class="form-label">หมายเหตุ (เพิ่มยอด):</label>
                     <textarea class="form-input" id="edit_loan_note" name="edit_loan_note" rows="2" placeholder="ระบุเหตุผลในการเพิ่มยอดหรือแก้ไข"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">บันทึกการแก้ไข/เพิ่มยอด</button>
+                <button type="submit" class="btn btn-primary" id="editLoanSubmitBtn">บันทึกการแก้ไข/เพิ่มยอด</button>
             </form>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- Loading Indicator Logic ---
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const addLoanForm = document.getElementById('addLoanForm');
+            const addLoanSubmitBtn = document.getElementById('addLoanSubmitBtn');
+            const paymentSubmitBtn = document.getElementById('paymentSubmitBtn');
+            const editLoanSubmitBtn = document.getElementById('editLoanSubmitBtn');
+
+            // Initially disable all relevant forms/buttons
+            if (addLoanForm) {
+                Array.from(addLoanForm.elements).forEach(element => {
+                    if (element.tagName !== 'BUTTON') { // Don't disable the button itself yet
+                        element.disabled = true;
+                    }
+                });
+                addLoanSubmitBtn.disabled = true;
+            }
+            if (paymentSubmitBtn) paymentSubmitBtn.disabled = true;
+            if (editLoanSubmitBtn) editLoanSubmitBtn.disabled = true;
+
+            const tableActionButtons = document.querySelectorAll('.edit-topup-loan-btn, .view-payment-history-btn, .record-payment-btn');
+            tableActionButtons.forEach(button => button.disabled = true);
+
+            // Hide loading overlay and enable elements when DOM is fully loaded and presumed data is rendered
+            window.addEventListener('load', function() { // Use window.load to ensure all resources are loaded
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                    setTimeout(() => loadingOverlay.style.display = 'none', 300); // Hide after transition
+                }
+
+                // Enable all relevant forms/buttons
+                if (addLoanForm) {
+                    Array.from(addLoanForm.elements).forEach(element => {
+                        element.disabled = false;
+                    });
+                    addLoanSubmitBtn.disabled = false;
+                }
+                if (paymentSubmitBtn) paymentSubmitBtn.disabled = false;
+                if (editLoanSubmitBtn) editLoanSubmitBtn.disabled = false;
+                tableActionButtons.forEach(button => button.disabled = false);
+            });
+
+
             // Set today's date as default for 'start_date' field
             const startDateField = document.getElementById('start_date');
             if (startDateField) {
