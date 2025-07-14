@@ -397,15 +397,15 @@ def add_loan_record():
 
             # 1. หักดอกหัวท้าย (Upfront Interest Deduction)
             # สูตร: วงเงินกู้ * ดอกเบี้ย / 100 * 2
-            upfront_interest_deduction = round(simple_interest * 2, 2) # <--- แก้ไขบรรทัดนี้
+            upfront_interest_deduction = round(simple_interest * 2, 2)
 
             # 2. ยอดเงินต้นที่ต้องคืน (Principal to Return)
-            # กลับไปใช้สูตร: วงเงินกู้ - หักดอกหัวท้าย
+            # สูตร: วงเงินกู้ - หักดอกหัวท้าย (ไม่รวมค่าดำเนินการ)
             principal_to_return = round(loan_amount - upfront_interest_deduction, 2) # <--- แก้ไขบรรทัดนี้
             
             # 3. ยอดที่ต้องชำระรายวัน (Daily Payment)
             # สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ simple_interest)
-            daily_payment = round(simple_interest, 2) # <--- แก้ไขบรรทัดนี้
+            daily_payment = round(simple_interest, 2)
 
             # Prepare the data row for Loan Transactions sheet
             row_data = {
@@ -417,10 +417,10 @@ def add_loan_record():
                 'วงเงินกู้': loan_amount,
                 'ดอกเบี้ย (%)': interest_rate,
                 'วันที่เริ่มกู้': start_date_str,
-                'หักดอกหัวท้าย': upfront_interest_deduction, # ใช้ค่าที่คำนวณใหม่
+                'หักดอกหัวท้าย': upfront_interest_deduction,
                 'ยอดเงินต้นที่ต้องคืน': principal_to_return, # ใช้ค่าที่คำนวณใหม่
                 'ค่าดำเนินการ': processing_fee,
-                'ยอดที่ต้องชำระรายวัน': daily_payment, # ใช้ค่าที่คำนวณใหม่
+                'ยอดที่ต้องชำระรายวัน': daily_payment,
                 'ยอดชำระแล้ว': 0, # Initial value is 0
                 'ยอดค้างชำระ': principal_to_return, # Initially, outstanding is principal to return
                 'สถานะเงินกู้': 'รออนุมัติ/ใหม่', # Default status
