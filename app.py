@@ -203,18 +203,25 @@ def get_all_loan_customer_records():
     """
     worksheet = get_loan_customer_data_worksheet()
     if not worksheet:
+        print("ERROR: Loan_Customers worksheet not available in get_all_loan_customer_records.")
         return []
     try:
         all_data = worksheet.get_all_values()
+        # เพิ่ม Debug print ตรงนี้: เพื่อแสดง 2 แถวแรกของข้อมูลดิบที่ดึงมา
+        print(f"DEBUG: Raw data from Loan_Customers (first 2 rows): {all_data[:2]}")
+        
         if not all_data or len(all_data) < 2:
             print("DEBUG: Google Sheet 'Loan_Customers' is empty or only has headers.")
             return []
 
         headers = all_data[0]
+        # เพิ่ม Debug print ตรงนี้: เพื่อแสดง Headers ที่ดึงมาได้
+        print(f"DEBUG: Headers from Loan_Customers: {headers}")
+        
         data_rows = all_data[1:]
         
         loan_customer_records = []
-        for row in data_rows:
+        for i, row in enumerate(data_rows): # เพิ่ม enumerate เพื่อให้ได้ index
             record = {}
             for j, header in enumerate(headers):
                 if j < len(row):
@@ -222,6 +229,9 @@ def get_all_loan_customer_records():
                 else:
                     record[header] = ''
             loan_customer_records.append(record)
+            # เพิ่ม Debug print ตรงนี้: เพื่อแสดงตัวอย่าง 2 record แรกที่ถูกสร้าง
+            if i < 2: 
+                print(f"DEBUG: Sample loan customer record {i+1}: {record}")
         return loan_customer_records
     except Exception as e:
         print(f"ERROR in get_all_loan_customer_records: {e}")
