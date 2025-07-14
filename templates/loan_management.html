@@ -563,10 +563,19 @@
                     <label for="modal_outstanding_display" class="form-label">ยอดค้างชำระปัจจุบัน:</label>
                     <input type="text" class="form-input" id="modal_outstanding_display" readonly>
                 </div>
+                
+                {# Changed label back to "จำนวนเงินที่ชำระ (บาท)" #}
                 <div class="form-group">
                     <label for="payment_amount" class="form-label">จำนวนเงินที่ชำระ (บาท):</label>
-                    <input type="number" class="form-input" id="payment_amount" name="payment_amount" step="0.01" required>
+                    <input type="number" class="form-input" id="payment_amount" name="payment_amount" step="0.01" value="0">
                 </div>
+
+                {# NEW: Field for Principal Repayment #}
+                <div class="form-group">
+                    <label for="principal_payment_amount" class="form-label">จำนวนเงินที่ชำระคืนต้น (บาท):</label>
+                    <input type="number" class="form-input" id="principal_payment_amount" name="principal_payment_amount" step="0.01" value="0">
+                </div>
+
                 <div class="form-group">
                     <label for="payment_date" class="form-label">วันที่ชำระ:</label>
                     <input type="date" class="form-input" id="payment_date" name="payment_date" required>
@@ -702,7 +711,11 @@
             const modalOutstandingDisplay = document.getElementById('modal_outstanding_display');
             const modalCurrentAmountPaid = document.getElementById('modal_current_amount_paid');
             const modalCurrentOutstandingAmount = document.getElementById('modal_current_outstanding_amount');
-            const paymentAmountField = document.getElementById('payment_amount');
+            
+            // Re-established reference to payment_amount and new principal_payment_amount
+            const paymentAmountField = document.getElementById('payment_amount'); // This is now for floating interest
+            const principalPaymentAmountField = document.getElementById('principal_payment_amount'); // This is for principal repayment
+
             const paymentDateField = document.getElementById('payment_date');
 
             // Set today's date for payment date field
@@ -730,8 +743,9 @@
                     modalCurrentAmountPaid.value = parseFloat(amountPaid); // Store current paid amount
                     modalCurrentOutstandingAmount.value = parseFloat(outstandingAmount); // Store current outstanding
 
-                    // Clear previous payment amount and set today's date
-                    paymentAmountField.value = '';
+                    // Clear previous payment amounts and set today's date
+                    paymentAmountField.value = '0'; // Default to 0 for floating interest
+                    principalPaymentAmountField.value = '0'; // Default to 0 for principal repayment
                     paymentDateField.value = `${year}-${month}-${day}`;
 
                     // Add 'show' class to trigger fade-in and scale-up animation

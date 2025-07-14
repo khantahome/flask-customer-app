@@ -60,7 +60,11 @@ LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
     'ค่าดำเนินการ', 'ยอดที่ต้องชำระรายวัน', 'ยอดชำระแล้ว', 'ยอดค้างชำระ',
     'สถานะเงินกู้', 'หมายเหตุเงินกู้', 'ผู้บันทึก'
 ]
-
+LOAN_PAYMENT_HISTORY_WORKSHEET_NAME = 'Loan_Payment_History'
+LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS = [
+    'Timestamp', 'รหัสเงินกู้', 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
+    'จำนวนเงินที่ชำระดอกลอย', 'จำนวนเงินที่ชำระคืนต้น', 'วันที่ชำระ', 'หมายเหตุการชำระ', 'ผู้บันทึก'
+]
 
 # --- Cloudinary Configuration ---
 cloudinary.config(
@@ -146,6 +150,8 @@ def get_loan_worksheet():
         print("DEBUG: get_loan_worksheet returned None.")
     return worksheet
 
+
+
 def get_customer_id_counter_worksheet():
     """NEW: Gets or creates the worksheet for loan customer ID counter."""
     # This worksheet will just have one cell (A1) storing the last ID.
@@ -155,6 +161,193 @@ def get_customer_id_counter_worksheet():
 def get_loan_customer_data_worksheet():
     """NEW: Returns the Loan_Customers worksheet."""
     return get_worksheet(SPREADSHEET_NAME, LOAN_CUSTOMER_RECORDS_WORKSHEET_NAME, LOAN_CUSTOMER_DATA_WORKSHEET_HEADERS)
+
+def get_loan_payment_history_worksheet():
+    """Returns the Loan_Payment_History worksheet."""
+    return get_worksheet(SPREADSHEET_NAME, LOAN_PAYMENT_HISTORY_WORKSHEET_NAME, LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS)
+
+# NEW: Helper function to get payment records for a specific loan ID
+def get_payment_records_by_loan_id(loan_id):
+    """
+    Retrieves payment records for a specific loan ID from the Loan_Payment_History worksheet.
+    """
+    worksheet = get_loan_payment_history_worksheet()
+    if not worksheet:
+        print(f"ERROR: Loan_Payment_History worksheet not available for loan_id {loan_id}.")
+        return []
+    try:
+        all_data = worksheet.get_all_values()
+        if not all_data or len(all_data) < 2:
+            print(f"DEBUG: Google Sheet '{LOAN_PAYMENT_HISTORY_WORKSHEET_NAME}' is empty or only has headers.")
+            return []
+
+        headers = all_data[0]
+        data_rows = all_data[1:]
+        
+        filtered_payments = []
+        for row in data_rows:
+            record = {}
+            for j, header in enumerate(headers):
+                if j < len(row):
+                    record[header] = row[j]
+                else:
+                    record[header] = ''
+            if record.get('รหัสเงินกู้') == loan_id:
+                filtered_payments.append(record)
+        
+        # NEW DEBUG PRINT: แสดงข้อมูลที่ถูกกรองก่อนคืนค่า
+        print(f"DEBUG: Payments filtered for loan_id {loan_id}: {filtered_payments[:2]} (showing first 2 records if many)")
+        
+        return filtered_payments
+    except Exception as e:
+        print(f"ERROR in get_payment_records_by_loan_id: {e}")
+        return []
+
+# --- Route for Adding New Loan Record ---
+@app.route('/add_loan_record', methods=['POST'])
+def add_loan_record():
+    # ... (โค้ด add_loan_record ที่มีอยู่แล้ว) ...
+    pass # โค้ดจริงของ add_loan_record จะอยู่ที่นี่
+
+# Route for recording payments (MODIFIED)
+@app.route('/record_payment', methods=['POST'])
+def record_payment():
+    """
+    Handles payment submission for a specific loan record.
+    Now differentiates between floating interest payment and principal repayment.
+    Updates 'ยอดชำระแล้ว', 'ยอดค้างชำระ', and recalculates 'ยอดที่ต้องชำระรายวัน'.
+    Also records payment details to Loan_Payment_History sheet.
+    """
+    if 'username' not in session:
+        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
+        return redirect(url_for('login'))
+
+    logged_in_user = session['username']
+
+    if request.method == 'POST':
+        try:
+            loan_id = request.form['loan_id']
+            row_index = int(request.form['row_index']) # Row index from the table (1-based)
+            
+            # Get both payment amounts
+            payment_amount = float(request.form.get('payment_amount', 0)) # This is for floating interest
+            principal_payment_amount = float(request.form.get('principal_payment_amount', 0)) # This is for principal repayment
+
+            payment_date = request.form['payment_date']
+            payment_note = request.form.get('payment_note', '').strip()
+            
+            # Get current values from hidden fields (these are from the table row)
+            current_amount_paid = float(request.form['current_amount_paid'])
+            current_outstanding_amount = float(request.form['current_outstanding_amount'])
+
+            loan_worksheet = get_loan_worksheet()
+            if not loan_worksheet:
+                flash('ไม่สามารถเชื่อมต่อกับ Worksheet เงินกู้ได้', 'error')
+                return redirect(url_for('loan_management'))
+
+            # Get the specific row to update
+            loan_record_values = loan_worksheet.row_values(row_index)
+            
+            if not loan_record_values:
+                flash('ไม่พบรายการเงินกู้ที่ระบุ', 'error')
+                return redirect(url_for('loan_management'))
+
+            # Convert row_values to a dictionary for easier access
+            current_loan_record = dict(zip(LOAN_TRANSACTIONS_WORKSHEET_HEADERS, loan_record_values))
+
+            # Update 'ยอดชำระแล้ว' (Total amount paid, including both interest and principal)
+            new_amount_paid = current_amount_paid + payment_amount + principal_payment_amount
+
+            # Update 'ยอดค้างชำระ' (Only reduced by principal repayment)
+            new_outstanding_amount = current_outstanding_amount - principal_payment_amount
+            if new_outstanding_amount < 0:
+                new_outstanding_amount = 0 # Ensure outstanding doesn't go below zero
+
+            # Recalculate 'ยอดที่ต้องชำระรายวัน' based on new outstanding principal
+            # สูตร: ยอดค้างชำระที่เหลืออยู่ × ดอกเบี้ย ÷ 100
+            interest_rate_percent = float(current_loan_record.get('ดอกเบี้ย (%)', 0))
+            new_daily_payment = round(new_outstanding_amount * (interest_rate_percent / 100), 2)
+            
+            # Update 'สถานะเงินกู้' if fully paid
+            new_loan_status = current_loan_record.get('สถานะเงินกู้', 'อยู่ระหว่างผ่อนชำระ')
+            if new_outstanding_amount <= 0.01: # Use a small epsilon for floating point comparison
+                new_loan_status = 'ปิดบัญชี'
+
+            # Prepare the updated row data for Loan_Transactions sheet
+            current_loan_record['ยอดชำระแล้ว'] = new_amount_paid
+            current_loan_record['ยอดค้างชำระ'] = new_outstanding_amount
+            current_loan_record['ยอดที่ต้องชำระรายวัน'] = new_daily_payment
+            current_loan_record['สถานะเงินกู้'] = new_loan_status
+            
+            # Convert the updated dictionary back to a list in the correct header order for gspread
+            updated_row_values = [current_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
+
+            # Update the row in Google Sheet
+            loan_worksheet.update(f'A{row_index}', [updated_row_values])
+
+            # NEW: Append payment details to a separate history sheet
+            payment_history_worksheet = get_loan_payment_history_worksheet()
+            if payment_history_worksheet:
+                payment_row = {
+                    'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'รหัสเงินกู้': loan_id,
+                    'รหัสลูกค้า': current_loan_record.get('รหัสลูกค้า', ''),
+                    'ชื่อลูกค้า': current_loan_record.get('ชื่อลูกค้า', ''),
+                    'นามสกุลลูกค้า': current_loan_record.get('นามสกุลลูกค้า', ''),
+                    'จำนวนเงินที่ชำระดอกลอย': payment_amount, # Use payment_amount for floating interest
+                    'จำนวนเงินที่ชำระคืนต้น': principal_payment_amount, # Use principal_payment_amount for principal
+                    'วันที่ชำระ': payment_date,
+                    'หมายเหตุการชำระ': payment_note,
+                    'ผู้บันทึก': logged_in_user
+                }
+                payment_history_worksheet.append_row([payment_row.get(h, '-') for h in LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS])
+                flash('บันทึกประวัติการชำระเงินเรียบร้อยแล้ว!', 'success')
+            else:
+                flash('ไม่สามารถบันทึกประวัติการชำระเงินได้', 'warning')
+
+
+            flash('บันทึกการชำระเงินเรียบร้อยแล้ว!', 'success')
+            return redirect(url_for('loan_management'))
+
+        except ValueError as e:
+            flash(f'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบรูปแบบตัวเลข: {e}', 'error')
+        except KeyError as e:
+            flash(f'ข้อมูลฟอร์มไม่ครบถ้วน: {e}', 'error')
+        except Exception as e:
+            flash(f'เกิดข้อผิดพลาดในการบันทึกการชำระเงิน: {e}', 'error')
+            print(f"Error recording payment: {e}")
+
+    return redirect(url_for('loan_management'))
+
+# NEW: Route to get payment history for a specific loan
+@app.route('/get_payment_history/<loan_id>')
+def get_payment_history(loan_id):
+    """
+    Returns payment history for a given loan ID as JSON.
+    Ensures all values are JSON-serializable.
+    """
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    payments = get_payment_records_by_loan_id(loan_id)
+
+    # Force sanitize values before jsonify
+    safe_payments = []
+    for record in payments:
+        safe_record = {}
+        for k, v in record.items():
+            if v is None:
+                safe_record[k] = ""
+            elif isinstance(v, (int, float, str, bool)):
+                safe_record[k] = v
+            else:
+                # Force convert any unexpected type to string
+                safe_record[k] = str(v)
+        safe_payments.append(safe_record)
+
+    print(f"DEBUG: Safe data ready for jsonify: {safe_payments[:2]}")  # First 2 records preview
+
+    return jsonify({'payments': safe_payments, 'headers': LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS})
 
 
 def get_all_customer_records():
@@ -196,46 +389,6 @@ def get_all_customer_records():
         return []
 
 
-def get_all_loan_records():
-    """
-    NEW: Retrieves all loan-specific customer records from the Loan_Customers worksheet.
-    Each record will be a dictionary.
-    """
-    worksheet = get_loan_customer_data_worksheet()
-    if not worksheet:
-        print("ERROR: Loan_Customers worksheet not available in get_all_loan_customer_records.")
-        return []
-    try:
-        all_data = worksheet.get_all_values()
-        # เพิ่ม Debug print ตรงนี้: เพื่อแสดง 2 แถวแรกของข้อมูลดิบที่ดึงมา
-        print(f"DEBUG: Raw data from Loan_Customers (first 2 rows): {all_data[:2]}")
-        
-        if not all_data or len(all_data) < 2:
-            print("DEBUG: Google Sheet 'Loan_Customers' is empty or only has headers.")
-            return []
-
-        headers = all_data[0]
-        # เพิ่ม Debug print ตรงนี้: เพื่อแสดง Headers ที่ดึงมาได้
-        print(f"DEBUG: Headers from Loan_Customers: {headers}")
-        
-        data_rows = all_data[1:]
-        
-        loan_customer_records = []
-        for i, row in enumerate(data_rows): # เพิ่ม enumerate เพื่อให้ได้ index
-            record = {}
-            for j, header in enumerate(headers):
-                if j < len(row):
-                    record[header] = row[j]
-                else:
-                    record[header] = ''
-            loan_customer_records.append(record)
-            # เพิ่ม Debug print ตรงนี้: เพื่อแสดงตัวอย่าง 2 record แรกที่ถูกสร้าง
-            if i < 2: 
-                print(f"DEBUG: Sample loan customer record {i+1}: {record}")
-        return loan_customer_records
-    except Exception as e:
-        print(f"ERROR in get_all_loan_customer_records: {e}")
-        return []
 
 def get_all_loan_records():
     """
@@ -504,6 +657,7 @@ def add_loan_record():
 def record_payment():
     """
     Handles payment submission for a specific loan record.
+    Now differentiates between floating interest payment and principal repayment.
     Updates 'ยอดชำระแล้ว', 'ยอดค้างชำระ', and recalculates 'ยอดที่ต้องชำระรายวัน'.
     """
     if 'username' not in session:
@@ -516,7 +670,13 @@ def record_payment():
         try:
             loan_id = request.form['loan_id']
             row_index = int(request.form['row_index']) # Row index from the table (1-based)
-            payment_amount = float(request.form['payment_amount'])
+            
+            # Get both payment amounts
+            # payment_amount is now for floating interest
+            payment_amount = float(request.form.get('payment_amount', 0)) 
+            # principal_payment_amount is for principal repayment
+            principal_payment_amount = float(request.form.get('principal_payment_amount', 0))
+
             payment_date = request.form['payment_date']
             payment_note = request.form.get('payment_note', '').strip()
             
@@ -530,7 +690,6 @@ def record_payment():
                 return redirect(url_for('loan_management'))
 
             # Get the specific row to update
-            # row_index มาจาก loop.index + 1 ใน HTML ซึ่งตรงกับ row number ใน Google Sheet
             loan_record_values = loan_worksheet.row_values(row_index)
             
             if not loan_record_values:
@@ -540,16 +699,16 @@ def record_payment():
             # Convert row_values to a dictionary for easier access
             current_loan_record = dict(zip(LOAN_TRANSACTIONS_WORKSHEET_HEADERS, loan_record_values))
 
-            # Update 'ยอดชำระแล้ว'
-            new_amount_paid = current_amount_paid + payment_amount
+            # Update 'ยอดชำระแล้ว' (Total amount paid, including both interest and principal)
+            new_amount_paid = current_amount_paid + payment_amount + principal_payment_amount
 
-            # Update 'ยอดค้างชำระ'
-            new_outstanding_amount = current_outstanding_amount - payment_amount
+            # Update 'ยอดค้างชำระ' (Only reduced by principal repayment)
+            new_outstanding_amount = current_outstanding_amount - principal_payment_amount
             if new_outstanding_amount < 0:
                 new_outstanding_amount = 0 # Ensure outstanding doesn't go below zero
 
             # Recalculate 'ยอดที่ต้องชำระรายวัน' based on new outstanding principal
-            # สูตร: ยอดเงินต้นที่ต้องคืนที่เหลืออยู่ (Outstanding Principal) × ดอกเบี้ย ÷ 100
+            # สูตร: ยอดค้างชำระที่เหลืออยู่ × ดอกเบี้ย ÷ 100
             interest_rate_percent = float(current_loan_record.get('ดอกเบี้ย (%)', 0))
             new_daily_payment = round(new_outstanding_amount * (interest_rate_percent / 100), 2)
             
@@ -559,12 +718,12 @@ def record_payment():
                 new_loan_status = 'ปิดบัญชี'
 
             # Prepare the updated row data
-            # Make sure to update the dictionary with new values
             current_loan_record['ยอดชำระแล้ว'] = new_amount_paid
             current_loan_record['ยอดค้างชำระ'] = new_outstanding_amount
             current_loan_record['ยอดที่ต้องชำระรายวัน'] = new_daily_payment
             current_loan_record['สถานะเงินกู้'] = new_loan_status
             
+            # Convert the updated dictionary back to a list in the correct header order for gspread
             updated_row_values = [current_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
 
             # Update the row in Google Sheet
@@ -574,7 +733,7 @@ def record_payment():
             return redirect(url_for('loan_management'))
 
         except ValueError as e:
-            flash(f'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบรูปแบบตัวเลขและวันที่: {e}', 'error')
+            flash(f'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบรูปแบบตัวเลข: {e}', 'error')
         except KeyError as e:
             flash(f'ข้อมูลฟอร์มไม่ครบถ้วน: {e}', 'error')
         except Exception as e:
