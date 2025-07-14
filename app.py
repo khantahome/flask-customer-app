@@ -98,6 +98,8 @@ except Exception as e:
     DRIVE_CLIENT = None
 
 
+# --- Helper Functions for Google Sheets (Moved to top) ---
+
 def get_worksheet(spreadsheet_name, worksheet_name, headers=None):
     """Helper to get a specific worksheet, creating it and setting headers if needed."""
     if not GSPREAD_CLIENT:
@@ -242,6 +244,30 @@ def generate_next_customer_id():
     except Exception as e:
         print(f"ERROR generating next loan customer ID: {e}")
         return None
+
+def load_users():
+    """
+    Loads user IDs and passwords from the specified Google Sheet (UserLoginData).
+    It expects the sheet to have columns named 'id' and 'pass'.
+    Returns a dictionary where keys are user IDs and values are their passwords.
+    Returns an empty dictionary if there's an error or columns are missing.
+    """
+    if not GSPREAD_CLIENT:
+        print("Gspread client not initialized. Cannot load users.")
+        return {}
+    try:
+        sheet = GSPREAD_CLIENT.open(USER_LOGIN_SPREADSHEET_NAME).worksheet(USER_LOGIN_WORKSHEET_NAME)
+        data = sheet.get_all_records()
+        df = pd.DataFrame(data)
+        if 'id' in df.columns and 'pass' in df.columns:
+            users = dict(zip(df['id'], df['pass']))
+            return users
+        else:
+            print("Error: 'id' or 'pass' columns not found in Google Sheet. Please check your sheet structure.")
+            return {}
+    except Exception as e:
+        print(f"Error loading users from Google Sheet: {e}")
+        return {}
 
 
 def get_customer_records_by_status(status):
@@ -470,11 +496,11 @@ def login():
     Handles user login functionality.
     """
     error = None
-    users = load_users() # Fix: Changed UserLoginData() to load_users()
+    users = load_users() 
 
     if request.method == 'POST':
-        username = request.form.get('username') # Fix: Changed 'id' to 'username'
-        password = request.form.get('password') # Fix: Changed 'pass' to 'password'
+        username = request.form.get('username') 
+        password = request.form.get('password') 
 
         if username in users and users[username] == password:
             session['username'] = username
@@ -705,9 +731,9 @@ def edit_customer_data(row_index):
             'สถานะ': request.form.get('status', '') or '-',
             'วงเงินที่ต้องการ': request.form.get('desired_credit_limit', '') or '-',
             'วงเงินที่อนุมัติ': request.form.get('approved_credit_limit', '') or '-',
-            'เคยขอเข้ามาในเครือหรือยัง': request.form.get('applied_before', '') or '-', # Fix: Use request.form.get
-            'เช็ค': request.form.get('check', '') or '-', # Fix: Use request.form.get
-            'ขอเข้ามาทางไหน': request.form.get('how_applied', '') or '-', # Fix: Use request.form.get
+            'เคยขอเข้ามาในเครือหรือยัง': request.form.get('applied_before', '') or '-', 
+            'เช็ค': request.form.get('check', '') or '-', 
+            'ขอเข้ามาทางไหน': request.form.get('how_applied', '') or '-', 
             'LINE ID': request.form.get('line_id', '') or '-',
             'หักดอกหัวท้าย': request.form.get('upfront_interest', '') or '-',
             'ค่าดำเนินการ': request.form.get('processing_fee', '') or '-',
@@ -771,7 +797,7 @@ def loan_management():
     logged_in_user = session['username']
     
     # Fetch all loan records
-    loan_records = get_all_loan_records() 
+    loan_records = get_all_loan_records() # <--- Error reported here
     # Fetch all loan-specific customer records to populate datalist and display names
     all_loan_customers = get_all_loan_customer_records() 
     
@@ -792,4 +818,3 @@ def loan_management():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
