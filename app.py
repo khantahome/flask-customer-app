@@ -12,6 +12,8 @@ import json
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify # <-- เพิ่ม jsonify ตรงนี้
+
 
 # Initialize the Flask application
 app = Flask(__name__)
