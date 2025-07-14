@@ -805,7 +805,7 @@ def loan_management():
     logged_in_user = session['username']
     
     # Fetch all loan records
-    loan_records = get_all_loan_records() # <--- Error reported here
+    loan_records = get_all_loan_customer_records() # <--- Error reported here
     # Fetch all loan-specific customer records to populate datalist and display names
     all_loan_customers = get_all_loan_customer_records() 
     
