@@ -647,11 +647,13 @@ def enter_customer_data():
 
     return render_template('data_entry.html', username=logged_in_user)
 
+# ... (โค้ดส่วนบนของ app.py) ...
+
 @app.route('/search_customer_data', methods=['GET'])
 def search_customer_data():
     """
     Handles searching for customer data from the original customer_records sheet.
-    Can search by keyword or filter by 'รอดำเนินการ' status.
+    Now defaults to showing 'รอดำเนินการ' status if no specific search or filter is applied.
     Requires user to be logged in.
     """
     if 'username' not in session:
@@ -666,6 +668,10 @@ def search_customer_data():
     customer_records = []
     display_title = "ค้นหาข้อมูลลูกค้า"
 
+    # Logic:
+    # 1. If status_filter is explicitly 'pending', show pending.
+    # 2. If a search_keyword is provided, perform keyword search.
+    # 3. Otherwise (no explicit filter or keyword), default to showing 'รอดำเนินการ'.
     if status_filter == 'pending':
         customer_records = get_customer_records_by_status("รอดำเนินการ")
         display_title = "ข้อมูลลูกค้า: รอดำเนินการ"
@@ -675,17 +681,19 @@ def search_customer_data():
             flash(f"พบ {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ'", "success")
     elif search_keyword:
         customer_records = get_customer_records_by_keyword(search_keyword)
+        display_title = f"ผลการค้นหาสำหรับ: '{search_keyword}'"
         if not customer_records:
             flash(f"ไม่พบข้อมูลลูกค้าสำหรับ '{search_keyword}'", "info")
         else:
             flash(f"พบ {len(customer_records)} รายการสำหรับ '{search_keyword}'", "success")
     else:
-        customer_records = get_all_customer_records() # Show all customers by default
-        display_title = "ข้อมูลลูกค้าทั้งหมด"
+        # Default behavior: Show records with status 'รอดำเนินการ'
+        customer_records = get_customer_records_by_status("รอดำเนินการ")
+        display_title = "ข้อมูลลูกค้า: รอดำเนินการ (ค่าเริ่มต้น)"
         if not customer_records:
-            flash("ไม่พบข้อมูลลูกค้าในระบบ", "info")
+            flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ' ในระบบ", "info")
         else:
-            flash(f"แสดงข้อมูลลูกค้าทั้งหมด {len(customer_records)} รายการ", "info")
+            flash(f"แสดงข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ' {len(customer_records)} รายการ", "info")
 
 
     return render_template(
@@ -695,6 +703,9 @@ def search_customer_data():
         username=logged_in_user,
         display_title=display_title
     )
+
+# ... (โค้ดส่วนล่างของ app.py) ...
+
 
 @app.route('/edit_customer_data/<int:row_index>', methods=['GET', 'POST']) # Changed back to int:row_index for original customer data
 def edit_customer_data(row_index):
