@@ -14,6 +14,13 @@
             margin: 0;
             padding: 0;
             line-height: 1.6;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            opacity: 0; /* Hide content initially */
+            transition: opacity 0.5s ease-in-out; /* Smooth fade in for content */
+        }
+
+        body.loaded {
+            opacity: 1; /* Show content when loaded */
         }
 
         /* Navigation Bar Styling */
@@ -414,12 +421,12 @@
             width: 100%;
             height: 100%;
             background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
-            display: flex;
+            display: flex; /* Ensure it's visible by default */
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 2000; /* Above everything else */
-            transition: opacity 0.3s ease-out;
+            transition: opacity 0.5s ease-out; /* Longer transition for visibility */
             opacity: 1; /* Start visible */
         }
 
@@ -450,7 +457,7 @@
         }
     </style>
 </head>
-<body>
+<body class="initial-hidden"> {# Add initial-hidden class to body #}
     {# NEW: Loading Overlay #}
     <div id="loadingOverlay">
         <div class="spinner"></div>
@@ -735,43 +742,20 @@
         document.addEventListener('DOMContentLoaded', function() {
             // --- Loading Indicator Logic ---
             const loadingOverlay = document.getElementById('loadingOverlay');
-            const addLoanForm = document.getElementById('addLoanForm');
-            const addLoanSubmitBtn = document.getElementById('addLoanSubmitBtn');
-            const paymentSubmitBtn = document.getElementById('paymentSubmitBtn');
-            const editLoanSubmitBtn = document.getElementById('editLoanSubmitBtn');
-
-            // Initially disable all relevant forms/buttons
-            if (addLoanForm) {
-                Array.from(addLoanForm.elements).forEach(element => {
-                    if (element.tagName !== 'BUTTON') { // Don't disable the button itself yet
-                        element.disabled = true;
-                    }
-                });
-                addLoanSubmitBtn.disabled = true;
-            }
-            if (paymentSubmitBtn) paymentSubmitBtn.disabled = true;
-            if (editLoanSubmitBtn) editLoanSubmitBtn.disabled = true;
-
-            const tableActionButtons = document.querySelectorAll('.edit-topup-loan-btn, .view-payment-history-btn, .record-payment-btn');
-            tableActionButtons.forEach(button => button.disabled = true);
+            const body = document.body; // Reference to the body element
 
             // Hide loading overlay and enable elements when DOM is fully loaded and presumed data is rendered
             window.addEventListener('load', function() { // Use window.load to ensure all resources are loaded
                 if (loadingOverlay) {
                     loadingOverlay.classList.add('hidden');
-                    setTimeout(() => loadingOverlay.style.display = 'none', 300); // Hide after transition
+                    // After transition, set display to none to remove it from layout flow
+                    loadingOverlay.addEventListener('transitionend', function() {
+                        loadingOverlay.style.display = 'none';
+                    }, { once: true }); // Ensure listener is removed after one use
                 }
 
-                // Enable all relevant forms/buttons
-                if (addLoanForm) {
-                    Array.from(addLoanForm.elements).forEach(element => {
-                        element.disabled = false;
-                    });
-                    addLoanSubmitBtn.disabled = false;
-                }
-                if (paymentSubmitBtn) paymentSubmitBtn.disabled = false;
-                if (editLoanSubmitBtn) editLoanSubmitBtn.disabled = false;
-                tableActionButtons.forEach(button => button.disabled = false);
+                // Make the body visible with a fade-in effect
+                body.classList.add('loaded');
             });
 
 
@@ -1020,7 +1004,7 @@
                 setTimeout(() => paymentHistoryModal.style.display = 'none', 300);
             });
 
-            // Close history modal if clicking outside
+            // Close modal if clicking outside
             window.addEventListener('click', function(event) {
                 if (event.target == paymentHistoryModal) {
                     paymentHistoryModal.classList.remove('show');
