@@ -13,6 +13,7 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify # <-- เพิ่ม jsonify ตรงนี้
+from datetime import datetime, timedelta
 
 
 # Initialize the Flask application
@@ -67,6 +68,12 @@ LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS = [
     'Timestamp', 'รหัสเงินกู้', 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
     'จำนวนเงินที่ชำระดอกลอย', 'จำนวนเงินที่ชำระคืนต้น', 'ยอดเพิ่มวงเงิน', 'วันที่ชำระ', 'หมายเหตุการชำระ', 'ผู้บันทึก'
 ]
+loan_records_cache = None
+loan_records_cache_timestamp = None
+loan_customers_cache = None
+loan_customers_cache_timestamp = None
+# Define cache expiry time (e.g., 5 minutes)
+CACHE_EXPIRY_SECONDS = 300 # 5 minutes
 
 # --- Cloudinary Configuration ---
 cloudinary.config(
@@ -305,6 +312,9 @@ def record_payment():
                 flash('บันทึกประวัติการชำระเงินเรียบร้อยแล้ว!', 'success')
             else:
                 flash('ไม่สามารถบันทึกประวัติการชำระเงินได้', 'warning')
+            global loan_records_cache, loan_records_cache_timestamp
+            loan_records_cache = None
+            loan_records_cache_timestamp = None
 
 
             flash('บันทึกการชำระเงินเรียบร้อยแล้ว!', 'success')
@@ -356,6 +366,16 @@ def get_all_customer_records():
     Retrieves all customer records from the original customer_records worksheet.
     Each record will be a dictionary, now including its row_index.
     """
+    global loan_customers_cache, loan_customers_cache_timestamp
+
+    # Check if cache is valid and not expired
+    if loan_customers_cache is not None and \
+       loan_customers_cache_timestamp is not None and \
+       datetime.now() < loan_customers_cache_timestamp + timedelta(seconds=CACHE_EXPIRY_SECONDS):
+        print("DEBUG: Returning loan customer records from cache.")
+        return loan_customers_cache
+
+    print("DEBUG: Fetching loan customer records from Google Sheet (cache expired or not set).")
     worksheet = get_customer_data_worksheet()
     if not worksheet:
         return []
@@ -483,6 +503,9 @@ def update_loan_details():
                     flash('บันทึกการเพิ่มยอดในประวัติการชำระเงินเรียบร้อยแล้ว!', 'success')
                 else:
                     flash('ไม่สามารถบันทึกการเพิ่มยอดในประวัติการชำระเงินได้', 'warning')
+                global loan_records_cache, loan_records_cache_timestamp
+                loan_records_cache = None
+                loan_records_cache_timestamp = None
 
 
             flash(f'บันทึกการแก้ไข/เพิ่มยอดสินเชื่อ {loan_id} เรียบร้อยแล้ว!', 'success')
@@ -504,7 +527,16 @@ def get_all_loan_records():
     """
     Retrieves all loan records from the Loan_Transactions worksheet.
     Each record will be a dictionary.
+    
     """
+    global loan_records_cache, loan_records_cache_timestamp
+    if loan_records_cache is not None and \
+       loan_records_cache_timestamp is not None and \
+       datetime.now() < loan_records_cache_timestamp + timedelta(seconds=CACHE_EXPIRY_SECONDS):
+        print("DEBUG: Returning loan records from cache.")
+        return loan_records_cache
+
+    print("DEBUG: Fetching loan records from Google Sheet (cache expired or not set).")
     worksheet = get_loan_worksheet()
     if not worksheet:
         print("ERROR: Loan transactions worksheet not available in get_all_loan_records.")
