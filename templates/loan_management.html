@@ -517,6 +517,17 @@
                     <input type="text" class="form-input" id="new_customer_surname" name="new_customer_surname" placeholder="กรอกนามสกุลลูกค้าใหม่">
                 </div>
 
+                {# NEW: Dropdown for Company Name #}
+                <div class="form-group">
+                    <label for="company_name" class="form-label">ชื่อบริษัทผู้ปล่อยกู้:</label>
+                    <select class="form-input" id="company_name" name="company_name" required>
+                        <option value="">-- เลือกบริษัท --</option>
+                        <option value="บริษัท A">บริษัท A</option>
+                        <option value="บริษัท B">บริษัท B</option>
+                        {# เพิ่ม option สำหรับบริษัทอื่นๆ ที่นี่ได้เลย #}
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label for="loan_amount" class="form-label">วงเงินกู้ (บาท):</label>
                     <input type="number" class="form-input" id="loan_amount" name="loan_amount" step="0.01" required>
@@ -575,6 +586,7 @@
                                 <td>{{ record.get('รหัสลูกค้า', '-') }}</td>
                                 <td>{{ record.get('ชื่อลูกค้า', '-') }}</td>
                                 <td>{{ record.get('นามสกุลลูกค้า', '-') }}</td>
+                                <td>{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '-') }}</td> {# <-- NEW: เพิ่มคอลัมน์นี้ #}
                                 <td>{{ record.get('วงเงินกู้', '-') }}</td>
                                 <td>{{ record.get('ดอกเบี้ย (%)', '-') }}</td>
                                 <td>{{ record.get('วันที่เริ่มกู้', '-') }}</td>
@@ -588,7 +600,7 @@
                                 <td>{{ record.get('หมายเหตุเงินกู้', '-') }}</td>
                                 <td>{{ record.get('ผู้บันทึก', '-') }}</td>
                                 <td>
-                                    {# NEW: Button for Edit/Top-up Loan #}
+                                    {# Button for Edit/Top-up Loan (MODIFIED data-attributes) #}
                                     <button class="btn btn-info edit-topup-loan-btn"
                                             data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
                                             data-row-index="{{ loop.index + 1 }}"
@@ -599,11 +611,13 @@
                                             data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
                                             data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
                                             data-loan-note="{{ record.get('หมายเหตุเงินกู้', '') }}"
+                                            data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
                                             >แก้ไข/เพิ่มยอด</button>
                                     
-                                    {# Button for View Payment History #}
+                                    {# Button for View Payment History (MODIFIED data-attributes) #}
                                     <button class="btn btn-info view-payment-history-btn"
                                             data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
+                                            data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
                                             >ดูบันทึกการชำระ</button>
                                     <button class="btn btn-success record-payment-btn"
                                             data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
@@ -613,6 +627,7 @@
                                             data-outstanding-amount="{{ record.get('ยอดค้างชำระ', '') }}"
                                             data-amount-paid="{{ record.get('ยอดชำระแล้ว', '') }}"
                                             data-row-index="{{ loop.index + 1 }}" {# +1 because loop.index is 0-based, and headers are row 1 #}
+                                            data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
                                             >บันทึกชำระ</button>
                                 </td>
                             </tr>
@@ -627,7 +642,7 @@
         </div>
     </div>
 
-    {# Payment Modal Structure #}
+    {# Payment Modal Structure (ไม่มีการเปลี่ยนแปลงโครงสร้าง) #}
     <div id="paymentModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -637,10 +652,15 @@
                 <input type="hidden" id="modal_row_index" name="row_index">
                 <input type="hidden" id="modal_current_amount_paid" name="current_amount_paid">
                 <input type="hidden" id="modal_current_outstanding_amount" name="current_outstanding_amount">
+                <input type="hidden" id="modal_company_name" name="company_name"> {# <-- NEW: Hidden field for company name #}
 
                 <div class="form-group">
                     <label for="modal_customer_info" class="form-label">ลูกค้า:</label>
                     <input type="text" class="form-input" id="modal_customer_info" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="modal_company_name_display" class="form-label">บริษัทผู้ปล่อยกู้:</label> {# <-- NEW: Display company name #}
+                    <input type="text" class="form-input" id="modal_company_name_display" readonly>
                 </div>
                 <div class="form-group">
                     <label for="modal_outstanding_display" class="form-label">ยอดค้างชำระปัจจุบัน:</label>
@@ -672,11 +692,11 @@
         </div>
     </div>
 
-    {# Payment History Modal Structure #}
+    {# Payment History Modal Structure (MODIFIED title) #}
     <div id="paymentHistoryModal" class="modal">
         <div class="modal-content">
             <span class="close-button history-close-button">&times;</span>
-            <h4 class="modal-title">บันทึกการชำระเงินสำหรับ <span id="history_loan_id_display"></span></h4>
+            <h4 class="modal-title">บันทึกการชำระเงินสำหรับ <span id="history_loan_id_display"></span> (บริษัท: <span id="history_company_name_display"></span>)</h4> {# <-- NEW: แสดงชื่อบริษัท #}
             <div class="table-container">
                 <table class="data-table" id="paymentHistoryTable">
                     <thead>
@@ -693,7 +713,7 @@
         </div>
     </div>
 
-    {# NEW: Edit/Top-up Loan Modal Structure #}
+    {# Edit/Top-up Loan Modal Structure (MODIFIED title) #}
     <div id="editLoanModal" class="modal">
         <div class="modal-content">
             <span class="close-button edit-loan-close-button">&times;</span>
@@ -704,11 +724,15 @@
                 <input type="hidden" id="edit_modal_original_loan_amount" name="original_loan_amount"> {# Store original loan amount #}
                 <input type="hidden" id="edit_modal_original_interest_rate" name="original_interest_rate"> {# Store original interest rate #}
                 <input type="hidden" id="edit_modal_original_principal_to_return" name="original_principal_to_return"> {# Store original principal to return (current outstanding principal) #}
-
+                <input type="hidden" id="edit_modal_company_name" name="company_name"> {# <-- NEW: Hidden field for company name #}
 
                 <div class="form-group">
                     <label for="edit_modal_customer_info" class="form-label">ลูกค้า:</label>
                     <input type="text" class="form-input" id="edit_modal_customer_info" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="edit_modal_company_name_display" class="form-label">บริษัทผู้ปล่อยกู้:</label> {# <-- NEW: Display company name #}
+                    <input type="text" class="form-input" id="edit_modal_company_name_display" readonly>
                 </div>
                 <div class="form-group">
                     <label for="edit_modal_current_loan_amount" class="form-label">วงเงินกู้ปัจจุบัน:</label>
@@ -869,13 +893,15 @@
             // Initial calculation on page load if values are already present
             calculateLoanValues();
 
-            // --- Payment Modal Logic ---
+            // --- Payment Modal Logic (MODIFIED) ---
             const paymentModal = document.getElementById('paymentModal');
             const closeButton = paymentModal.querySelector('.close-button');
             const paymentButtons = document.querySelectorAll('.record-payment-btn');
             const modalLoanId = document.getElementById('modal_loan_id');
             const modalRowIndex = document.getElementById('modal_row_index');
             const modalCustomerInfo = document.getElementById('modal_customer_info');
+            const modalCompanyName = document.getElementById('modal_company_name'); // <-- NEW
+            const modalCompanyNameDisplay = document.getElementById('modal_company_name_display'); // <-- NEW
             const modalOutstandingDisplay = document.getElementById('modal_outstanding_display');
             const modalCurrentAmountPaid = document.getElementById('modal_current_amount_paid');
             const modalCurrentOutstandingAmount = document.getElementById('modal_current_outstanding_amount');
@@ -902,11 +928,14 @@
                     const outstandingAmount = this.dataset.outstandingAmount;
                     const amountPaid = this.dataset.amountPaid;
                     const rowIndex = this.dataset.rowIndex; // Get the row index from data attribute
+                    const companyName = this.dataset.companyName; // <-- NEW: รับค่าชื่อบริษัท
 
                     // Populate modal fields
                     modalLoanId.value = loanId;
                     modalRowIndex.value = rowIndex; // Set the row index
                     modalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
+                    modalCompanyName.value = companyName; // <-- NEW: Set hidden company name
+                    modalCompanyNameDisplay.value = companyName; // <-- NEW: Display company name
                     modalOutstandingDisplay.value = parseFloat(outstandingAmount).toFixed(2) + ' บาท';
                     modalCurrentAmountPaid.value = parseFloat(amountPaid); // Store current paid amount
                     modalCurrentOutstandingAmount.value = parseFloat(outstandingAmount); // Store current outstanding
@@ -935,18 +964,22 @@
                 }
             });
 
-            // --- Payment History Modal Logic ---
+            // --- Payment History Modal Logic (MODIFIED) ---
             const paymentHistoryModal = document.getElementById('paymentHistoryModal');
             const historyCloseButton = paymentHistoryModal.querySelector('.history-close-button');
             const viewHistoryButtons = document.querySelectorAll('.view-payment-history-btn'); 
             const historyLoanIdDisplay = document.getElementById('history_loan_id_display');
+            const historyCompanyNameDisplay = document.getElementById('history_company_name_display'); // <-- NEW
             const paymentHistoryTable = document.getElementById('paymentHistoryTable');
             const noPaymentHistoryMessage = document.getElementById('noPaymentHistoryMessage');
 
             viewHistoryButtons.forEach(button => {
                 button.addEventListener('click', async function() {
                     const loanId = this.dataset.loanId;
+                    const companyName = this.dataset.companyName; // <-- NEW: รับค่าชื่อบริษัท
+
                     historyLoanIdDisplay.textContent = loanId; // Display loan ID in modal title
+                    historyCompanyNameDisplay.textContent = companyName; // <-- NEW: Display company name in modal title
 
                     // Clear previous table content
                     paymentHistoryTable.querySelector('thead tr').innerHTML = '';
@@ -1012,7 +1045,7 @@
                 }
             });
 
-            // --- NEW: Edit/Top-up Loan Modal Logic ---
+            // --- Edit/Top-up Loan Modal Logic (MODIFIED) ---
             const editLoanModal = document.getElementById('editLoanModal');
             const editLoanCloseButton = editLoanModal.querySelector('.edit-loan-close-button');
             const editTopupLoanButtons = document.querySelectorAll('.edit-topup-loan-btn');
@@ -1022,8 +1055,10 @@
             const editModalOriginalLoanAmount = document.getElementById('edit_modal_original_loan_amount');
             const editModalOriginalInterestRate = document.getElementById('edit_modal_original_interest_rate');
             const editModalOriginalPrincipalToReturn = document.getElementById('edit_modal_original_principal_to_return');
-
+            const editModalCompanyName = document.getElementById('edit_modal_company_name'); // <-- NEW
+            
             const editModalCustomerInfo = document.getElementById('edit_modal_customer_info');
+            const editModalCompanyNameDisplay = document.getElementById('edit_modal_company_name_display'); // <-- NEW
             const editModalCurrentLoanAmount = document.getElementById('edit_modal_current_loan_amount');
             const editModalCurrentInterestRate = document.getElementById('edit_modal_current_interest_rate');
             const editModalCurrentOutstandingPrincipal = document.getElementById('edit_modal_current_outstanding_principal');
@@ -1041,6 +1076,7 @@
                     const customerSurname = this.dataset.customerSurname;
                     const customerId = this.dataset.customerId;
                     const loanNote = this.dataset.loanNote;
+                    const companyName = this.dataset.companyName; // <-- NEW: รับค่าชื่อบริษัท
 
                     // Populate hidden fields
                     editModalLoanId.value = loanId;
@@ -1048,9 +1084,11 @@
                     editModalOriginalLoanAmount.value = parseFloat(loanAmount);
                     editModalOriginalInterestRate.value = parseFloat(interestRate);
                     editModalOriginalPrincipalToReturn.value = parseFloat(principalToReturn);
+                    editModalCompanyName.value = companyName; // <-- NEW: Set hidden company name
 
                     // Populate display fields
                     editModalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
+                    editModalCompanyNameDisplay.value = companyName; // <-- NEW: Display company name
                     editModalCurrentLoanAmount.value = parseFloat(loanAmount).toFixed(2) + ' บาท';
                     editModalCurrentInterestRate.value = parseFloat(interestRate).toFixed(2) + ' %';
                     editModalCurrentOutstandingPrincipal.value = parseFloat(principalToReturn).toFixed(2) + ' บาท';

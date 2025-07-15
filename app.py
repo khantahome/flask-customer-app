@@ -55,17 +55,18 @@ LOAN_CUSTOMER_RECORDS_WORKSHEET_NAME = 'Loan_Customers'
 LOAN_CUSTOMER_DATA_WORKSHEET_HEADERS = ['รหัสลูกค้า', 'ชื่อ', 'นามสกุล'] # Headers for the new loan customer sheet
 
 # UPDATED: Define headers for the Loan Transactions worksheet
-LOAN_TRANSACTIONS_WORKSHEET_NAME = os.environ.get('LOAN_TRANSACTIONS_WORKSHEET_NAME', 'Loan_Transactions')
+LOAN_TRANSACTIONS_WORKSHEET_NAME = 'Loan_Transactions'
 LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
-    'Timestamp', 'รหัสเงินกู้', 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า', # Changed from เลขบัตรประชาชนลูกค้า
-    'วงเงินกู้', 'ดอกเบี้ย (%)', 'วันที่เริ่มกู้',
-    'หักดอกหัวท้าย', 'ยอดเงินต้นที่ต้องคืน',
-    'ค่าดำเนินการ', 'ยอดที่ต้องชำระรายวัน', 'ยอดชำระแล้ว', 'ยอดค้างชำระ',
-    'สถานะเงินกู้', 'หมายเหตุเงินกู้', 'ผู้บันทึก'
+    'Timestamp', 'รหัสเงินกู้', 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
+    'ชื่อบริษัทผู้ปล่อยกู้', 
+    'วงเงินกู้', 'ดอกเบี้ย (%)', 'วันที่เริ่มกู้', 'หักดอกหัวท้าย', 'ยอดเงินต้นที่ต้องคืน',
+    'ค่าดำเนินการ', 'ยอดที่ต้องชำระรายวัน', 'ยอดชำระแล้ว', 'ยอดค้างชำระ', 'สถานะเงินกู้',
+    'หมายเหตุเงินกู้', 'ผู้บันทึก'
 ]
 LOAN_PAYMENT_HISTORY_WORKSHEET_NAME = 'Loan_Payment_History'
 LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS = [
     'Timestamp', 'รหัสเงินกู้', 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
+    'ชื่อบริษัทผู้ปล่อยกู้', 
     'จำนวนเงินที่ชำระดอกลอย', 'จำนวนเงินที่ชำระคืนต้น', 'ยอดเพิ่มวงเงิน', 'วันที่ชำระ', 'หมายเหตุการชำระ', 'ผู้บันทึก'
 ]
 loan_records_cache = None
@@ -302,6 +303,7 @@ def record_payment():
                     'รหัสลูกค้า': current_loan_record.get('รหัสลูกค้า', ''),
                     'ชื่อลูกค้า': current_loan_record.get('ชื่อลูกค้า', ''),
                     'นามสกุลลูกค้า': current_loan_record.get('นามสกุลลูกค้า', ''),
+                    'ชื่อบริษัทผู้ปล่อยกู้': current_loan_record.get('ชื่อบริษัทผู้ปล่อยกู้', ''),
                     'จำนวนเงินที่ชำระดอกลอย': payment_amount, # Use payment_amount for floating interest
                     'จำนวนเงินที่ชำระคืนต้น': principal_payment_amount, # Use principal_payment_amount for principal
                     'วันที่ชำระ': payment_date,
@@ -492,6 +494,7 @@ def update_loan_details():
                         'รหัสลูกค้า': current_loan_record.get('รหัสลูกค้า', ''),
                         'ชื่อลูกค้า': current_loan_record.get('ชื่อลูกค้า', ''),
                         'นามสกุลลูกค้า': current_loan_record.get('นามสกุลลูกค้า', ''),
+                        'ชื่อบริษัทผู้ปล่อยกู้': current_loan_record.get('ชื่อบริษัทผู้ปล่อยกู้', ''),
                         'จำนวนเงินที่ชำระดอกลอย': 0, # No floating interest payment for top-up
                         'จำนวนเงินที่ชำระคืนต้น': 0, # No principal repayment for top-up
                         'ยอดเพิ่มวงเงิน': top_up_amount, # Record the top-up amount
@@ -678,6 +681,7 @@ def add_loan_record():
             customer_loan_id = request.form.get('customer_new_id', '').strip()
             new_customer_name = request.form.get('new_customer_name', '').strip()
             new_customer_surname = request.form.get('new_customer_surname', '').strip()
+            company_name = request.form['company_name'].strip()
 
             loan_amount = float(request.form['loan_amount'])
             interest_rate = float(request.form['interest_rate'])
@@ -760,6 +764,7 @@ def add_loan_record():
                 'รหัสลูกค้า': final_customer_id, # Use the determined customer ID
                 'ชื่อลูกค้า': customer_name_for_loan,
                 'นามสกุลลูกค้า': customer_surname_for_loan,
+                'ชื่อบริษัทผู้ปล่อยกู้': company_name,
                 'วงเงินกู้': loan_amount,
                 'ดอกเบี้ย (%)': interest_rate,
                 'วันที่เริ่มกู้': start_date_str,
