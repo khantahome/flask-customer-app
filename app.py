@@ -581,21 +581,25 @@ def get_all_loan_records():
     
 @cache.cached(timeout=300, key_prefix='all_loan_records_with_payments')
 def get_all_loan_records_with_payments():
-    loan_records = get_all_loan_records()
+    loan_records = get_all_loan_records()  # จาก Loan_Transactions
+    
     for record in loan_records:
         loan_id = record.get('รหัสเงินกู้', '')
-        payments = get_payment_records_by_loan_id(loan_id)
-
-        total_interest_paid = 0
+        payments = get_payment_records_by_loan_id(loan_id)  # จาก Loan_Payment_History
+        
+        total_paid = 0
         for p in payments:
             try:
-                amount_paid = float(p.get('จำนวนเงินที่ชำระ', 0)) if p.get('จำนวนเงินที่ชำระ') else 0
-                total_interest_paid += amount_paid
+                amount_str = p.get('จำนวนเงินที่ชำระ', '0').replace(',', '').strip()
+                total_paid += float(amount_str) if amount_str else 0
             except Exception:
                 continue
-
-        record['ยอดชำระแล้ว'] = f"{total_interest_paid:,.2f}"
+        
+        # แทนที่ยอดชำระใน record ด้วยยอดรวมที่คำนวณใหม่
+        record['ยอดชำระแล้ว'] = f"{total_paid:,.2f}"
+        
     return loan_records
+
 
 
 def generate_next_customer_id():
