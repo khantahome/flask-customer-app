@@ -14,11 +14,13 @@ import cloudinary.uploader
 import cloudinary.api
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify # <-- เพิ่ม jsonify ตรงนี้
 from datetime import datetime, timedelta
-
+from flask_caching import Cache
 
 # Initialize the Flask application
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your_super_secret_key_for_customer_app_2025_new')
+
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 # --- Configuration for Google Sheets & Drive API Access ---
 GOOGLE_API_SCOPE = [
@@ -176,7 +178,7 @@ def get_loan_payment_history_worksheet():
     """Returns the Loan_Payment_History worksheet."""
     return get_worksheet(SPREADSHEET_NAME, LOAN_PAYMENT_HISTORY_WORKSHEET_NAME, LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS)
 
-# NEW: Helper function to get payment records for a specific loan ID
+@cache.memoize(timeout=300)
 def get_payment_records_by_loan_id(loan_id):
     """
     Retrieves payment records for a specific loan ID from the Loan_Payment_History worksheet.
@@ -362,7 +364,7 @@ def get_payment_history(loan_id):
 
     return jsonify({'payments': safe_payments, 'headers': LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS})
 
-
+@cache.cached(timeout=300, key_prefix='all_customer_records')
 def get_all_customer_records():
     """
     Retrieves all customer records from the original customer_records worksheet.
@@ -525,7 +527,7 @@ def update_loan_details():
     return redirect(url_for('loan_management'))
 
 
-
+@cache.cached(timeout=300, key_prefix='all_loan_records')
 def get_all_loan_records():
     """
     Retrieves all loan records from the Loan_Transactions worksheet.
@@ -612,7 +614,7 @@ def generate_next_customer_id():
         print(f"ERROR generating next loan customer ID: {e}")
         return None
 
-
+@cache.cached(timeout=300, key_prefix='user_login_data')
 def load_users():
     """
     Loads user IDs and passwords from the specified Google Sheet (UserLoginData).
@@ -1180,9 +1182,9 @@ def loan_management():
     logged_in_user = session['username']
     
     # Fetch all loan records
-    loan_records = loan_records = get_all_loan_records() # <--- Error reported here
-    # Fetch all loan-specific customer records to populate datalist and display names
-    all_loan_customers = loan_records = get_all_loan_records() 
+    loan_records = get_all_loan_records()
+    all_loan_customers = loan_records
+
     
     if not loan_records:
         flash('ไม่พบรายการเงินกู้ในระบบ', 'info')
