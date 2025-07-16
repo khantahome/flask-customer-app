@@ -590,7 +590,7 @@ def get_all_loan_records_with_payments():
         total_paid = 0
         for p in payments:
             try:
-                amount_str = p.get('จำนวนเงินที่ชำระ', '0').replace(',', '').strip()
+                amount_str = p.get('จำนวนเงินที่ชำระดอกลอย', '0').replace(',', '').strip()
                 total_paid += float(amount_str) if amount_str else 0
             except Exception:
                 continue
