@@ -61,7 +61,7 @@ LOAN_TRANSACTIONS_WORKSHEET_NAME = 'Loan_Transactions'
 LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
     'Timestamp', 'รหัสเงินกู้', 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
     'ชื่อบริษัทผู้ปล่อยกู้', 
-    'วงเงินกู้', 'ดอกเบี้ย (%)', 'วันที่เริ่มกู้', 'หักดอกหัวท้าย', 'ยอดเงินต้นที่ต้องคืน',
+    'วงเงินกู้', 'ดอกเบี้ย (%)', 'วันที่เริ่มกู้', 'หักดอกหัวท้าย', 'ยอดเงินต้นที่ต้องโอน',
     'ค่าดำเนินการ', 'ยอดที่ต้องชำระรายวัน', 'ยอดชำระแล้ว', 'ยอดค้างชำระ', 'สถานะเงินกู้',
     'หมายเหตุเงินกู้', 'ผู้บันทึก'
 ]
@@ -801,6 +801,9 @@ def add_loan_record():
             loan_worksheet = get_loan_worksheet()
             if loan_worksheet:
                 loan_worksheet.append_row(row_to_append)
+                global loan_records_cache, loan_records_cache_timestamp
+                loan_records_cache = None
+                loan_records_cache_timestamp = None
                 flash('บันทึกรายการเงินกู้ใหม่เรียบร้อยแล้ว!', 'success')
             else:
                 flash('ไม่สามารถเข้าถึง Worksheet เงินกู้ได้', 'error')
