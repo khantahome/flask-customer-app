@@ -454,31 +454,21 @@ def update_loan_details():
             # วงเงินกู้ใหม่ = วงเงินกู้เดิม + ยอดที่ต้องการเพิ่ม
             new_total_loan_amount = original_loan_amount + top_up_amount
 
-            # ยอดเงินต้นที่ต้องคืน (ซึ่งคือยอดคงค้างปัจจุบัน) = ยอดเงินต้นคงเหลือเดิม + ยอดที่ต้องการเพิ่ม
-            new_principal_to_return = original_principal_to_return + top_up_amount
-            
-            # ยอดค้างชำระ = ยอดค้างชำระเดิม + ยอดที่ต้องการเพิ่ม (ยอดค้างชำระจะเท่ากับยอดเงินต้นที่ต้องคืน)
-            new_outstanding_amount = new_principal_to_return # They are the same now
+            # กำหนดยอดเงินต้นที่ต้องคืน = วงเงินกู้ใหม่ (รวมยอดเพิ่ม)
+            new_principal_to_return = new_total_loan_amount
 
-            # ยอดที่ต้องชำระรายวัน = ยอดเงินต้นคงเหลือใหม่ * ดอกเบี้ยเดิม / 100
-            new_daily_payment = round(new_principal_to_return * (original_interest_rate / 100), 2)
+            # ยอดค้างชำระ = ยอดเงินต้นที่ต้องคืน
+            new_outstanding_amount = new_principal_to_return
 
-            # Update loan note: append new note to existing note if it's not empty
-            current_loan_note = current_loan_record.get('หมายเหตุเงินกู้', '').strip()
-            if edit_loan_note:
-                if current_loan_note and current_loan_note != '-':
-                    new_loan_note_combined = f"{current_loan_note}; เพิ่มยอด {top_up_amount:.2f} บาท ({edit_loan_note})"
-                else:
-                    new_loan_note_combined = f"เพิ่มยอด {top_up_amount:.2f} บาท ({edit_loan_note})"
-            else:
-                new_loan_note_combined = current_loan_note # Keep original note if no new note
+            # คำนวณยอดที่ต้องชำระรายวันจากวงเงินกู้ใหม่
+            new_daily_payment = round(new_total_loan_amount * (original_interest_rate / 100), 2)
 
-            # Update the record dictionary for Loan_Transactions sheet
+            # อัปเดตลง record
             current_loan_record['วงเงินกู้'] = new_total_loan_amount
             current_loan_record['ยอดเงินต้นที่ต้องคืน'] = new_principal_to_return
             current_loan_record['ยอดค้างชำระ'] = new_outstanding_amount
             current_loan_record['ยอดที่ต้องชำระรายวัน'] = new_daily_payment
-            current_loan_record['หมายเหตุเงินกู้'] = new_loan_note_combined
+
 
             # Convert the updated dictionary back to a list in the correct header order
             updated_row_values = [current_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
@@ -775,8 +765,8 @@ def add_loan_record():
             upfront_interest_deduction = round(simple_interest * 2, 2)
 
             # 2. ยอดเงินต้นที่ต้องคืน (Principal to Return)
-            # สูตร: (วงเงินกู้ - หักดอกหัวท้าย) - ค่าดำเนินการ
-            principal_to_return = round((loan_amount - upfront_interest_deduction) - processing_fee, 2) # <--- แก้ไขบรรทัดนี้
+            # ยอดเงินต้นที่ต้องคืน = วงเงินกู้ (ไม่หักอะไรทั้งนั้น)
+            principal_to_return = round(loan_amount, 2)
             
             # 3. ยอดที่ต้องชำระรายวัน (Daily Payment)
             # สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ simple_interest)
