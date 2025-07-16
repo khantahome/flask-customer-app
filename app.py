@@ -578,6 +578,25 @@ def get_all_loan_records():
         print(f"ERROR in get_all_loan_records: {e}")
         return []
 
+    
+@cache.cached(timeout=300, key_prefix='all_loan_records_with_payments')
+def get_all_loan_records_with_payments():
+    loan_records = get_all_loan_records()
+    for record in loan_records:
+        loan_id = record.get('รหัสเงินกู้', '')
+        payments = get_payment_records_by_loan_id(loan_id)
+
+        total_interest_paid = 0
+        for p in payments:
+            try:
+                amount_paid = float(p.get('จำนวนเงินที่ชำระ', 0)) if p.get('จำนวนเงินที่ชำระ') else 0
+                total_interest_paid += amount_paid
+            except Exception:
+                continue
+
+        record['ยอดชำระแล้ว'] = f"{total_interest_paid:,.2f}"
+    return loan_records
+
 
 def generate_next_customer_id():
     """
@@ -1182,8 +1201,9 @@ def loan_management():
     logged_in_user = session['username']
     
     # Fetch all loan records
-    loan_records = get_all_loan_records()
+    loan_records = get_all_loan_records_with_payments()
     all_loan_customers = loan_records
+
 
     
     if not loan_records:

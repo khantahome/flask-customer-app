@@ -579,15 +579,15 @@
                 </thead>
                 <tbody>
                     {% if loan_records %}
+                        {% set color_classes = ['bg-light', 'bg-white', 'bg-warning-subtle', 'bg-success-subtle'] %}
                         {% for record in loan_records %}
-                            <tr>
-                                {# Display data based on loan_headers order #}
+                            <tr class="{{ color_classes[loop.index0 % color_classes|length] }}">
                                 <td>{{ record.get('Timestamp', '-') }}</td>
                                 <td>{{ record.get('รหัสเงินกู้', '-') }}</td>
                                 <td>{{ record.get('รหัสลูกค้า', '-') }}</td>
                                 <td>{{ record.get('ชื่อลูกค้า', '-') }}</td>
                                 <td>{{ record.get('นามสกุลลูกค้า', '-') }}</td>
-                                <td>{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '-') }}</td> {# <-- NEW: เพิ่มคอลัมน์นี้ #}
+                                <td>{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '-') }}</td>
                                 <td>{{ record.get('วงเงินกู้', '-') }}</td>
                                 <td>{{ record.get('ดอกเบี้ย (%)', '-') }}</td>
                                 <td>{{ record.get('วันที่เริ่มกู้', '-') }}</td>
