@@ -481,6 +481,11 @@
 
     <div class="container">
         <h2>จัดการสินเชื่อ</h2>
+        <form method="get" action="{{ url_for('loan_management') }}" style="margin-bottom: 20px;">
+            <input type="text" name="search_query" placeholder="ค้นหาโดย รหัสลูกค้า / รหัสเงินกู้ / ชื่อ / นามสกุล" required>
+            <button type="submit">ค้นหา</button>
+        </form>
+
 
         <div class="flash-messages">
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -567,22 +572,20 @@
             </form>
         </div>
 
-        <h3 class="mt-5 mb-3 text-center">รายการเงินกู้ทั้งหมด</h3>
+        {% if loan_records %}
         <div class="table-container">
             <table class="data-table">
                 <thead>
                     <tr>
-                        {# Headers will be dynamically rendered from loan_headers passed by Flask #}
-                        {% for header in loan_headers %}
+                       {% for header in loan_headers %}
                             <th>{{ header }}</th>
                         {% endfor %}
                         <th>ดำเนินการ</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% if loan_records %}
-                        {% set color_classes = ['bg-light', 'bg-white', 'bg-warning-subtle', 'bg-success-subtle'] %}
-                        {% for record in loan_records %}
+                    {% set color_classes = ['bg-light', 'bg-white', 'bg-warning-subtle', 'bg-success-subtle'] %}
+                    {% for record in loan_records %}
                             <tr class="{{ color_classes[loop.index0 % color_classes|length] }}">
                                 <td>{{ record.get('Timestamp', '-') }}</td>
                                 <td>{{ record.get('รหัสเงินกู้', '-') }}</td>
@@ -635,15 +638,12 @@
                                 </td>
                             </tr>
                         {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="{{ loan_headers|length + 1 }}" class="text-center">ไม่พบรายการเงินกู้</td>
-                        </tr>
-                    {% endif %}
                 </tbody>
             </table>
         </div>
-    </div>
+        {% else %}
+        <p class="text-center mt-4">กรุณากรอกคำค้นหาด้านบนเพื่อแสดงรายการ</p>
+        {% endif %}
 
     {# Payment Modal Structure (ไม่มีการเปลี่ยนแปลงโครงสร้าง) #}
     <div id="paymentModal" class="modal">

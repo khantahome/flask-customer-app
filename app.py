@@ -1184,36 +1184,57 @@ def edit_customer_data(row_index):
                            row_index=row_index) # Pass row_index back
 
 
+def search_loan_records(query):
+    """
+    Searches loan records by loan ID, customer ID, name or surname.
+    Returns list of matching loan records.
+    """
+    all_loans = get_all_loan_records_with_payments()
+    query = query.strip().lower()
+    matches = []
+
+    for rec in all_loans:
+        if query in rec.get('รหัสเงินกู้', '').lower() \
+        or query in rec.get('รหัสลูกค้า', '').lower() \
+        or query in rec.get('ชื่อลูกค้า', '').lower() \
+        or query in rec.get('นามสกุลลูกค้า', '').lower():
+            matches.append(rec)
+
+    return matches
+
+
 # NEW: Route for the Loan Management page
 @app.route('/loan_management', methods=['GET'])
 def loan_management():
-    """
-    Displays the loan management dashboard with all loan records.
-    Requires user to be logged in.
-    """
     if 'username' not in session:
         flash('กรุณาเข้าสู่ระบบก่อน', 'error')
         return redirect(url_for('login'))
-    
+
     logged_in_user = session['username']
-    
-    # Fetch all loan records
-    loan_records = get_all_loan_records_with_payments()
-    all_loan_customers = loan_records
+    search_query = request.args.get('search_query', '').strip()
+    loan_records = []
 
-
-    
-    if not loan_records:
-        flash('ไม่พบรายการเงินกู้ในระบบ', 'info')
+    if search_query:
+        loan_records = search_loan_records(search_query)
+        if not loan_records:
+            flash(f"ไม่พบรายการเงินกู้ที่ตรงกับ '{search_query}'", "info")
+        else:
+            flash(f"พบ {len(loan_records)} รายการที่ตรงกับ '{search_query}'", "success")
     else:
-        flash(f'พบ {len(loan_records)} รายการเงินกู้', 'success')
+        flash("กรุณากรอกคำค้นเพื่อแสดงข้อมูลสินเชื่อ", "info")
 
-    return render_template('loan_management.html', 
-                           username=logged_in_user,
-                           loan_records=loan_records, # Pass fetched loan data to template
-                           loan_headers=LOAN_TRANSACTIONS_WORKSHEET_HEADERS, # Pass headers for table display
-                           all_customers=all_loan_customers # Pass loan-specific customer data for name lookup and datalist
-                           )
+    # ✅ โหลด customer list สำหรับ datalist ลูกค้า
+    all_customers = get_all_loan_records()  # หรือฟังก์ชันของคุณที่คืน customer list
+
+    return render_template(
+        'loan_management.html',
+        username=logged_in_user,
+        loan_records=loan_records,
+        loan_headers=LOAN_TRANSACTIONS_WORKSHEET_HEADERS,
+        all_customers=all_customers
+    )
+
+
 
 
 # --- Main execution block ---
