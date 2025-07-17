@@ -243,7 +243,7 @@ def record_payment():
     if request.method == 'POST':
         try:
             loan_id = request.form['loan_id']
-            row_index = int(request.form['row_index']) # Row index from the table (1-based)
+            find_row_index_by_loan_id()
             
             # Get both payment amounts
             payment_amount = float(request.form.get('payment_amount', 0)) # This is for floating interest
@@ -1184,6 +1184,7 @@ def edit_customer_data(row_index):
 
 def search_loan_records(query):
     all_loans = get_all_loan_records_with_payments()
+    print("DEBUG: Records count = ", len(all_loans)) 
     query = query.strip().lower()
 
     return [
@@ -1193,8 +1194,6 @@ def search_loan_records(query):
         or query in rec.get('ชื่อลูกค้า', '').lower()
         or query in rec.get('นามสกุลลูกค้า', '').lower()
     ]
-
-
 
 # NEW: Route for the Loan Management page
 @app.route('/loan_management', methods=['GET'])

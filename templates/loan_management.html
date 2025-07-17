@@ -667,7 +667,6 @@
             <h4 class="modal-title">บันทึกการชำระเงิน</h4>
             <form id="paymentForm" action="{{ url_for('record_payment') }}" method="POST">
                 <input type="hidden" id="modal_loan_id" name="loan_id">
-                <input type="hidden" id="modal_row_index" name="row_index">
                 <input type="hidden" id="modal_current_amount_paid" name="current_amount_paid">
                 <input type="hidden" id="modal_current_outstanding_amount" name="current_outstanding_amount">
                 <input type="hidden" id="modal_company_name" name="company_name"> {# <-- NEW: Hidden field for company name #}
@@ -738,7 +737,6 @@
             <h4 class="modal-title">แก้ไข/เพิ่มยอดสินเชื่อ</h4>
             <form id="editLoanForm" action="{{ url_for('update_loan_details') }}" method="POST">
                 <input type="hidden" id="edit_modal_loan_id" name="loan_id">
-                <input type="hidden" id="edit_modal_row_index" name="row_index">
                 <input type="hidden" id="edit_modal_original_loan_amount" name="original_loan_amount"> {# Store original loan amount #}
                 <input type="hidden" id="edit_modal_original_interest_rate" name="original_interest_rate"> {# Store original interest rate #}
                 <input type="hidden" id="edit_modal_original_principal_to_return" name="original_principal_to_return"> {# Store original principal to return (current outstanding principal) #}
