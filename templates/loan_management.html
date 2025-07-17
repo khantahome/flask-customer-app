@@ -623,6 +623,8 @@
                                 <td>
                                     {# Button for Edit/Top-up Loan (MODIFIED data-attributes) #}
                                     <button class="btn btn-info edit-topup-loan-btn"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editLoanModal"
                                             data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
                                             data-row-index="{{ loop.index + 1 }}"
                                             data-loan-amount="{{ record.get('วงเงินกู้', '') }}"
@@ -641,6 +643,8 @@
                                             data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
                                             >ดูบันทึกการชำระ</button>
                                     <button class="btn btn-success record-payment-btn"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#paymentModal"
                                             data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
                                             data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
                                             data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
