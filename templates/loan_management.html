@@ -923,7 +923,6 @@
             const closeButton = paymentModal.querySelector('.close-button');
             const paymentButtons = document.querySelectorAll('.record-payment-btn');
             const modalLoanId = document.getElementById('modal_loan_id');
-            const modalRowIndex = document.getElementById('modal_row_index');
             const modalCustomerInfo = document.getElementById('modal_customer_info');
             const modalCompanyName = document.getElementById('modal_company_name'); // <-- NEW
             const modalCompanyNameDisplay = document.getElementById('modal_company_name_display'); // <-- NEW
@@ -957,7 +956,6 @@
 
                     // Populate modal fields
                     modalLoanId.value = loanId;
-                    modalRowIndex.value = rowIndex; // Set the row index
                     modalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
                     modalCompanyName.value = companyName; // <-- NEW: Set hidden company name
                     modalCompanyNameDisplay.value = companyName; // <-- NEW: Display company name
@@ -1070,7 +1068,6 @@
             const editTopupLoanButtons = document.querySelectorAll('.edit-topup-loan-btn');
 
             const editModalLoanId = document.getElementById('edit_modal_loan_id');
-            const editModalRowIndex = document.getElementById('edit_modal_row_index');
             const editModalOriginalLoanAmount = document.getElementById('edit_modal_original_loan_amount');
             const editModalOriginalInterestRate = document.getElementById('edit_modal_original_interest_rate');
             const editModalOriginalPrincipalToReturn = document.getElementById('edit_modal_original_principal_to_return');
@@ -1099,7 +1096,6 @@
 
                     // Populate hidden fields
                     editModalLoanId.value = loanId;
-                    editModalRowIndex.value = rowIndex;
                     editModalOriginalLoanAmount.value = parseFloat(loanAmount);
                     editModalOriginalInterestRate.value = parseFloat(interestRate);
                     editModalOriginalPrincipalToReturn.value = parseFloat(principalToReturn);
