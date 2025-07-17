@@ -436,6 +436,21 @@
             opacity: 0;
             pointer-events: none; /* Allow clicks through when hidden */
         }
+         button[type="submit"] {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 1rem;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button[type="submit"]:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+        }
 
         .spinner {
             border: 6px solid #f3f3f3; /* Light grey */
@@ -483,7 +498,7 @@
         <h2>จัดการสินเชื่อ</h2>
         <form method="get" action="{{ url_for('loan_management') }}" style="margin-bottom: 20px;">
             <input type="text" name="search_query" placeholder="ค้นหาโดย รหัสลูกค้า / รหัสเงินกู้ / ชื่อ / นามสกุล" required>
-            <button type="submit">ค้นหา</button>
+            <button type="submit">🔍 ค้นหา</button>
         </form>
 
 
