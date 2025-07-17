@@ -76,7 +76,7 @@ loan_records_cache_timestamp = None
 loan_customers_cache = None
 loan_customers_cache_timestamp = None
 # Define cache expiry time (e.g., 5 minutes)
-CACHE_EXPIRY_SECONDS = 300 # 5 minutes
+CACHE_EXPIRY_SECONDS = 120
 
 # --- Cloudinary Configuration ---
 cloudinary.config(
