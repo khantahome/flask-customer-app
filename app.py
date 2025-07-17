@@ -214,6 +214,14 @@ def get_payment_records_by_loan_id(loan_id):
     except Exception as e:
         print(f"ERROR in get_payment_records_by_loan_id: {e}")
         return []
+    
+def find_row_index_by_loan_id(worksheet, loan_id):
+    rows = worksheet.get_all_values()
+    for i, row in enumerate(rows, start=1):
+        if row[1] == loan_id:
+            return i
+    return None
+
 
 
 
@@ -294,7 +302,12 @@ def record_payment():
             updated_row_values = [current_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
 
             # Update the row in Google Sheet
-            loan_worksheet.update(f'A{row_index}', [updated_row_values])
+            row_index = find_row_index_by_loan_id(loan_worksheet, loan_id)
+
+            if row_index is None:
+                flash('ไม่พบรายการเงินกู้ที่ต้องการอัปเดต', 'error')
+                return redirect(url_for('loan_management'))
+
 
             # NEW: Append payment details to a separate history sheet
             payment_history_worksheet = get_loan_payment_history_worksheet()
@@ -414,11 +427,6 @@ def get_all_customer_records():
         return []
 @app.route('/update_loan_details', methods=['POST'])
 def update_loan_details():
-    """
-    Handles updating an existing loan record, including top-up functionality.
-    Updates 'วงเงินกู้', 'ยอดเงินต้นที่ต้องคืน', 'ยอดค้างชำระ', 'ยอดที่ต้องชำระรายวัน', and 'หมายเหตุเงินกู้'.
-    Also records top-up details to Loan_Payment_History sheet.
-    """
     if 'username' not in session:
         flash('กรุณาเข้าสู่ระบบก่อน', 'error')
         return redirect(url_for('login'))
@@ -428,56 +436,53 @@ def update_loan_details():
     if request.method == 'POST':
         try:
             loan_id = request.form['loan_id']
-            row_index = int(request.form['row_index'])
             top_up_amount = float(request.form.get('top_up_amount', 0))
             edit_loan_note = request.form.get('edit_loan_note', '').strip()
 
-            # Get original values from hidden fields (these are from the table row when modal opened)
             original_loan_amount = float(request.form['original_loan_amount'])
             original_interest_rate = float(request.form['original_interest_rate'])
-            original_principal_to_return = float(request.form['original_principal_to_return']) # This is the current outstanding principal
 
             loan_worksheet = get_loan_worksheet()
             if not loan_worksheet:
                 flash('ไม่สามารถเชื่อมต่อกับ Worksheet เงินกู้ได้', 'error')
                 return redirect(url_for('loan_management'))
 
-            # Get the specific row to update from Google Sheet to ensure we have the latest data
+            # หาแถวที่ตรงกับ loan_id จริงๆ
+            row_index = find_row_index_by_loan_id(loan_worksheet, loan_id)
+            if row_index is None:
+                flash('ไม่พบรายการเงินกู้ที่ต้องการอัปเดต', 'error')
+                return redirect(url_for('loan_management'))
+
+            # โหลดข้อมูลแถวจริงจาก Google Sheet
             loan_record_values = loan_worksheet.row_values(row_index)
             if not loan_record_values:
                 flash('ไม่พบรายการเงินกู้ที่ระบุสำหรับการแก้ไข', 'error')
                 return redirect(url_for('loan_management'))
 
+            # แปลงข้อมูลเป็น dict
             current_loan_record = dict(zip(LOAN_TRANSACTIONS_WORKSHEET_HEADERS, loan_record_values))
 
-            # --- Recalculate based on Top-up ---
-            # วงเงินกู้ใหม่ = วงเงินกู้เดิม + ยอดที่ต้องการเพิ่ม
+            # คำนวณยอดใหม่ตาม top-up
             new_total_loan_amount = original_loan_amount + top_up_amount
-
-            # กำหนดยอดเงินต้นที่ต้องคืน = วงเงินกู้ใหม่ (รวมยอดเพิ่ม)
             new_principal_to_return = new_total_loan_amount
-
-            # ยอดค้างชำระ = ยอดเงินต้นที่ต้องคืน
             new_outstanding_amount = new_principal_to_return
-
-            # คำนวณยอดที่ต้องชำระรายวันจากวงเงินกู้ใหม่
             new_daily_payment = round(new_total_loan_amount * (original_interest_rate / 100), 2)
 
-            # อัปเดตลง record
+            # อัปเดตค่าที่แก้ไขลง dict
             current_loan_record['วงเงินกู้'] = new_total_loan_amount
             current_loan_record['ยอดเงินต้นที่ต้องคืน'] = new_principal_to_return
             current_loan_record['ยอดค้างชำระ'] = new_outstanding_amount
             current_loan_record['ยอดที่ต้องชำระรายวัน'] = new_daily_payment
+            current_loan_record['หมายเหตุเงินกู้'] = edit_loan_note
 
-
-            # Convert the updated dictionary back to a list in the correct header order
+            # เตรียม list สำหรับอัปเดตใน Google Sheet ตาม headers
             updated_row_values = [current_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
 
-            # Update the row in Google Sheet
-            loan_worksheet.update(f'A{row_index}', [updated_row_values])
+            # อัปเดตแถวโดยตรง (สมมติ columns A ถึง Z ครอบคลุมข้อมูลทั้งหมด)
+            loan_worksheet.update(f"A{row_index}:Z{row_index}", [updated_row_values])
 
-            # NEW: Append top-up details to Loan_Payment_History sheet
-            if top_up_amount > 0: # Only record if there was an actual top-up
+            # บันทึกประวัติการชำระยอดเพิ่ม (ถ้ามี)
+            if top_up_amount > 0:
                 payment_history_worksheet = get_loan_payment_history_worksheet()
                 if payment_history_worksheet:
                     top_up_row = {
@@ -487,10 +492,10 @@ def update_loan_details():
                         'ชื่อลูกค้า': current_loan_record.get('ชื่อลูกค้า', ''),
                         'นามสกุลลูกค้า': current_loan_record.get('นามสกุลลูกค้า', ''),
                         'ชื่อบริษัทผู้ปล่อยกู้': current_loan_record.get('ชื่อบริษัทผู้ปล่อยกู้', ''),
-                        'จำนวนเงินที่ชำระดอกลอย': 0, # No floating interest payment for top-up
-                        'จำนวนเงินที่ชำระคืนต้น': 0, # No principal repayment for top-up
-                        'ยอดเพิ่มวงเงิน': top_up_amount, # Record the top-up amount
-                        'วันที่ชำระ': datetime.now().strftime('%Y-%m-%d'), # Use current date for top-up record
+                        'จำนวนเงินที่ชำระดอกลอย': 0,
+                        'จำนวนเงินที่ชำระคืนต้น': 0,
+                        'ยอดเพิ่มวงเงิน': top_up_amount,
+                        'วันที่ชำระ': datetime.now().strftime('%Y-%m-%d'),
                         'หมายเหตุการชำระ': edit_loan_note if edit_loan_note else 'เพิ่มยอดวงเงินสินเชื่อ',
                         'ผู้บันทึก': logged_in_user
                     }
@@ -498,23 +503,16 @@ def update_loan_details():
                     flash('บันทึกการเพิ่มยอดในประวัติการชำระเงินเรียบร้อยแล้ว!', 'success')
                 else:
                     flash('ไม่สามารถบันทึกการเพิ่มยอดในประวัติการชำระเงินได้', 'warning')
-                global loan_records_cache, loan_records_cache_timestamp
-                loan_records_cache = None
-                loan_records_cache_timestamp = None
-
 
             flash(f'บันทึกการแก้ไข/เพิ่มยอดสินเชื่อ {loan_id} เรียบร้อยแล้ว!', 'success')
             return redirect(url_for('loan_management'))
 
-        except ValueError as e:
-            flash(f'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบรูปแบบตัวเลข: {e}', 'error')
-        except KeyError as e:
-            flash(f'ข้อมูลฟอร์มไม่ครบถ้วน: {e}', 'error')
         except Exception as e:
-            flash(f'เกิดข้อผิดพลาดในการแก้ไข/เพิ่มยอดสินเชื่อ: {e}', 'error')
+            flash(f'เกิดข้อผิดพลาด: {e}', 'error')
             print(f"Error updating loan details: {e}")
 
     return redirect(url_for('loan_management'))
+
 
 
 @cache.cached(timeout=300, key_prefix='all_loan_records')
@@ -572,6 +570,8 @@ def get_all_loan_records():
 @cache.cached(timeout=300, key_prefix='all_loan_records_with_payments')
 def get_all_loan_records_with_payments():
     loan_records = get_all_loan_records()  # จาก Loan_Transactions
+    current_loan_record = next((item for item in loan_records if item['รหัสเงินกู้'] == loan_id), None)
+
     
     for record in loan_records:
         loan_id = record.get('รหัสเงินกู้', '')
