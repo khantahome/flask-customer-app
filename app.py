@@ -243,6 +243,8 @@ def record_payment():
     if request.method == 'POST':
         try:
             loan_id = request.form['loan_id']
+            loan_worksheet = get_loan_worksheet()
+
             row_index = find_row_index_by_loan_id(loan_worksheet, loan_id)
 
             
