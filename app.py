@@ -570,13 +570,11 @@ def get_all_loan_records():
 @cache.cached(timeout=300, key_prefix='all_loan_records_with_payments')
 def get_all_loan_records_with_payments():
     loan_records = get_all_loan_records()  # จาก Loan_Transactions
-    current_loan_record = next((item for item in loan_records if item['รหัสเงินกู้'] == loan_id), None)
 
-    
     for record in loan_records:
         loan_id = record.get('รหัสเงินกู้', '')
         payments = get_payment_records_by_loan_id(loan_id)  # จาก Loan_Payment_History
-        
+
         total_paid = 0
         for p in payments:
             try:
@@ -584,11 +582,11 @@ def get_all_loan_records_with_payments():
                 total_paid += float(amount_str) if amount_str else 0
             except Exception:
                 continue
-        
-        # แทนที่ยอดชำระใน record ด้วยยอดรวมที่คำนวณใหม่
+
         record['ยอดชำระแล้ว'] = f"{total_paid:,.2f}"
-        
+
     return loan_records
+
 
 
 
@@ -1185,22 +1183,17 @@ def edit_customer_data(row_index):
 
 
 def search_loan_records(query):
-    """
-    Searches loan records by loan ID, customer ID, name or surname.
-    Returns list of matching loan records.
-    """
     all_loans = get_all_loan_records_with_payments()
     query = query.strip().lower()
-    matches = []
 
-    for rec in all_loans:
-        if query in rec.get('รหัสเงินกู้', '').lower() \
-        or query in rec.get('รหัสลูกค้า', '').lower() \
-        or query in rec.get('ชื่อลูกค้า', '').lower() \
-        or query in rec.get('นามสกุลลูกค้า', '').lower():
-            matches.append(rec)
+    return [
+        rec for rec in all_loans
+        if query in rec.get('รหัสเงินกู้', '').lower()
+        or query in rec.get('รหัสลูกค้า', '').lower()
+        or query in rec.get('ชื่อลูกค้า', '').lower()
+        or query in rec.get('นามสกุลลูกค้า', '').lower()
+    ]
 
-    return matches
 
 
 # NEW: Route for the Loan Management page
