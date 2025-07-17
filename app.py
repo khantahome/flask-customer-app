@@ -243,7 +243,8 @@ def record_payment():
     if request.method == 'POST':
         try:
             loan_id = request.form['loan_id']
-            find_row_index_by_loan_id()
+            row_index = find_row_index_by_loan_id(loan_worksheet, loan_id)
+
             
             # Get both payment amounts
             payment_amount = float(request.form.get('payment_amount', 0)) # This is for floating interest
