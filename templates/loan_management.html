@@ -839,399 +839,354 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // --- Loading Indicator Logic ---
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            const body = document.body; // Reference to the body element
+        // --- Loading Indicator Logic ---
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const body = document.body;
 
-            // Hide loading overlay and enable elements when DOM is fully loaded and presumed data is rendered
-            window.addEventListener('load', function() { // Use window.load to ensure all resources are loaded
-                if (loadingOverlay) {
-                    loadingOverlay.classList.add('hidden');
-                    // After transition, set display to none to remove it from layout flow
-                    loadingOverlay.addEventListener('transitionend', function() {
-                        loadingOverlay.style.display = 'none';
-                    }, { once: true }); // Ensure listener is removed after one use
-                }
-
-                // Make the body visible with a fade-in effect
-                body.classList.add('loaded');
-            });
-
-
-            // Set today's date as default for 'start_date' field
-            const startDateField = document.getElementById('start_date');
-            if (startDateField) {
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = (today.getMonth() + 1).toString().padStart(2, '0');
-                const day = today.getDate().toString().padStart(2, '0');
-                startDateField.value = `${year}-${month}-${day}`;
+        window.addEventListener('load', function() {
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('hidden');
+                loadingOverlay.addEventListener('transitionend', function() {
+                    loadingOverlay.style.display = 'none';
+                }, { once: true });
             }
+            body.classList.add('loaded');
+        });
 
-            // Get references to input fields for calculation
-            const loanAmountField = document.getElementById('loan_amount');
-            const interestRateField = document.getElementById('interest_rate');
-            const processingFeeField = document.getElementById('processing_fee');
-            const frontBackInterestDeductionField = document.getElementById('front_back_interest_deduction');
-            const principalToReturnField = document.getElementById('principal_to_return');
-            const dailyAmountToReturnField = document.getElementById('daily_amount_to_return');
-
-            // NEW: References for new customer fields
-            const customerNewIdField = document.getElementById('customer_new_id');
-            const newCustomerNameField = document.getElementById('new_customer_name');
-            const newCustomerSurnameField = document.getElementById('new_customer_surname');
-
-            // Function to perform calculations
-            function calculateLoanValues() {
-                const loanAmount = parseFloat(loanAmountField.value) || 0;
-                const interestRate = parseFloat(interestRateField.value) || 0;
-                const processingFee = parseFloat(processingFeeField.value) || 0;
-
-                // คำนวณดอกเบี้ยแบบเดี่ยว (วงเงินกู้ * ดอกเบี้ย / 100)
-                const simpleInterest = loanAmount * (interestRate / 100);
-
-                // 1. Calculate "หักดอกหัวท้าย" (Upfront Interest Deduction)
-                // สูตร: วงเงินกู้ * ดอกเบี้ย / 100 * 2
-                const upfrontInterestDeduction = simpleInterest * 2;
-                frontBackInterestDeductionField.value = upfrontInterestDeduction.toFixed(2);
-
-                // 2. Calculate "ยอดเงินต้นที่ต้องคืน" (Principal to Return)
-                // สูตร: (วงเงินกู้ - หักดอกหัวท้าย) - ค่าดำเนินการ
-                const principalToReturn = (loanAmount - upfrontInterestDeduction) - processingFee; 
-                principalToReturnField.value = principalToReturn.toFixed(2);
-
-                // 3. Calculate "ยอดเงินต้องคืนรายวัน" (Daily Amount to Return)
-                // สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ simpleInterest)
-                dailyAmountToReturnField.value = simpleInterest.toFixed(2);
-            }
-
-            // Attach event listeners to relevant input fields to trigger calculations
-            loanAmountField.addEventListener('input', calculateLoanValues);
-            interestRateField.addEventListener('input', calculateLoanValues);
-            processingFeeField.addEventListener('input', calculateLoanValues);
-            // frontBackInterestDeductionField is readonly, no need for listener
-            // principalToReturnField is readonly, no need for listener
-            // dailyAmountToReturnField is readonly, no need for listener
-
-            // NEW: Logic for customer ID / New Customer Name fields
-            customerNewIdField.addEventListener('input', function() {
-                if (customerNewIdField.value.trim() !== '') {
-                    // If customer ID is entered/selected, clear new customer name fields
-                    newCustomerNameField.value = '';
-                    newCustomerSurnameField.value = '';
-                    newCustomerNameField.removeAttribute('required'); // Remove required if ID is present
-                    newCustomerSurnameField.removeAttribute('required');
-                } else {
-                    // If customer ID is empty, make new customer name fields required
-                    newCustomerNameField.setAttribute('required', 'required');
-                    newCustomerSurnameField.setAttribute('required', 'required');
-                }
-            });
-
-            newCustomerNameField.addEventListener('input', function() {
-                if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
-                    // If new customer name is entered, clear customer ID field
-                    customerNewIdField.value = '';
-                    customerNewIdField.removeAttribute('required'); // Remove required if new name is present
-                } else {
-                    // If new customer name is empty, make customer ID field required
-                    customerNewIdField.setAttribute('required', 'required');
-                }
-            });
-
-            newCustomerSurnameField.addEventListener('input', function() {
-                if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
-                    // If new customer surname is entered, clear customer ID field
-                    customerNewIdField.value = '';
-                    customerNewIdField.removeAttribute('required'); // Remove required if new surname is present
-                } else {
-                    // If new customer surname is empty, make customer ID field required
-                    newCustomerNewIdField.setAttribute('required', 'required');
-                }
-            });
-
-            // Initial check on page load for required attributes
-            // This ensures that if the page loads with an empty customer ID field,
-            // the new customer name/surname fields are marked as required.
-            // Conversely, if an ID is pre-filled (e.g., from a previous submission),
-            // the new customer name/surname fields are not required.
-            if (customerNewIdField.value.trim() === '') {
-                newCustomerNameField.setAttribute('required', 'required');
-                newCustomerSurnameField.setAttribute('required', 'required');
-            } else {
-                customerNewIdField.removeAttribute('required'); // If ID is pre-filled, it's not required to fill new name
-                newCustomerNameField.removeAttribute('required');
-                newCustomerSurnameField.removeAttribute('required');
-            }
-
-
-            // Initial calculation on page load if values are already present
-            calculateLoanValues();
-
-            // --- Payment Modal Logic (MODIFIED) ---
-            const paymentModal = document.getElementById('paymentModal');
-            const closeButton = paymentModal.querySelector('.close-button');
-            const paymentButtons = document.querySelectorAll('.record-payment-btn');
-            const modalLoanId = document.getElementById('modal_loan_id');
-            const modalCustomerInfo = document.getElementById('modal_customer_info');
-            const modalCompanyName = document.getElementById('modal_company_name'); // <-- NEW
-            const modalCompanyNameDisplay = document.getElementById('modal_company_name_display'); // <-- NEW
-            const modalOutstandingDisplay = document.getElementById('modal_outstanding_display');
-            const modalCurrentAmountPaid = document.getElementById('modal_current_amount_paid');
-            const modalCurrentOutstandingAmount = document.getElementById('modal_current_outstanding_amount');
-            
-            // Re-established reference to payment_amount and new principal_payment_amount
-            const paymentAmountField = document.getElementById('payment_amount'); // This is now for floating interest
-            const principalPaymentAmountField = document.getElementById('principal_payment_amount'); // This is for principal repayment
-
-            const paymentDateField = document.getElementById('payment_date');
-
-            // Set today's date for payment date field
+        // Set today's date as default for 'start_date' field
+        const startDateField = document.getElementById('start_date');
+        if (startDateField) {
             const today = new Date();
             const year = today.getFullYear();
             const month = (today.getMonth() + 1).toString().padStart(2, '0');
             const day = today.getDate().toString().padStart(2, '0');
-            paymentDateField.value = `${year}-${month}-${day}`;
+            startDateField.value = `${year}-${month}-${day}`;
+        }
 
-            paymentButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const loanId = this.dataset.loanId;
-                    const customerId = this.dataset.customerId;
-                    const customerName = this.dataset.customerName;
-                    const customerSurname = this.dataset.customerSurname;
-                    const outstandingAmount = this.dataset.outstandingAmount;
-                    const amountPaid = this.dataset.amountPaid;
-                    const rowIndex = this.dataset.rowIndex; // Get the row index from data attribute
-                    const companyName = this.dataset.companyName; // <-- NEW: รับค่าชื่อบริษัท
+        // Get references to input fields for calculation
+        const loanAmountField = document.getElementById('loan_amount');
+        const interestRateField = document.getElementById('interest_rate');
+        const processingFeeField = document.getElementById('processing_fee');
+        const frontBackInterestDeductionField = document.getElementById('front_back_interest_deduction');
+        const principalToReturnField = document.getElementById('principal_to_return');
+        const dailyAmountToReturnField = document.getElementById('daily_amount_to_return');
 
-                    // Populate modal fields
-                    modalLoanId.value = loanId;
-                    modalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
-                    modalCompanyName.value = companyName; // <-- NEW: Set hidden company name
-                    modalCompanyNameDisplay.value = companyName; // <-- NEW: Display company name
-                    modalOutstandingDisplay.value = parseFloat(outstandingAmount).toFixed(2) + ' บาท';
-                    modalCurrentAmountPaid.value = parseFloat(amountPaid); // Store current paid amount
-                    modalCurrentOutstandingAmount.value = parseFloat(outstandingAmount); // Store current outstanding
+        // References for new customer fields
+        const customerNewIdField = document.getElementById('customer_new_id');
+        const newCustomerNameField = document.getElementById('new_customer_name');
+        const newCustomerSurnameField = document.getElementById('new_customer_surname');
 
-                    // Clear previous payment amounts and set today's date
-                    paymentAmountField.value = '0'; // Default to 0 for floating interest
-                    principalPaymentAmountField.value = '0'; // Default to 0 for principal repayment
-                    paymentDateField.value = `${year}-${month}-${day}`;
+        // Function to perform calculations
+        function calculateLoanValues() {
+            const loanAmount = parseFloat(loanAmountField.value) || 0;
+            const interestRate = parseFloat(interestRateField.value) || 0;
+            const processingFee = parseFloat(processingFeeField.value) || 0;
 
-                    // Add 'show' class to trigger fade-in and scale-up animation
-                    paymentModal.classList.add('show');
-                });
-            });
+            const simpleInterest = loanAmount * (interestRate / 100);
 
-            closeButton.addEventListener('click', function() {
-                paymentModal.classList.remove('show'); // Remove 'show' class to trigger fade-out
-            });
+            const upfrontInterestDeduction = simpleInterest * 2;
+            frontBackInterestDeductionField.value = upfrontInterestDeduction.toFixed(2);
 
-            // Close modal if clicking outside the modal content
-            window.addEventListener('click', function(event) {
-                if (event.target == paymentModal) {
-                    paymentModal.classList.remove('show'); // Remove 'show' class to trigger fade-out
-                }
-            });
+            const principalToReturn = (loanAmount - upfrontInterestDeduction) - processingFee;
+            principalToReturnField.value = principalToReturn.toFixed(2);
 
-            // --- Payment History Modal Logic (MODIFIED) ---
-            const paymentHistoryModal = document.getElementById('paymentHistoryModal');
-            const historyCloseButton = paymentHistoryModal.querySelector('.history-close-button');
-            const viewHistoryButtons = document.querySelectorAll('.view-payment-history-btn'); 
-            const historyLoanIdDisplay = document.getElementById('history_loan_id_display');
-            const historyCompanyNameDisplay = document.getElementById('history_company_name_display'); // <-- NEW
-            const paymentHistoryTable = document.getElementById('paymentHistoryTable');
-            const noPaymentHistoryMessage = document.getElementById('noPaymentHistoryMessage');
+            dailyAmountToReturnField.value = simpleInterest.toFixed(2);
+        }
 
-            viewHistoryButtons.forEach(button => {
-                button.addEventListener('click', async function() {
-                    const loanId = this.dataset.loanId;
-                    const companyName = this.dataset.companyName; // <-- NEW: รับค่าชื่อบริษัท
+        // Attach event listeners to relevant input fields to trigger calculations
+        loanAmountField.addEventListener('input', calculateLoanValues);
+        interestRateField.addEventListener('input', calculateLoanValues);
+        processingFeeField.addEventListener('input', calculateLoanValues);
 
-                    historyLoanIdDisplay.textContent = loanId; // Display loan ID in modal title
-                    historyCompanyNameDisplay.textContent = companyName; // <-- NEW: Display company name in modal title
+        // Logic for customer ID / New Customer Name fields
+        customerNewIdField.addEventListener('input', function() {
+            if (customerNewIdField.value.trim() !== '') {
+                newCustomerNameField.value = '';
+                newCustomerSurnameField.value = '';
+                newCustomerNameField.removeAttribute('required');
+                newCustomerSurnameField.removeAttribute('required');
+            } else {
+                newCustomerNameField.setAttribute('required', 'required');
+                newCustomerSurnameField.setAttribute('required', 'required');
+            }
+        });
 
-                    // Clear previous table content
-                    paymentHistoryTable.querySelector('thead tr').innerHTML = '';
-                    paymentHistoryTable.querySelector('tbody').innerHTML = '';
-                    noPaymentHistoryMessage.style.display = 'none'; // Hide no history message
+        newCustomerNameField.addEventListener('input', function() {
+            if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
+                customerNewIdField.value = '';
+                customerNewIdField.removeAttribute('required');
+            } else {
+                customerNewIdField.setAttribute('required', 'required');
+            }
+        });
 
-                    // Show loading indicator (optional, but good UX)
-                    paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center;">กำลังโหลดประวัติการชำระเงิน...</td></tr>';
+        newCustomerSurnameField.addEventListener('input', function() {
+            if (newCustomerNameField.value.trim() !== '' || newCustomerSurnameField.value.trim() !== '') {
+                customerNewIdField.value = '';
+                customerNewIdField.removeAttribute('required');
+            } else {
+                customerNewIdField.setAttribute('required', 'required');
+            }
+        });
 
-                    try {
-                        const response = await fetch(`/get_payment_history/${loanId}`);
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        const data = await response.json();
+        // Initial check on page load for required attributes
+        if (customerNewIdField.value.trim() === '') {
+            newCustomerNameField.setAttribute('required', 'required');
+            newCustomerSurnameField.setAttribute('required', 'required');
+        } else {
+            customerNewIdField.removeAttribute('required');
+            newCustomerNameField.removeAttribute('required');
+            newCustomerSurnameField.removeAttribute('required');
+        }
 
-                        if (data.payments && data.payments.length > 0) {
-                            // Populate table headers
-                            const headerRow = paymentHistoryTable.querySelector('thead tr');
-                            data.headers.forEach(header => {
-                                const th = document.createElement('th');
-                                th.textContent = header;
-                                headerRow.appendChild(th);
-                            });
+        // Initial calculation on page load if values are already present
+        calculateLoanValues();
 
-                            // Populate table body
-                            const tbody = paymentHistoryTable.querySelector('tbody');
-                            tbody.innerHTML = ''; // Clear loading message
-                            data.payments.forEach(payment => {
-                                const tr = document.createElement('tr');
-                                data.headers.forEach(header => {
-                                    const td = document.createElement('td');
-                                    td.textContent = payment[header] || '-'; // Display value or '-' if empty
-                                    tr.appendChild(td);
-                                });
-                                tbody.appendChild(tr);
-                            });
-                        } else {
-                            noPaymentHistoryMessage.style.display = 'block'; // Show no history message
-                            paymentHistoryTable.querySelector('tbody').innerHTML = ''; // Clear loading message
-                        }
-                    } catch (error) {
-                        console.error('Error fetching payment history:', error);
-                        paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; color: red;">ไม่สามารถโหลดประวัติการชำระเงินได้</td></tr>';
-                    }
+        // --- Payment Modal Logic ---
+        const paymentModal = document.getElementById('paymentModal');
+        const closeButton = paymentModal.querySelector('.close-button');
+        const paymentButtons = document.querySelectorAll('.record-payment-btn');
+        const modalLoanId = document.getElementById('modal_loan_id');
+        const modalCustomerInfo = document.getElementById('modal_customer_info');
+        const modalCompanyName = document.getElementById('modal_company_name');
+        const modalCompanyNameDisplay = document.getElementById('modal_company_name_display');
+        const modalOutstandingDisplay = document.getElementById('modal_outstanding_display');
+        const modalCurrentAmountPaid = document.getElementById('modal_current_amount_paid');
+        const modalCurrentOutstandingAmount = document.getElementById('modal_current_outstanding_amount');
+        
+        const paymentAmountField = document.getElementById('payment_amount');
+        const principalPaymentAmountField = document.getElementById('principal_payment_amount');
 
-                    // Show the history modal
-                    paymentHistoryModal.classList.add('show');
-                });
-            });
+        const paymentDateField = document.getElementById('payment_date');
 
-            historyCloseButton.addEventListener('click', function() {
-                paymentHistoryModal.classList.remove('show');
-            });
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = (today.getMonth() + 1).toString().padStart(2, '0');
+        const day = today.getDate().toString().padStart(2, '0');
+        paymentDateField.value = `${year}-${month}-${day}`;
 
-            // Close modal if clicking outside
-            window.addEventListener('click', function(event) {
-                if (event.target == paymentHistoryModal) {
-                paymentHistoryModal.classList.remove('show');
-                }
-            });
+        paymentButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const loanId = this.dataset.loanId;
+                const customerId = this.dataset.customerId;
+                const customerName = this.dataset.customerName;
+                const customerSurname = this.dataset.customerSurname;
+                const outstandingAmount = this.dataset.outstandingAmount;
+                const amountPaid = this.dataset.amountPaid;
+                const rowIndex = this.dataset.rowIndex;
+                const companyName = this.dataset.companyName;
 
-            // --- Edit/Top-up Loan Modal Logic (MODIFIED) ---
-            const editLoanModal = document.getElementById('editLoanModal');
-            const editLoanCloseButton = editLoanModal.querySelector('.edit-loan-close-button');
-            const editTopupLoanButtons = document.querySelectorAll('.edit-topup-loan-btn');
-            const openNewLoanButtons = document.querySelectorAll('.open-new-loan-btn'); 
-            
+                modalLoanId.value = loanId;
+                modalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
+                modalCompanyName.value = companyName;
+                modalCompanyNameDisplay.value = companyName;
+                modalOutstandingDisplay.value = parseFloat(outstandingAmount).toFixed(2) + ' บาท';
+                modalCurrentAmountPaid.value = parseFloat(amountPaid);
+                modalCurrentOutstandingAmount.value = parseFloat(outstandingAmount);
 
-            const editModalLoanId = document.getElementById('edit_modal_loan_id');
-            const editModalOriginalLoanAmount = document.getElementById('edit_modal_original_loan_amount');
-            const editModalOriginalInterestRate = document.getElementById('edit_modal_original_interest_rate');
-            const editModalOriginalPrincipalToReturn = document.getElementById('edit_modal_original_principal_to_return');
-            const editModalCompanyName = document.getElementById('edit_modal_company_name'); // <-- NEW
-            
-            const editModalCustomerInfo = document.getElementById('edit_modal_customer_info');
-            const editModalCompanyNameDisplay = document.getElementById('edit_modal_company_name_display'); // <-- NEW
-            const editModalCurrentLoanAmount = document.getElementById('edit_modal_current_loan_amount');
-            const editModalCurrentInterestRate = document.getElementById('edit_modal_current_interest_rate');
-            const editModalCurrentOutstandingPrincipal = document.getElementById('edit_modal_current_outstanding_principal');
-            const topUpAmountField = document.getElementById('top_up_amount');
-            const editLoanNoteField = document.getElementById('edit_loan_note');
+                paymentAmountField.value = '0';
+                principalPaymentAmountField.value = '0';
+                paymentDateField.value = `${year}-${month}-${day}`;
 
-            editTopupLoanButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const loanId = this.dataset.loanId;
-                    const rowIndex = this.dataset.rowIndex;
-                    const loanAmount = this.dataset.loanAmount;
-                    const interestRate = this.dataset.interestRate;
-                    const principalToReturn = this.dataset.principalToReturn; // This is the current outstanding principal
-                    const customerName = this.dataset.customerName;
-                    const customerSurname = this.dataset.customerSurname;
-                    const customerId = this.dataset.customerId;
-                    const loanNote = this.dataset.loanNote;
-                    const companyName = this.dataset.companyName; // <-- NEW: รับค่าชื่อบริษัท
-
-                    // Populate hidden fields
-                    editModalLoanId.value = loanId;
-                    editModalOriginalLoanAmount.value = parseFloat(loanAmount);
-                    editModalOriginalInterestRate.value = parseFloat(interestRate);
-                    editModalOriginalPrincipalToReturn.value = parseFloat(principalToReturn);
-                    editModalCompanyName.value = companyName; // <-- NEW: Set hidden company name
-
-                    // Populate display fields
-                    editModalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
-                    editModalCompanyNameDisplay.value = companyName; // <-- NEW: Display company name
-                    editModalCurrentLoanAmount.value = parseFloat(loanAmount).toFixed(2) + ' บาท';
-                    editModalCurrentInterestRate.value = parseFloat(interestRate).toFixed(2) + ' %';
-                    editModalCurrentOutstandingPrincipal.value = parseFloat(principalToReturn).toFixed(2) + ' บาท';
-                    
-                    // Reset top-up amount and pre-fill note
-                    topUpAmountField.value = '0';
-                    editLoanNoteField.value = loanNote; // Show existing note
-
-                    // Show the edit modal
-                    editLoanModal.classList.add('show');
-                });
-            });
-
-            editLoanCloseButton.addEventListener('click', function() {
-                editLoanModal.classList.remove('show');
-            });
-
-            // Close modal if clicking outside
-            window.addEventListener('click', function(event) {
-                if (event.target == editLoanModal) {
-                    editLoanModal.classList.remove('show');
-                }
-            });
-                        document.addEventListener('DOMContentLoaded', function() {
-                const reloanModal = document.getElementById('reloanModal');
-                const reloanCloseButton = reloanModal.querySelector('.reloan-close-button');
-                const reloanLoanButtons = document.querySelectorAll('.reloan-loan-btn');
-
-                const reloanModalOriginalLoanId = document.getElementById('reloan_modal_original_loan_id');
-                const reloanModalCustomerInfo = document.getElementById('reloan_modal_customer_info');
-                const reloanModalCompanyNameDisplay = document.getElementById('reloan_modal_company_name_display');
-
-                const reloanLoanAmountField = document.getElementById('reloan_loan_amount');
-                const reloanInterestRateField = document.getElementById('reloan_interest_rate');
-                const reloanLoanStartDateField = document.getElementById('reloan_loan_start_date');
-                const reloanLoanDurationField = document.getElementById('reloan_loan_duration');
-                const reloanLoanNoteField = document.getElementById('reloan_loan_note');
-
-                reloanLoanButtons.forEach(button => {
-                    button.addEventListener('click', function() {
-                        const loanId = this.dataset.loanId;
-                        const customerName = this.dataset.customerName;
-                        const customerSurname = this.dataset.customerSurname;
-                        const customerId = this.dataset.customerId;
-                        const companyName = this.dataset.companyName;
-
-                        reloanModalOriginalLoanId.value = loanId;
-
-                        reloanModalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
-                        reloanModalCompanyNameDisplay.value = companyName;
-
-                        reloanLoanAmountField.value = '';
-                        reloanInterestRateField.value = '';
-                        const today = new Date();
-                        const year = today.getFullYear();
-                        const month = String(today.getMonth() + 1).padStart(2, '0');
-                        const day = String(today.getDate()).padStart(2, '0');
-                        reloanLoanStartDateField.value = `${year}-${month}-${day}`;
-                        reloanLoanDurationField.value = '';
-                        reloanLoanNoteField.value = '';
-
-                        reloanModal.classList.add('show');
-                    });
-                });
-
-                reloanCloseButton.addEventListener('click', function() {
-                    reloanModal.classList.remove('show');
-                });
-
-                window.addEventListener('click', function(event) {
-                    if (event.target == reloanModal) {
-                        reloanModal.classList.remove('show');
-                    }
-                });
+                paymentModal.classList.add('show');
             });
         });
+
+        closeButton.addEventListener('click', function() {
+            paymentModal.classList.remove('show');
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target == paymentModal) {
+                paymentModal.classList.remove('show');
+            }
+        });
+
+        // --- Payment History Modal Logic ---
+        const paymentHistoryModal = document.getElementById('paymentHistoryModal');
+        const historyCloseButton = paymentHistoryModal.querySelector('.history-close-button');
+        const viewHistoryButtons = document.querySelectorAll('.view-payment-history-btn');
+        const historyLoanIdDisplay = document.getElementById('history_loan_id_display');
+        const historyCompanyNameDisplay = document.getElementById('history_company_name_display');
+        const paymentHistoryTable = document.getElementById('paymentHistoryTable');
+        const noPaymentHistoryMessage = document.getElementById('noPaymentHistoryMessage');
+
+        viewHistoryButtons.forEach(button => {
+            button.addEventListener('click', async function() {
+                const loanId = this.dataset.loanId;
+                const companyName = this.dataset.companyName;
+
+                historyLoanIdDisplay.textContent = loanId;
+                historyCompanyNameDisplay.textContent = companyName;
+
+                paymentHistoryTable.querySelector('thead tr').innerHTML = '';
+                paymentHistoryTable.querySelector('tbody').innerHTML = '';
+                noPaymentHistoryMessage.style.display = 'none';
+
+                paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center;">กำลังโหลดประวัติการชำระเงิน...</td></tr>';
+
+                try {
+                    const response = await fetch(`/get_payment_history/${loanId}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+
+                    if (data.payments && data.payments.length > 0) {
+                        const headerRow = paymentHistoryTable.querySelector('thead tr');
+                        data.headers.forEach(header => {
+                            const th = document.createElement('th');
+                            th.textContent = header;
+                            headerRow.appendChild(th);
+                        });
+
+                        const tbody = paymentHistoryTable.querySelector('tbody');
+                        tbody.innerHTML = '';
+                        data.payments.forEach(payment => {
+                            const tr = document.createElement('tr');
+                            data.headers.forEach(header => {
+                                const td = document.createElement('td');
+                                td.textContent = payment[header] || '-';
+                                tr.appendChild(td);
+                            });
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        noPaymentHistoryMessage.style.display = 'block';
+                        paymentHistoryTable.querySelector('tbody').innerHTML = '';
+                    }
+                } catch (error) {
+                    console.error('Error fetching payment history:', error);
+                    paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; color: red;">ไม่สามารถโหลดประวัติการชำระเงินได้</td></tr>';
+                }
+
+                paymentHistoryModal.classList.add('show');
+            });
+        });
+
+        historyCloseButton.addEventListener('click', function() {
+            paymentHistoryModal.classList.remove('show');
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target == paymentHistoryModal) {
+            paymentHistoryModal.classList.remove('show');
+            }
+        });
+
+        // --- Edit/Top-up Loan Modal Logic ---
+        const editLoanModal = document.getElementById('editLoanModal');
+        const editLoanCloseButton = editLoanModal.querySelector('.edit-loan-close-button');
+        const editTopupLoanButtons = document.querySelectorAll('.edit-topup-loan-btn');
+        
+        const editModalLoanId = document.getElementById('edit_modal_loan_id');
+        const editModalOriginalLoanAmount = document.getElementById('edit_modal_original_loan_amount');
+        const editModalOriginalInterestRate = document.getElementById('edit_modal_original_interest_rate');
+        const editModalOriginalPrincipalToReturn = document.getElementById('edit_modal_original_principal_to_return');
+        const editModalCompanyName = document.getElementById('edit_modal_company_name');
+        
+        const editModalCustomerInfo = document.getElementById('edit_modal_customer_info');
+        const editModalCompanyNameDisplay = document.getElementById('edit_modal_company_name_display');
+        const editModalCurrentLoanAmount = document.getElementById('edit_modal_current_loan_amount');
+        const editModalCurrentInterestRate = document.getElementById('edit_modal_current_interest_rate');
+        const editModalCurrentOutstandingPrincipal = document.getElementById('edit_modal_current_outstanding_principal');
+        const topUpAmountField = document.getElementById('top_up_amount');
+        const editLoanNoteField = document.getElementById('edit_loan_note');
+
+        editTopupLoanButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const loanId = this.dataset.loanId;
+                const rowIndex = this.dataset.rowIndex;
+                const loanAmount = this.dataset.loanAmount;
+                const interestRate = this.dataset.interestRate;
+                const principalToReturn = this.dataset.principalToReturn;
+                const customerName = this.dataset.customerName;
+                const customerSurname = this.dataset.customerSurname;
+                const customerId = this.dataset.customerId;
+                const loanNote = this.dataset.loanNote;
+                const companyName = this.dataset.companyName;
+
+                editModalLoanId.value = loanId;
+                editModalOriginalLoanAmount.value = parseFloat(loanAmount);
+                editModalOriginalInterestRate.value = parseFloat(interestRate);
+                editModalOriginalPrincipalToReturn.value = parseFloat(principalToReturn);
+                editModalCompanyName.value = companyName;
+
+                editModalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
+                editModalCompanyNameDisplay.value = companyName;
+                editModalCurrentLoanAmount.value = parseFloat(loanAmount).toFixed(2) + ' บาท';
+                editModalCurrentInterestRate.value = parseFloat(interestRate).toFixed(2) + ' %';
+                editModalCurrentOutstandingPrincipal.value = parseFloat(principalToReturn).toFixed(2) + ' บาท';
+                
+                topUpAmountField.value = '0';
+                editLoanNoteField.value = loanNote;
+
+                editLoanModal.classList.add('show');
+            });
+        });
+
+        editLoanCloseButton.addEventListener('click', function() {
+            editLoanModal.classList.remove('show');
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target == editLoanModal) {
+                editLoanModal.classList.remove('show');
+            }
+        });
+
+        // --- Reloan Modal Logic (New Section - Corrected Placement) ---
+        const reloanModal = document.getElementById('reloanModal');
+        const reloanCloseButton = reloanModal.querySelector('.reloan-close-button');
+        const reloanLoanButtons = document.querySelectorAll('.reloan-loan-btn');
+
+        const reloanModalOriginalLoanId = document.getElementById('reloan_modal_original_loan_id');
+        const reloanModalCustomerInfo = document.getElementById('reloan_modal_customer_info');
+        const reloanModalCompanyNameDisplay = document.getElementById('reloan_modal_company_name_display');
+
+        const reloanLoanAmountField = document.getElementById('reloan_loan_amount');
+        const reloanInterestRateField = document.getElementById('reloan_interest_rate');
+        const reloanLoanStartDateField = document.getElementById('reloan_loan_start_date');
+        const reloanLoanDurationField = document.getElementById('reloan_loan_duration');
+        const reloanLoanNoteField = document.getElementById('reloan_loan_note');
+
+        reloanLoanButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const loanId = this.dataset.loanId;
+                const customerName = this.dataset.customerName;
+                const customerSurname = this.dataset.customerSurname;
+                const customerId = this.dataset.customerId;
+                const companyName = this.dataset.companyName;
+
+                reloanModalOriginalLoanId.value = loanId;
+
+                reloanModalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
+                reloanModalCompanyNameDisplay.value = companyName;
+
+                reloanLoanAmountField.value = '';
+                reloanInterestRateField.value = '';
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                reloanLoanStartDateField.value = `${year}-${month}-${day}`;
+                reloanLoanDurationField.value = '';
+                reloanLoanNoteField.value = '';
+
+                reloanModal.classList.add('show');
+            });
+        });
+
+        reloanCloseButton.addEventListener('click', function() {
+            reloanModal.classList.remove('show');
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target == reloanModal) {
+                reloanModal.classList.remove('show');
+            }
+        });
+    });
     </script>
 </body>
 </html>
