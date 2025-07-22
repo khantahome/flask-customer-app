@@ -1303,7 +1303,19 @@ def create_new_loan_for_existing():
         try:
             original_loan_id = request.form.get('original_loan_id')
             customer_info_str = request.form.get('reloan_modal_customer_info')
-            customer_id = customer_info_str.split('(รหัส: ')[1][:-1] if '(รหัส: ' in customer_info_str else ''
+            
+            # --- NEW FIX: Robustly extract customer_id ---
+            customer_id = ''
+            if customer_info_str:
+                parts = customer_info_str.split('(รหัส: ')
+                if len(parts) > 1:
+                    customer_id = parts[1][:-1].strip() # Get the part after '(รหัส: ' and remove ')'
+
+            if not customer_id:
+                flash('ไม่สามารถดึงรหัสลูกค้าจากข้อมูลที่ส่งมาได้ กรุณาตรวจสอบฟอร์ม', 'danger')
+                current_app.logger.error(f"Failed to extract customer_id from customer_info_str: {customer_info_str}")
+                return redirect(url_for('loan_management'))
+
             company_name = request.form.get('reloan_modal_company_name_display')
             
             loan_amount = float(request.form.get('loan_amount'))
@@ -1320,7 +1332,6 @@ def create_new_loan_for_existing():
             customer_name_for_loan = 'ไม่พบ'
             customer_surname_for_loan = 'ไม่พบ'
             
-            # --- IMPORTANT FIX: Handle case where get_loan_customer_by_id returns None ---
             loan_customer_data = get_loan_customer_by_id(customer_id)
             if loan_customer_data is None:
                 flash(f"ไม่พบข้อมูลลูกค้าสำหรับรหัสลูกค้า '{customer_id}' ในระบบ Loan_Customers กรุณาตรวจสอบรหัสลูกค้า", 'danger')
@@ -1370,8 +1381,7 @@ def create_new_loan_for_existing():
                 if old_loan_row_index:
                     old_loan_record_values = loan_worksheet.row_values(old_loan_row_index)
                     
-                    # --- NEW FIX: Ensure old_loan_record_values is a list before zipping ---
-                    if old_loan_record_values and isinstance(old_loan_record_values, list):
+                    if old_loan_record_values and isinstance(old_loan_record_values, list) and len(old_loan_record_values) >= len(LOAN_TRANSACTIONS_WORKSHEET_HEADERS):
                         old_loan_record = dict(zip(LOAN_TRANSACTIONS_WORKSHEET_HEADERS, old_loan_record_values))
                         old_loan_record['สถานะเงินกู้'] = 'เปิดยอดใหม่'
                         old_loan_record['ยอดค้างชำระ'] = '0'
@@ -1382,7 +1392,7 @@ def create_new_loan_for_existing():
                         flash(f'อัปเดตสถานะสินเชื่อเก่า {original_loan_id} เป็น "เปิดยอดใหม่" แล้ว', 'info')
                     else:
                         flash(f'ไม่สามารถอัปเดตสถานะสินเชื่อเก่า {original_loan_id} ได้: ข้อมูลแถวไม่ถูกต้องหรือว่างเปล่า', 'warning')
-                        current_app.logger.warning(f"Original loan record {original_loan_id} found at index {old_loan_row_index} but row values are empty or not a list: {old_loan_record_values}")
+                        current_app.logger.warning(f"Original loan record {original_loan_id} found at index {old_loan_row_index} but row values are empty, not a list, or insufficient columns: {old_loan_record_values}")
                 else:
                     flash(f'ไม่พบสินเชื่อเก่า {original_loan_id} ที่ต้องการอัปเดตสถานะ', 'warning')
                     current_app.logger.warning(f"Row index for original loan ID {original_loan_id} not found for status update.")
