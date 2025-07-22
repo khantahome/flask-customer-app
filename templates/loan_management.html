@@ -653,6 +653,18 @@
                                             data-row-index="{{ loop.index + 1 }}" {# +1 because loop.index is 0-based, and headers are row 1 #}
                                             data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
                                             >บันทึกชำระ</button>
+                                    <button class="btn btn-info btn-sm open-new-loan-btn"
+                                        data-loan-id="{{ loan.id }}"
+                                        data-loan-amount="{{ '%.2f'|format(loan.loan_amount) }}"
+                                        data-interest-rate="{{ '%.2f'|format(loan.interest_rate) }}"
+                                        data-principal-to-return="{{ '%.2f'|format(loan.principal_to_return) }}"
+                                        data-customer-name="{{ loan.customer_name }}"
+                                        data-customer-surname="{{ loan.customer_surname }}"
+                                        data-customer-id="{{ loan.customer_id }}"
+                                        data-loan-note="{{ loan.loan_note }}"
+                                        data-company-name="{{ loan.company_name }}">
+                                        เปิดยอดใหม่
+                                    </button>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -785,6 +797,48 @@
             </form>
         </div>
     </div>
+    <div id="reloanModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button reloan-close-button">&times;</span>
+        <h4 class="modal-title">เปิดยอดสินเชื่อใหม่ (สำหรับลูกค้าเดิม)</h4>
+        <form id="reloanForm" action="{{ url_for('create_new_loan_for_existing') }}" method="POST">
+            <input type="hidden" id="reloan_modal_original_loan_id" name="original_loan_id">
+            
+            <div class="form-group">
+                <label for="reloan_modal_customer_info" class="form-label">ลูกค้า:</label>
+                <input type="text" class="form-input" id="reloan_modal_customer_info" readonly>
+            </div>
+            <div class="form-group">
+                <label for="reloan_modal_company_name_display" class="form-label">บริษัทผู้ปล่อยกู้:</label>
+                <input type="text" class="form-input" id="reloan_modal_company_name_display" readonly>
+            </div>
+            
+            <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
+
+            <div class="form-group">
+                <label for="reloan_loan_amount" class="form-label">วงเงินกู้ใหม่ (บาท):</label>
+                <input type="number" class="form-input" id="reloan_loan_amount" name="loan_amount" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="reloan_interest_rate" class="form-label">อัตราดอกเบี้ยใหม่ (%):</label>
+                <input type="number" class="form-input" id="reloan_interest_rate" name="interest_rate" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="reloan_loan_start_date" class="form-label">วันที่เริ่มกู้ใหม่:</label>
+                <input type="date" class="form-input" id="reloan_loan_start_date" name="loan_start_date" required>
+            </div>
+            <div class="form-group">
+                <label for="reloan_loan_duration" class="form-label">ระยะเวลาผ่อนชำระใหม่ (เดือน):</label>
+                <input type="number" class="form-input" id="reloan_loan_duration" name="loan_duration" required>
+            </div>
+            <div class="form-group">
+                <label for="reloan_loan_note" class="form-label">หมายเหตุ (สำหรับยอดใหม่):</label>
+                <textarea class="form-input" id="reloan_loan_note" name="loan_note" rows="2" placeholder="ระบุเหตุผลหรือรายละเอียดของยอดใหม่"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" id="reloanSubmitBtn">บันทึกยอดสินเชื่อใหม่</button>
+        </form>
+    </div>
+</div>
     <body class="initial-hidden">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -1066,6 +1120,8 @@
             const editLoanModal = document.getElementById('editLoanModal');
             const editLoanCloseButton = editLoanModal.querySelector('.edit-loan-close-button');
             const editTopupLoanButtons = document.querySelectorAll('.edit-topup-loan-btn');
+            const openNewLoanButtons = document.querySelectorAll('.open-new-loan-btn'); 
+            
 
             const editModalLoanId = document.getElementById('edit_modal_loan_id');
             const editModalOriginalLoanAmount = document.getElementById('edit_modal_original_loan_amount');
@@ -1126,6 +1182,58 @@
                 if (event.target == editLoanModal) {
                     editLoanModal.classList.remove('show');
                 }
+            });
+                        document.addEventListener('DOMContentLoaded', function() {
+                const reloanModal = document.getElementById('reloanModal');
+                const reloanCloseButton = reloanModal.querySelector('.reloan-close-button');
+                const reloanLoanButtons = document.querySelectorAll('.reloan-loan-btn');
+
+                const reloanModalOriginalLoanId = document.getElementById('reloan_modal_original_loan_id');
+                const reloanModalCustomerInfo = document.getElementById('reloan_modal_customer_info');
+                const reloanModalCompanyNameDisplay = document.getElementById('reloan_modal_company_name_display');
+
+                const reloanLoanAmountField = document.getElementById('reloan_loan_amount');
+                const reloanInterestRateField = document.getElementById('reloan_interest_rate');
+                const reloanLoanStartDateField = document.getElementById('reloan_loan_start_date');
+                const reloanLoanDurationField = document.getElementById('reloan_loan_duration');
+                const reloanLoanNoteField = document.getElementById('reloan_loan_note');
+
+                reloanLoanButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const loanId = this.dataset.loanId;
+                        const customerName = this.dataset.customerName;
+                        const customerSurname = this.dataset.customerSurname;
+                        const customerId = this.dataset.customerId;
+                        const companyName = this.dataset.companyName;
+
+                        reloanModalOriginalLoanId.value = loanId;
+
+                        reloanModalCustomerInfo.value = `${customerName} ${customerSurname} (รหัส: ${customerId})`;
+                        reloanModalCompanyNameDisplay.value = companyName;
+
+                        reloanLoanAmountField.value = '';
+                        reloanInterestRateField.value = '';
+                        const today = new Date();
+                        const year = today.getFullYear();
+                        const month = String(today.getMonth() + 1).padStart(2, '0');
+                        const day = String(today.getDate()).padStart(2, '0');
+                        reloanLoanStartDateField.value = `${year}-${month}-${day}`;
+                        reloanLoanDurationField.value = '';
+                        reloanLoanNoteField.value = '';
+
+                        reloanModal.classList.add('show');
+                    });
+                });
+
+                reloanCloseButton.addEventListener('click', function() {
+                    reloanModal.classList.remove('show');
+                });
+
+                window.addEventListener('click', function(event) {
+                    if (event.target == reloanModal) {
+                        reloanModal.classList.remove('show');
+                    }
+                });
             });
         });
     </script>
