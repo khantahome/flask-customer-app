@@ -1352,7 +1352,9 @@ def create_new_loan_for_existing():
                 old_loan_row_index = find_row_index_by_loan_id(loan_worksheet, original_loan_id)
                 if old_loan_row_index:
                     old_loan_record_values = loan_worksheet.row_values(old_loan_row_index)
-                    if old_loan_record_values:
+                    
+                    # --- NEW FIX: Ensure old_loan_record_values is a list before zipping ---
+                    if old_loan_record_values and isinstance(old_loan_record_values, list):
                         old_loan_record = dict(zip(LOAN_TRANSACTIONS_WORKSHEET_HEADERS, old_loan_record_values))
                         old_loan_record['สถานะเงินกู้'] = 'เปิดยอดใหม่'
                         old_loan_record['ยอดค้างชำระ'] = '0'
@@ -1362,9 +1364,11 @@ def create_new_loan_for_existing():
                         loan_worksheet.update(f"A{old_loan_row_index}:Z{old_loan_row_index}", [updated_old_row_values])
                         flash(f'อัปเดตสถานะสินเชื่อเก่า {original_loan_id} เป็น "เปิดยอดใหม่" แล้ว', 'info')
                     else:
-                        print(f"Warning: Original loan record {original_loan_id} not found for status update (row values empty).")
+                        flash(f'ไม่สามารถอัปเดตสถานะสินเชื่อเก่า {original_loan_id} ได้: ข้อมูลแถวไม่ถูกต้องหรือว่างเปล่า', 'warning')
+                        current_app.logger.warning(f"Original loan record {original_loan_id} found at index {old_loan_row_index} but row values are empty or not a list: {old_loan_record_values}")
                 else:
-                    print(f"Warning: Row index for original loan ID {original_loan_id} not found for status update.")
+                    flash(f'ไม่พบสินเชื่อเก่า {original_loan_id} ที่ต้องการอัปเดตสถานะ', 'warning')
+                    current_app.logger.warning(f"Row index for original loan ID {original_loan_id} not found for status update.")
 
             # --- Save the NEW loan record to Loan_Transactions ---
             row_to_append_new_loan = [new_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
