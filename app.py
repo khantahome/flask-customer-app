@@ -1241,10 +1241,13 @@ def loan_management():
         else:
             flash(f"พบ {len(loan_records)} รายการที่ตรงกับ '{search_query}'", "success")
     else:
-        flash("กรุณากรอกคำค้นเพื่อแสดงข้อมูลสินเชื่อ", "info")
+        loan_records = get_all_loan_records_with_payments()
+        if not loan_records:
+            flash("ไม่พบข้อมูลสินเชื่อในระบบ", "info")
+        else:
+            flash(f"แสดงข้อมูลสินเชื่อทั้งหมด {len(loan_records)} รายการ", "info")
 
-    # ✅ โหลด customer list สำหรับ datalist ลูกค้า
-    all_customers = get_all_loan_records()  # หรือฟังก์ชันของคุณที่คืน customer list
+    all_customers = get_all_loan_records()
 
     return render_template(
         'loan_management.html',
