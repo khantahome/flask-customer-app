@@ -1302,28 +1302,25 @@ def create_new_loan_for_existing():
 
             customer_name_for_loan = 'ไม่พบ'
             customer_surname_for_loan = 'ไม่พบ'
+            
+            # --- IMPORTANT FIX: Handle case where get_loan_customer_by_id returns None ---
             loan_customer_data = get_loan_customer_by_id(customer_id)
-            if loan_customer_data:
-                customer_name_for_loan = loan_customer_data.get('ชื่อ', 'ไม่พบ')
-                customer_surname_for_loan = loan_customer_data.get('นามสกุล', 'ไม่พบ')
+            if loan_customer_data is None:
+                flash(f"ไม่พบข้อมูลลูกค้าสำหรับรหัสลูกค้า '{customer_id}' ในระบบ Loan_Customers กรุณาตรวจสอบรหัสลูกค้า", 'danger')
+                current_app.logger.error(f"Customer data not found for customer_id: {customer_id} in Loan_Customers worksheet.")
+                return redirect(url_for('loan_management'))
+            
+            customer_name_for_loan = loan_customer_data.get('ชื่อ', 'ไม่พบ')
+            customer_surname_for_loan = loan_customer_data.get('นามสกุล', 'ไม่พบ')
 
             # --- Loan Calculation based on provided formulas ---
-            # 1. ค่าดำเนินการ (บาท): = วงเงินกู้ * 2% / 100
             processing_fee = round((loan_amount * 2) / 100, 2)
-
-            # 2. หักดอกหัวท้าย (บาท): = (วงเงินกู้ * ดอกเบี้ย (%) / 100) * 2
             upfront_interest_deduction = round((loan_amount * (interest_rate / 100)) * 2, 2)
-
-            # 3. ยอดเงินที่ต้องโอน (บาท): = วงเงินกู้ - หักดอกหัวท้าย (บาท): - ค่าดำเนินการ (บาท):
             principal_to_transfer = round(loan_amount - upfront_interest_deduction - processing_fee, 2)
-
-            # 4. ยอดเงินต้องคืนรายวัน (บาท): = วงเงินกู้ * ดอกเบี้ย (%) / 100
             daily_return_amount = round(loan_amount * (interest_rate / 100), 2)
 
-            # Generate a new loan ID for the new loan record
             new_loan_id = generate_loan_id()
 
-            # Prepare data for the NEW loan record to be saved in Loan_Transactions
             new_loan_record = {
                 'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'รหัสเงินกู้': new_loan_id,
@@ -1357,17 +1354,17 @@ def create_new_loan_for_existing():
                     old_loan_record_values = loan_worksheet.row_values(old_loan_row_index)
                     if old_loan_record_values:
                         old_loan_record = dict(zip(LOAN_TRANSACTIONS_WORKSHEET_HEADERS, old_loan_record_values))
-                        old_loan_record['สถานะเงินกู้'] = 'เปิดยอดใหม่' # Set status to 'เปิดยอดใหม่'
-                        old_loan_record['ยอดค้างชำระ'] = '0' # Set outstanding to 0 for old loan
-                        old_loan_record['ยอดที่ต้องชำระรายวัน'] = '0' # Set daily payment to 0 for old loan
+                        old_loan_record['สถานะเงินกู้'] = 'เปิดยอดใหม่'
+                        old_loan_record['ยอดค้างชำระ'] = '0'
+                        old_loan_record['ยอดที่ต้องชำระรายวัน'] = '0'
 
                         updated_old_row_values = [old_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
                         loan_worksheet.update(f"A{old_loan_row_index}:Z{old_loan_row_index}", [updated_old_row_values])
                         flash(f'อัปเดตสถานะสินเชื่อเก่า {original_loan_id} เป็น "เปิดยอดใหม่" แล้ว', 'info')
                     else:
-                        print(f"Warning: Original loan record {original_loan_id} not found for status update.")
+                        print(f"Warning: Original loan record {original_loan_id} not found for status update (row values empty).")
                 else:
-                    print(f"Warning: Row index for original loan ID {original_loan_id} not found.")
+                    print(f"Warning: Row index for original loan ID {original_loan_id} not found for status update.")
 
             # --- Save the NEW loan record to Loan_Transactions ---
             row_to_append_new_loan = [new_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
@@ -1379,15 +1376,15 @@ def create_new_loan_for_existing():
             if payment_history_worksheet:
                 reloan_history_entry = {
                     'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    'รหัสเงินกู้': new_loan_id, # This is the new loan ID
+                    'รหัสเงินกู้': new_loan_id,
                     'รหัสลูกค้า': customer_id,
                     'ชื่อลูกค้า': customer_name_for_loan,
                     'นามสกุลลูกค้า': customer_surname_for_loan,
                     'ชื่อบริษัทผู้ปล่อยกู้': company_name,
                     'จำนวนเงินที่ชำระดอกลอย': '0',
                     'จำนวนเงินที่ชำระคืนต้น': '0',
-                    'ยอดเพิ่มวงเงิน': '0', # Set to 0 as 'ยอดเปิดวงเงินใหม่' is the new column
-                    'ยอดเปิดวงเงินใหม่': str(loan_amount), # Use the new column for the new loan amount
+                    'ยอดเพิ่มวงเงิน': '0',
+                    'ยอดเปิดวงเงินใหม่': str(loan_amount),
                     'วันที่ชำระ': loan_start_date.strftime('%Y-%m-%d'),
                     'หมายเหตุการชำระ': f"เปิดยอดใหม่จากสินเชื่อเก่า {original_loan_id if original_loan_id else 'N/A'}: {loan_note}",
                     'ผู้บันทึก': logged_in_user
@@ -1398,7 +1395,6 @@ def create_new_loan_for_existing():
             else:
                 flash('ไม่สามารถบันทึกประวัติการเปิดยอดใหม่ได้', 'warning')
 
-            # Clear loan records cache to ensure fresh data is loaded next time
             global loan_records_cache, loan_records_cache_timestamp
             loan_records_cache = None
             loan_records_cache_timestamp = None
@@ -1412,7 +1408,6 @@ def create_new_loan_for_existing():
             current_app.logger.error(f"Error creating new loan for existing customer: {e}")
 
     return redirect(url_for('loan_management'))
-# --- END NEW ROUTE ---
 
 
 # --- Main execution block ---
