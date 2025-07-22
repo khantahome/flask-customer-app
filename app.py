@@ -1304,10 +1304,14 @@ def create_new_loan_for_existing():
             original_loan_id = request.form.get('original_loan_id')
             customer_info_str = request.form.get('reloan_modal_customer_info')
             
+            # --- DEBUG: Print customer_info_str and parts ---
+            print(f"DEBUG: customer_info_str: '{customer_info_str}' (Type: {type(customer_info_str)})")
+            
             # --- NEW FIX: Robustly extract customer_id ---
             customer_id = ''
             if customer_info_str:
                 parts = customer_info_str.split('(รหัส: ')
+                print(f"DEBUG: parts after split: {parts} (Type: {type(parts)})")
                 if len(parts) > 1:
                     customer_id = parts[1][:-1].strip() # Get the part after '(รหัส: ' and remove ')'
 
@@ -1381,6 +1385,10 @@ def create_new_loan_for_existing():
                 if old_loan_row_index:
                     old_loan_record_values = loan_worksheet.row_values(old_loan_row_index)
                     
+                    # --- DEBUG: Print old_loan_record_values ---
+                    print(f"DEBUG: old_loan_record_values: {old_loan_record_values} (Type: {type(old_loan_record_values)})")
+                    print(f"DEBUG: LOAN_TRANSACTIONS_WORKSHEET_HEADERS: {LOAN_TRANSACTIONS_WORKSHEET_HEADERS} (Type: {type(LOAN_TRANSACTIONS_WORKSHEET_HEADERS)})")
+
                     if old_loan_record_values and isinstance(old_loan_record_values, list) and len(old_loan_record_values) >= len(LOAN_TRANSACTIONS_WORKSHEET_HEADERS):
                         old_loan_record = dict(zip(LOAN_TRANSACTIONS_WORKSHEET_HEADERS, old_loan_record_values))
                         old_loan_record['สถานะเงินกู้'] = 'เปิดยอดใหม่'
