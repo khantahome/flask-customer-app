@@ -211,11 +211,28 @@ def get_payment_records_by_loan_id(loan_id):
         return []
 
 def find_row_index_by_loan_id(worksheet, loan_id):
-    rows = worksheet.get_all_values()
-    for i, row in enumerate(rows, start=1):
-        if row[1] == loan_id:
-            return i
-    return None
+    """
+    Finds the row index of a loan record by its loan ID.
+    Returns the 1-based row index or None if not found or worksheet is empty.
+    """
+    if not worksheet:
+        current_app.logger.error("Worksheet is None in find_row_index_by_loan_id.")
+        return None
+    try:
+        rows = worksheet.get_all_values()
+        # --- NEW FIX: Ensure rows is a list before iterating ---
+        if not rows or not isinstance(rows, list):
+            current_app.logger.warning(f"Worksheet.get_all_values() returned empty or non-list for loan_id: {loan_id}. Result: {rows}")
+            return None
+
+        for i, row in enumerate(rows, start=1):
+            # Ensure row has enough columns to access index 1 (loan ID is usually in the second column)
+            if len(row) > 1 and row[1] == loan_id:
+                return i
+        return None
+    except Exception as e:
+        current_app.logger.error(f"Error in find_row_index_by_loan_id for loan_id {loan_id}: {e}")
+        return None
 
 # --- NEW HELPER FUNCTIONS ---
 def generate_loan_id():
