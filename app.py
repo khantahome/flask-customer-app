@@ -1,5 +1,5 @@
 # Import necessary modules from Flask and other libraries
-from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify, current_app # <-- เพิ่ม current_app ที่นี่ และรวมทุกอย่าง
+from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify, current_app
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
@@ -36,7 +36,7 @@ USER_LOGIN_SPREADSHEET_NAME = 'UserLoginData'
 USER_LOGIN_WORKSHEET_NAME = 'users'
 
 # Original Customer Records Sheet (uses เลขบัตรประชาชน)
-WORKSHEET_NAME = 'customer_records' 
+WORKSHEET_NAME = 'customer_records'
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
     'Timestamp', 'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
     'จดทะเบียน', 'ชื่อกิจการ', 'ประเภทธุรกิจ', 'ที่อยู่จดทะเบียน', 'สถานะ',
@@ -48,7 +48,7 @@ CUSTOMER_DATA_WORKSHEET_HEADERS = [
 ]
 
 # NEW: Worksheet for auto-incrementing customer IDs (for loan customers)
-CUSTOMER_ID_WORKSHEET_NAME = 'loan_customer_id_counter' 
+CUSTOMER_ID_WORKSHEET_NAME = 'loan_customer_id_counter'
 
 # NEW: Worksheet for loan-specific customer records (uses รหัสลูกค้า)
 LOAN_CUSTOMER_RECORDS_WORKSHEET_NAME = 'Loan_Customers'
@@ -58,7 +58,7 @@ LOAN_CUSTOMER_DATA_WORKSHEET_HEADERS = ['รหัสลูกค้า', 'ช�
 LOAN_TRANSACTIONS_WORKSHEET_NAME = 'Loan_Transactions'
 LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
     'Timestamp', 'รหัสเงินกู้', 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
-    'ชื่อบริษัทผู้ปล่อยกู้', 
+    'ชื่อบริษัทผู้ปล่อยกู้',
     'วงเงินกู้', 'ดอกเบี้ย (%)', 'วันที่เริ่มกู้', 'หักดอกหัวท้าย', 'ยอดเงินต้นที่ต้องคืน',
     'ค่าดำเนินการ', 'ยอดที่ต้องชำระรายวัน', 'ยอดชำระแล้ว', 'ยอดค้างชำระ', 'สถานะเงินกู้',
     'หมายเหตุเงินกู้', 'ผู้บันทึก'
@@ -66,7 +66,7 @@ LOAN_TRANSACTIONS_WORKSHEET_HEADERS = [
 LOAN_PAYMENT_HISTORY_WORKSHEET_NAME = 'Loan_Payment_History'
 LOAN_PAYMENT_HISTORY_WORKSHEET_HEADERS = [
     'Timestamp', 'รหัสเงินกู้', 'รหัสลูกค้า', 'ชื่อลูกค้า', 'นามสกุลลูกค้า',
-    'ชื่อบริษัทผู้ปล่อยกู้', 
+    'ชื่อบริษัทผู้ปล่อยกู้',
     'จำนวนเงินที่ชำระดอกลอย', 'จำนวนเงินที่ชำระคืนต้น', 'ยอดเพิ่มวงเงิน', 'วันที่ชำระ', 'หมายเหตุการชำระ', 'ผู้บันทึก'
 ]
 loan_records_cache = None
@@ -150,12 +150,10 @@ def get_customer_data_worksheet():
 
 def get_loan_worksheet():
     """Returns the Loan_Transactions worksheet."""
-    # เพิ่ม print statement ตรงนี้: เพื่อดูว่าพยายามเข้าถึงชีทชื่ออะไร
     print(f"DEBUG: Attempting to get loan worksheet: Spreadsheet='{SPREADSHEET_NAME}', Worksheet='{LOAN_TRANSACTIONS_WORKSHEET_NAME}'")
-    
+
     worksheet = get_worksheet(SPREADSHEET_NAME, LOAN_TRANSACTIONS_WORKSHEET_NAME, LOAN_TRANSACTIONS_WORKSHEET_HEADERS)
-    
-    # เพิ่ม print statement ตรงนี้: เพื่อดูว่า get_worksheet คืนค่าเป็น None หรือไม่
+
     if not worksheet:
         print("DEBUG: get_loan_worksheet returned None.")
     return worksheet
@@ -164,8 +162,6 @@ def get_loan_worksheet():
 
 def get_customer_id_counter_worksheet():
     """NEW: Gets or creates the worksheet for loan customer ID counter."""
-    # This worksheet will just have one cell (A1) storing the last ID.
-    # No specific headers needed.
     return get_worksheet(SPREADSHEET_NAME, CUSTOMER_ID_WORKSHEET_NAME)
 
 def get_loan_customer_data_worksheet():
@@ -193,7 +189,7 @@ def get_payment_records_by_loan_id(loan_id):
 
         headers = all_data[0]
         data_rows = all_data[1:]
-        
+
         filtered_payments = []
         for row in data_rows:
             record = {}
@@ -204,15 +200,14 @@ def get_payment_records_by_loan_id(loan_id):
                     record[header] = ''
             if record.get('รหัสเงินกู้') == loan_id:
                 filtered_payments.append(record)
-        
-        # NEW DEBUG PRINT: แสดงข้อมูลที่ถูกกรองก่อนคืนค่า
+
         print(f"DEBUG: Payments filtered for loan_id {loan_id}: {filtered_payments[:2]} (showing first 2 records if many)")
-        
+
         return filtered_payments
     except Exception as e:
         print(f"ERROR in get_payment_records_by_loan_id: {e}")
         return []
-    
+
 def find_row_index_by_loan_id(worksheet, loan_id):
     rows = worksheet.get_all_values()
     for i, row in enumerate(rows, start=1):
@@ -220,7 +215,39 @@ def find_row_index_by_loan_id(worksheet, loan_id):
             return i
     return None
 
+# --- NEW HELPER FUNCTIONS ---
+def generate_loan_id():
+    """Generates a unique loan ID based on current timestamp."""
+    return "L" + datetime.now().strftime("%Y%m%d%H%M%S")
 
+def get_loan_customer_by_id(customer_id):
+    """Retrieves loan customer details by customer_id from Loan_Customers worksheet."""
+    worksheet = get_loan_customer_data_worksheet()
+    if not worksheet:
+        print("ERROR: Loan_Customers worksheet not available.")
+        return None
+    try:
+        all_data = worksheet.get_all_values()
+        if not all_data or len(all_data) < 2:
+            return None # No data or only headers
+
+        headers = all_data[0]
+        data_rows = all_data[1:]
+
+        for row in data_rows:
+            record = {}
+            for j, header in enumerate(headers):
+                if j < len(row):
+                    record[header] = row[j]
+                else:
+                    record[header] = ''
+            if record.get('รหัสลูกค้า') == customer_id:
+                return record
+        return None
+    except Exception as e:
+        print(f"ERROR in get_loan_customer_by_id: {e}")
+        return None
+# --- END NEW HELPER FUNCTIONS ---
 
 
 # Route for recording payments (MODIFIED)
@@ -245,14 +272,14 @@ def record_payment():
 
             row_index = find_row_index_by_loan_id(loan_worksheet, loan_id)
 
-            
+
             # Get both payment amounts
             payment_amount = float(request.form.get('payment_amount', 0)) # This is for floating interest
             principal_payment_amount = float(request.form.get('principal_payment_amount', 0)) # This is for principal repayment
 
             payment_date = request.form['payment_date']
             payment_note = request.form.get('payment_note', '').strip()
-            
+
             # Get current values from hidden fields (these are from the table row)
             current_amount_paid = float(request.form['current_amount_paid'])
             current_outstanding_amount = float(request.form['current_outstanding_amount'])
@@ -264,7 +291,7 @@ def record_payment():
 
             # Get the specific row to update
             loan_record_values = loan_worksheet.row_values(row_index)
-            
+
             if not loan_record_values:
                 flash('ไม่พบรายการเงินกู้ที่ระบุ', 'error')
                 return redirect(url_for('loan_management'))
@@ -284,7 +311,7 @@ def record_payment():
             # สูตร: ยอดค้างชำระที่เหลืออยู่ × ดอกเบี้ย ÷ 100
             interest_rate_percent = float(current_loan_record.get('ดอกเบี้ย (%)', 0))
             new_daily_payment = round(new_outstanding_amount * (interest_rate_percent / 100), 2)
-            
+
             # Update 'สถานะเงินกู้' if fully paid
             new_loan_status = current_loan_record.get('สถานะเงินกู้', 'อยู่ระหว่างผ่อนชำระ')
             if new_outstanding_amount <= 0.01: # Use a small epsilon for floating point comparison
@@ -295,7 +322,7 @@ def record_payment():
             current_loan_record['ยอดค้างชำระ'] = new_outstanding_amount
             current_loan_record['ยอดที่ต้องชำระรายวัน'] = new_daily_payment
             current_loan_record['สถานะเงินกู้'] = new_loan_status
-            
+
             # NEW: Update 'ยอดเงินต้นที่ต้องคืน' to reflect the current outstanding principal
             current_loan_record['ยอดเงินต้นที่ต้องคืน'] = new_outstanding_amount # <-- เพิ่มบรรทัดนี้
 
@@ -359,7 +386,7 @@ def get_payment_history(loan_id):
     """
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     payments = get_payment_records_by_loan_id(loan_id)
 
     # Force sanitize values before jsonify
@@ -407,7 +434,7 @@ def get_all_customer_records():
 
         headers = all_data[0]
         data_rows = all_data[1:]
-        
+
         customer_records = []
         # เริ่มต้นการวนลูปด้วย index (i) เพื่อใช้ในการคำนวณ row_index
         for i, row in enumerate(data_rows): # <--- แก้ไขตรงนี้: เพิ่ม enumerate(data_rows)
@@ -417,12 +444,12 @@ def get_all_customer_records():
                     record[header] = row[j]
                 else:
                     record[header] = ''
-            
+
             # เพิ่มบรรทัดนี้: กำหนด row_index ให้กับแต่ละ record
             # i คือ index ที่เริ่มจาก 0 สำหรับ data_rows (ซึ่งคือแถวที่ 2 ของชีทจริง)
             # ดังนั้น row_index ใน Google Sheet คือ i + 2
-            record['row_index'] = i + 2 
-            
+            record['row_index'] = i + 2
+
             customer_records.append(record)
         return customer_records
     except Exception as e:
@@ -523,7 +550,7 @@ def get_all_loan_records():
     """
     Retrieves all loan records from the Loan_Transactions worksheet.
     Each record will be a dictionary.
-    
+
     """
     global loan_records_cache, loan_records_cache_timestamp
     if loan_records_cache is not None and \
@@ -539,19 +566,17 @@ def get_all_loan_records():
         return []
     try:
         all_data = worksheet.get_all_values()
-        # Debug print: แสดง 2 แถวแรกของข้อมูลดิบที่ดึงมา
         print(f"DEBUG: Raw data from Loan_Transactions (first 2 rows): {all_data[:2]}")
-        
+
         if not all_data or len(all_data) < 2:
             print("DEBUG: Google Sheet 'Loan_Transactions' is empty or only has headers.")
             return []
 
         headers = all_data[0]
-        # Debug print: แสดง Headers ที่ดึงมาได้
         print(f"DEBUG: Headers from Loan_Transactions: {headers}")
-        
+
         data_rows = all_data[1:]
-        
+
         loan_records = []
         for i, row in enumerate(data_rows):
             record = {}
@@ -561,15 +586,14 @@ def get_all_loan_records():
                 else:
                     record[header] = ''
             loan_records.append(record)
-            # Debug print: แสดงตัวอย่าง 2 record แรกที่ถูกสร้าง
-            if i < 2: 
+            if i < 2:
                 print(f"DEBUG: Sample loan record {i+1}: {record}")
         return loan_records
     except Exception as e:
         print(f"ERROR in get_all_loan_records: {e}")
         return []
 
-    
+
 @cache.cached(timeout=300, key_prefix='all_loan_records_with_payments')
 def get_all_loan_records_with_payments():
     loan_records = get_all_loan_records()  # จาก Loan_Transactions
@@ -616,7 +640,7 @@ def generate_next_customer_id():
             except ValueError:
                 print(f"Warning: Invalid customer ID format '{last_id_str}' in counter sheet A1. Resetting to 0 for calculation.")
                 last_id_num = 0 # Reset to 0 if value is not an integer
-        
+
         next_id_num = last_id_num + 1
         next_id_str = f"{next_id_num:06d}" # Format as 000001, 000002, etc.
 
@@ -716,8 +740,8 @@ def add_loan_record():
                     flash("ไม่สามารถเชื่อมต่อกับชีทข้อมูลลูกค้าเงินกู้ได้", 'error')
                     return redirect(url_for('loan_management'))
 
-                loan_records = get_all_loan_records()
-                found_loan_customer = next((rec for rec in loan_records if rec.get('รหัสลูกค้า') == customer_loan_id), None)
+                # Changed to use get_loan_customer_by_id for direct lookup
+                found_loan_customer = get_loan_customer_by_id(customer_loan_id)
 
                 if found_loan_customer:
                     final_customer_id = customer_loan_id
@@ -733,7 +757,7 @@ def add_loan_record():
                 if not generated_id:
                     flash('ไม่สามารถสร้างรหัสลูกค้าใหม่ได้ โปรดลองอีกครั้ง', 'error')
                     return redirect(url_for('loan_management'))
-                
+
                 final_customer_id = generated_id
                 customer_name_for_loan = new_customer_name
                 customer_surname_for_loan = new_customer_surname
@@ -768,7 +792,7 @@ def add_loan_record():
             # 2. ยอดเงินต้นที่ต้องคืน (Principal to Return)
             # ยอดเงินต้นที่ต้องคืน = วงเงินกู้ (ไม่หักอะไรทั้งนั้น)
             principal_to_return = round(loan_amount, 2)
-            
+
             # 3. ยอดที่ต้องชำระรายวัน (Daily Payment)
             # สูตร: วงเงินกู้ * ดอกเบี้ย / 100 (ซึ่งคือค่าเดียวกับ simple_interest)
             daily_payment = round(simple_interest, 2)
@@ -776,7 +800,7 @@ def add_loan_record():
             # Prepare the data row for Loan Transactions sheet
             row_data = {
                 'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'รหัสเงินกู้': f"L{datetime.now().strftime('%Y%m%d%H%M%S')}", # Generate a simple loan ID
+                'รหัสเงินกู้': generate_loan_id(), # ใช้ฟังก์ชัน generate_loan_id() ที่สร้างใหม่
                 'รหัสลูกค้า': final_customer_id, # Use the determined customer ID
                 'ชื่อลูกค้า': customer_name_for_loan,
                 'นามสกุลลูกค้า': customer_surname_for_loan,
@@ -817,7 +841,7 @@ def add_loan_record():
             flash(f'เกิดข้อผิดพลาดในการบันทึกรายการเงินกู้: {e}', 'error')
             print(f"Error adding loan record: {e}")
 
-    return redirect(url_for('loan_management')) # Redirect back to the loan management page
+    return redirect(url_for('loan_management'))
 
 
 
@@ -857,8 +881,8 @@ def delete_image_from_cloudinary(image_url):
             print(f"Invalid Cloudinary URL for deletion: {image_url}")
             return False
 
-        public_id_with_folder = "/".join(parts[-2:]).split('.')[0] 
-        
+        public_id_with_folder = "/".join(parts[-2:]).split('.')[0]
+
         if "customer_app_images" in public_id_with_folder:
             public_id_to_delete = public_id_with_folder
         else:
@@ -887,11 +911,11 @@ def login():
     Handles user login functionality.
     """
     error = None
-    users = load_users() 
+    users = load_users()
 
     if request.method == 'POST':
-        username = request.form.get('username') 
-        password = request.form.get('password') 
+        username = request.form.get('username')
+        password = request.form.get('password')
 
         if username in users and users[username] == password:
             session['username'] = username
@@ -956,7 +980,7 @@ def enter_customer_data():
             line_id = request.form.get('line_id', '') or '-'
             upfront_interest = request.form.get('upfront_interest', '') or '-'
             processing_fee = request.form.get('processing_fee', '') or '-'
-            application_date = request.form.get('application_date', '') or '-' 
+            application_date = request.form.get('application_date', '') or '-'
             home_location_link = request.form.get('home_location_link', '') or '-'
             work_location_link = request.form.get('work_location_link', '') or '-'
             remarks = request.form.get('remarks', '') or '-'
@@ -970,7 +994,7 @@ def enter_customer_data():
                         url = upload_image_to_cloudinary(customer_image.stream, customer_image.filename)
                         if url:
                             image_urls.append(url)
-            
+
             # Join all image URLs into a single comma-separated string, or "-" if no images
             image_urls_str = ', '.join(image_urls) if image_urls else '-'
 
@@ -1005,7 +1029,7 @@ def enter_customer_data():
                         'Image URLs': image_urls_str,
                         'Logged In User': logged_in_user
                     }
-                    
+
                     row_to_append = [row_data.get(header, '-') for header in CUSTOMER_DATA_WORKSHEET_HEADERS]
                     worksheet.append_row(row_to_append)
                     flash('บันทึกข้อมูลลูกค้าเรียบร้อยแล้ว!', 'success')
@@ -1024,6 +1048,7 @@ def enter_customer_data():
 
 # ... (โค้ดส่วนบนของ app.py) ...
 
+
 @app.route('/search_customer_data', methods=['GET'])
 def search_customer_data():
     """
@@ -1036,7 +1061,7 @@ def search_customer_data():
         return redirect(url_for('login'))
 
     logged_in_user = session['username']
-    
+
     search_keyword = request.args.get('search_keyword', '').strip()
     status_filter = request.args.get('status_filter', '').strip()
 
@@ -1133,9 +1158,9 @@ def edit_customer_data(row_index):
             'สถานะ': request.form.get('status', '') or '-',
             'วงเงินที่ต้องการ': request.form.get('desired_credit_limit', '') or '-',
             'วงเงินที่อนุมัติ': request.form.get('approved_credit_limit', '') or '-',
-            'เคยขอเข้ามาในเครือหรือยัง': request.form.get('applied_before', '') or '-', 
-            'เช็ค': request.form.get('check', '') or '-', 
-            'ขอเข้ามาทางไหน': request.form.get('how_applied', '') or '-', 
+            'เคยขอเข้ามาในเครือหรือยัง': request.form.get('applied_before', '') or '-',
+            'เช็ค': request.form.get('check', '') or '-',
+            'ขอเข้ามาทางไหน': request.form.get('how_applied', '') or '-',
             'LINE ID': request.form.get('line_id', '') or '-',
             'หักดอกหัวท้าย': request.form.get('upfront_interest', '') or '-',
             'ค่าดำเนินการ': request.form.get('processing_fee', '') or '-',
@@ -1149,7 +1174,7 @@ def edit_customer_data(row_index):
 
         kept_image_urls_str = request.form.get('kept_image_urls', '')
         kept_image_urls = [url.strip() for url in kept_image_urls_str.split(',')] if kept_image_urls_str else []
-        
+
         deleted_image_urls = [url for url in current_image_urls if url not in kept_image_urls]
 
         for url_to_delete in deleted_image_urls:
@@ -1163,7 +1188,7 @@ def edit_customer_data(row_index):
                     url = upload_image_to_cloudinary(new_image.stream, new_image.filename)
                     if url:
                         new_image_urls.append(url)
-        
+
         final_image_urls = kept_image_urls + new_image_urls
         updated_data['Image URLs'] = ', '.join(final_image_urls) if final_image_urls else '-'
 
@@ -1178,16 +1203,16 @@ def edit_customer_data(row_index):
         except Exception as e:
             flash(f'เกิดข้อผิดพลาดในการบันทึกการแก้ไขข้อมูล: {e}', 'error')
             print(f"Error updating row {row_index} in Google Sheet: {e}")
-    
-    return render_template('edit_customer_data.html', 
-                           username=logged_in_user, 
-                           customer_data=customer_data, 
+
+    return render_template('edit_customer_data.html',
+                           username=logged_in_user,
+                           customer_data=customer_data,
                            row_index=row_index) # Pass row_index back
 
 
 def search_loan_records(query):
     all_loans = get_all_loan_records_with_payments()
-    print("DEBUG: Records count = ", len(all_loans)) 
+    print("DEBUG: Records count = ", len(all_loans))
     query = query.strip().lower()
 
     return [
@@ -1229,7 +1254,101 @@ def loan_management():
         all_customers=all_customers
     )
 
+# --- NEW ROUTE FOR CREATING NEW LOAN FOR EXISTING CUSTOMER ---
+@app.route('/create_new_loan_for_existing', methods=['POST'])
+# @login_required # หากคุณมีการใช้งานระบบ login ให้ยกเลิกคอมเมนต์บรรทัดนี้
+def create_new_loan_for_existing():
+    if 'username' not in session:
+        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
+        return redirect(url_for('login'))
 
+    logged_in_user = session['username']
+
+    if request.method == 'POST':
+        try:
+            original_loan_id = request.form.get('original_loan_id')
+            customer_info_str = request.form.get('reloan_modal_customer_info')
+            # ดึง customer_id จากสตริง "ชื่อ นามสกุล (รหัส: XXXXXX)"
+            customer_id = customer_info_str.split('(รหัส: ')[1][:-1] if '(รหัส: ' in customer_info_str else ''
+            company_name = request.form.get('reloan_modal_company_name_display')
+            loan_amount = float(request.form.get('loan_amount'))
+            interest_rate = float(request.form.get('interest_rate'))
+            loan_start_date_str = request.form.get('loan_start_date')
+            loan_duration = int(request.form.get('loan_duration'))
+            loan_note = request.form.get('loan_note', '').strip()
+
+            try:
+                loan_start_date = datetime.strptime(loan_start_date_str, '%Y-%m-%d')
+            except ValueError:
+                flash('รูปแบบวันที่ไม่ถูกต้อง', 'danger')
+                return redirect(url_for('loan_management'))
+
+            # ดึงชื่อและนามสกุลลูกค้าจากชีท Loan_Customers โดยใช้ customer_id
+            customer_name_for_loan = 'ไม่พบ'
+            customer_surname_for_loan = 'ไม่พบ'
+            loan_customer_data = get_loan_customer_by_id(customer_id)
+            if loan_customer_data:
+                customer_name_for_loan = loan_customer_data.get('ชื่อ', 'ไม่พบ')
+                customer_surname_for_loan = loan_customer_data.get('นามสกุล', 'ไม่พบ')
+
+            # --- การคำนวณสินเชื่อใหม่ (โปรดปรับปรุงตามสูตรธุรกิจของคุณ) ---
+            # นี่คือค่าเริ่มต้น/ตัวอย่าง คุณต้องปรับแก้ให้ถูกต้องตามการคำนวณจริง
+            simple_interest = loan_amount * (interest_rate / 100)
+            upfront_interest_deduction = round(simple_interest * 2, 2) # ตัวอย่าง: หักดอกหัวท้าย 2 เดือน
+            principal_to_return = round(loan_amount, 2) # เงินต้นที่ต้องคืนเริ่มต้น
+            daily_payment = round(simple_interest, 2) # ยอดชำระรายวัน (ตัวอย่าง: เท่ากับดอกเบี้ยต่อเดือน)
+            processing_fee = 0 # ค่าดำเนินการ (ปรับตามจริง)
+
+            # สร้างรหัสเงินกู้ใหม่
+            loan_id = generate_loan_id()
+
+            # เตรียมข้อมูลสำหรับบันทึกลง Google Sheet
+            new_loan_record = {
+                'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'รหัสเงินกู้': loan_id,
+                'รหัสลูกค้า': customer_id,
+                'ชื่อลูกค้า': customer_name_for_loan,
+                'นามสกุลลูกค้า': customer_surname_for_loan,
+                'ชื่อบริษัทผู้ปล่อยกู้': company_name,
+                'วงเงินกู้': str(loan_amount),
+                'ดอกเบี้ย (%)': str(interest_rate),
+                'วันที่เริ่มกู้': loan_start_date.strftime('%Y-%m-%d'),
+                'หักดอกหัวท้าย': str(upfront_interest_deduction),
+                'ยอดเงินต้นที่ต้องคืน': str(principal_to_return),
+                'ค่าดำเนินการ': str(processing_fee),
+                'ยอดที่ต้องชำระรายวัน': str(daily_payment),
+                'ยอดชำระแล้ว': '0',
+                'ยอดค้างชำระ': str(principal_to_return),
+                'สถานะเงินกู้': 'รออนุมัติ/ใหม่',
+                'หมายเหตุเงินกู้': loan_note,
+                'ผู้บันทึก': logged_in_user
+            }
+
+            # แปลง dictionary เป็น list ตามลำดับ header
+            row_to_append = [new_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
+
+            # บันทึกข้อมูลลงในชีท Loan_Transactions
+            loan_worksheet = get_loan_worksheet()
+            if loan_worksheet:
+                loan_worksheet.append_row(row_to_append)
+                # ล้าง cache ของรายการเงินกู้ทั้งหมดเพื่อให้โหลดข้อมูลใหม่
+                global loan_records_cache, loan_records_cache_timestamp
+                loan_records_cache = None
+                loan_records_cache_timestamp = None
+                flash(f'บันทึกสินเชื่อใหม่ ({loan_id}) สำหรับลูกค้า {customer_name_for_loan} {customer_surname_for_loan} เรียบร้อยแล้ว', 'success')
+            else:
+                flash('ไม่สามารถเข้าถึง Worksheet เงินกู้เพื่อบันทึกสินเชื่อใหม่ได้', 'error')
+
+        except ValueError as e:
+            flash(f'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบรูปแบบตัวเลขและวันที่: {e}', 'danger')
+        except KeyError as e:
+            flash(f'ข้อมูลฟอร์มไม่ครบถ้วน: {e}', 'danger')
+        except Exception as e:
+            flash(f'เกิดข้อผิดพลาดในการบันทึกสินเชื่อใหม่: {str(e)}', 'danger')
+            print(f"Error creating new loan for existing customer: {e}")
+
+    return redirect(url_for('loan_management'))
+# --- END NEW ROUTE ---
 
 
 # --- Main execution block ---
