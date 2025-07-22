@@ -653,16 +653,12 @@
                                             data-row-index="{{ loop.index + 1 }}" {# +1 because loop.index is 0-based, and headers are row 1 #}
                                             data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
                                             >บันทึกชำระ</button>
-                                    <button class="btn btn-info btn-sm open-new-loan-btn"
-                                        data-loan-id="{{ loan.id }}"
-                                        data-loan-amount="{{ '%.2f'|format(loan.loan_amount) }}"
-                                        data-interest-rate="{{ '%.2f'|format(loan.interest_rate) }}"
-                                        data-principal-to-return="{{ '%.2f'|format(loan.principal_to_return) }}"
-                                        data-customer-name="{{ loan.customer_name }}"
-                                        data-customer-surname="{{ loan.customer_surname }}"
-                                        data-customer-id="{{ loan.customer_id }}"
-                                        data-loan-note="{{ loan.loan_note }}"
-                                        data-company-name="{{ loan.company_name }}">
+                                    <button class="btn btn-info btn-sm reloan-loan-btn"
+                                        data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
+                                        data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
+                                        data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
+                                        data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
+                                        data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}">
                                         เปิดยอดใหม่
                                     </button>
                                 </td>
