@@ -1,19 +1,17 @@
 # Import necessary modules from Flask and other libraries
-from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify, current_app # <-- เพิ่ม current_app ที่นี่ และรวมทุกอย่าง
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 import json
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify # <-- เพิ่ม jsonify ตรงนี้
-from datetime import datetime, timedelta
 from flask_caching import Cache
 
 # Initialize the Flask application
@@ -349,6 +347,8 @@ def record_payment():
             print(f"Error recording payment: {e}")
 
     return redirect(url_for('loan_management'))
+
+
 
 # NEW: Route to get payment history for a specific loan
 @app.route('/get_payment_history/<loan_id>')
