@@ -1386,14 +1386,16 @@ def create_new_loan_for_existing():
             updated_loan_record['ดอกเบี้ย (%)'] = str(interest_rate) # เขียนทับอัตราดอกเบี้ยเดิม
             updated_loan_record['วันที่เริ่มกู้'] = loan_start_date.strftime('%Y-%m-%d') # เขียนทับวันที่เริ่มกู้เดิม
             updated_loan_record['หักดอกหัวท้าย'] = str(upfront_interest_deduction)
-            updated_loan_record['ยอดเงินต้นที่ต้องคืน'] = str(principal_to_transfer)
             updated_loan_record['ค่าดำเนินการ'] = str(processing_fee)
             updated_loan_record['ยอดที่ต้องชำระรายวัน'] = str(daily_return_amount)
             updated_loan_record['ยอดชำระแล้ว'] = '0' # รีเซ็ตยอดชำระแล้วสำหรับยอดใหม่
-            updated_loan_record['ยอดค้างชำระ'] = str(principal_to_transfer) # รีเซ็ตยอดค้างชำระเป็นยอดเงินต้นใหม่
             updated_loan_record['สถานะเงินกู้'] = 'เปิดยอดใหม่' # ตั้งสถานะเป็น 'เปิดยอดใหม่'
             updated_loan_record['หมายเหตุเงินกู้'] = loan_note
             updated_loan_record['ผู้บันทึก'] = logged_in_user
+
+            # --- แก้ไขตรงนี้: กำหนดให้ 'ยอดเงินต้นที่ต้องคืน' และ 'ยอดค้างชำระ' เป็น loan_amount เต็มจำนวน ---
+            updated_loan_record['ยอดเงินต้นที่ต้องคืน'] = str(loan_amount)
+            updated_loan_record['ยอดค้างชำระ'] = str(loan_amount) 
 
             # แปลง dictionary ที่อัปเดตแล้วกลับเป็น list ตามลำดับ header ที่ถูกต้อง
             row_to_update_sheet = [updated_loan_record.get(header, '-') for header in LOAN_TRANSACTIONS_WORKSHEET_HEADERS]
@@ -1440,6 +1442,7 @@ def create_new_loan_for_existing():
             current_app.logger.error(f"Error creating new loan for existing customer: {e}")
 
     return redirect(url_for('loan_management'))
+
 
 
 # --- Main execution block ---
