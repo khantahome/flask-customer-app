@@ -255,6 +255,25 @@
             <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
         </div>
     </div>
+     <div class="chart-container">
+        <h3 class="chart-title">กราฟข้อมูลลูกค้าใหม่</h3>
+        <div class="filters">
+            <label for="chartYearSelect">ปี:</label>
+            <select id="chartYearSelect" class="filter-select"></select>
+
+            <label for="chartMonthSelect">เดือน:</label>
+            <select id="chartMonthSelect" class="filter-select"></select>
+
+            <label for="customerGroupSelect">กลุ่มลูกค้า:</label>
+            <select id="customerGroupSelect" class="filter-select"></select>
+        </div>
+        <div class="chart-canvas-wrapper">
+            <canvas id="customerChart"></canvas>
+            <div id="chartLoadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
 <script>
         document.addEventListener('DOMContentLoaded', function() {
             // ดึงค่า CSS variable สำหรับใช้ใน Chart.js
