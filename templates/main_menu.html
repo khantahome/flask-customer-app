@@ -320,11 +320,11 @@
                     uniqueYears = data.unique_years;
                     allMonths = data.all_months; // '01', '02', ...
 
-                    console.log('Raw Chart Data fetched (Global):', {
-                        chart_data: rawChartData,
-                        unique_customer_groups: uniqueCustomerGroups,
-                        unique_years: uniqueYears,
-                        all_months: allMonths
+                    console.log('1. Raw Chart Data fetched (Global):', {
+                        chart_data_content: data.chart_data, // <-- ตรงนี้สำคัญ
+                        unique_customer_groups: data.unique_customer_groups,
+                        unique_years: data.unique_years,
+                        all_months: data.all_months
                     });
 
                     populateFilters();
