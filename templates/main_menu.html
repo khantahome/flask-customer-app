@@ -502,6 +502,7 @@
             // ฟังก์ชันสำหรับอัปเดตกราฟ
             function updateChart() {
                 const chartData = prepareChartData();
+                console.log('Chart Data being passed to Chart.js:', chartData);
 
                 if (customerChartInstance) {
                     customerChartInstance.destroy(); // ทำลาย instance กราฟเก่า
