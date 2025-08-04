@@ -150,8 +150,18 @@ def get_user_worksheet():
     return get_worksheet(USER_LOGIN_SPREADSHEET_NAME, USER_LOGIN_WORKSHEET_NAME)
 
 def get_customer_data_worksheet():
-    """Returns the original customer_records worksheet."""
-    return get_worksheet(SPREADSHEET_NAME, WORKSHEET_NAME, CUSTOMER_DATA_WORKSHEET_HEADERS)
+    """Returns the original customer_records worksheet and force-updates header row."""
+    worksheet = get_worksheet(SPREADSHEET_NAME, WORKSHEET_NAME)
+
+    if worksheet:
+        try:
+            worksheet.update('A1', [CUSTOMER_DATA_WORKSHEET_HEADERS])
+            print("DEBUG: Header of 'customer_records' worksheet updated successfully.")
+        except Exception as e:
+            print(f"ERROR: Failed to update header for 'customer_records': {e}")
+    
+    return worksheet
+
 
 def get_loan_worksheet():
     """Returns the Loan_Transactions worksheet."""
