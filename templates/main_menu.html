@@ -19,14 +19,15 @@
 
         /* Basic styles for the body to center content and set font */
         body {
-            font-family: 'Kanit', sans-serif; /* Use Kanit font */
-            background-image: url('/static/images/your_background_image.jpg'); /* <-- ตรงนี้ใส่ URL จริงของรูปภาพพื้นหลังของคุณ */
+            font-family: 'Kanit', sans-serif;
+            background-image: url('/static/images/your_background_image.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
             display: flex;
+            flex-direction: column; 
             justify-content: center;
-            align-items: center;
+            align-items: center; 
             min-height: 100vh;
             margin: 0;
             padding: 20px;
@@ -230,27 +231,7 @@
             100% { transform: rotate(360deg); }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <div class="chart-container">
-        <h3 class="chart-title">กราฟจำนวนลูกค้าใหม่ตามกลุ่มลูกค้าหลัก</h3>
-        <div class="filters">
-            <label for="chartYearSelect">เลือกปี:</label>
-            <select id="chartYearSelect" class="filter-select"></select>
 
-            <label for="chartMonthSelect">เลือกเดือน:</label>
-            <select id="chartMonthSelect" class="filter-select"></select>
-
-            <label for="customerGroupSelect">เลือกกลุ่มลูกค้า:</label>
-            <select id="customerGroupSelect" class="filter-select"></select>
-        </div>
-        <div class="chart-canvas-wrapper">
-            <canvas id="customerChart"></canvas>
-            <div id="chartLoadingOverlay" class="loading-overlay" style="display: none;">
-                <div class="spinner"></div>
-                <p>กำลังโหลดข้อมูล...</p>
-            </div>
-        </div>
-    </div>
 </head>
 <body>
     <div class="main-container">
