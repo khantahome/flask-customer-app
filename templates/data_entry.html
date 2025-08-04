@@ -302,7 +302,6 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-
         <form id="customerForm" method="post" enctype="multipart/form-data">
             <div class="input-group">
                 <label for="customer_name">ชื่อ</label>
@@ -322,6 +321,33 @@
             <div class="input-group">
                 <label for="mobile_phone_number">เบอร์มือถือ</label>
                 <input type="tel" id="mobile_phone_number" name="mobile_phone_number" placeholder="กรอกเบอร์มือถือ" required pattern="\d{10}" title="กรุณากรอกเบอร์มือถือ 10 หลัก">
+            </div>
+             <div class="input-group">
+                <label for="main_customer_group">กลุ่มลูกค้าหลัก</label>
+                <select id="main_customer_group" name="main_customer_group" required>
+                    <option value="">--- เลือกกลุ่มลูกค้าหลัก ---</option>
+                    <option value="ค้าปลีก-ค้าส่ง / ร้านค้า">1. กลุ่มค้าปลีก-ค้าส่ง / ร้านค้า</option>
+                    <option value="ธุรกิจบริการ / ร้านอาหาร">2. กลุ่มธุรกิจบริการ / ร้านอาหาร</option>
+                    <option value="ผู้รับเหมาก่อสร้าง / งานโยธา">3. กลุ่มผู้รับเหมาก่อสร้าง / งานโยธา</option>
+                    <option value="โลจิสติกส์ / ขนส่ง / ยานยนต์">4. กลุ่มโลจิสติกส์ / ขนส่ง / ยานยนต์</option>
+                    <option value="เทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล">5. กลุ่มเทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล</option>
+                    <option value="โรงงาน / การผลิต">6. กลุ่มโรงงาน / การผลิต</option>
+                    <option value="อสังหาริมทรัพย์ / บริหารทรัพย์สิน">7. กลุ่มอสังหาริมทรัพย์ / บริหารทรัพย์สิน</option>
+                    <option value="นำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ">8. กลุ่มนำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ</option>
+                    <option value="อื่นๆ">9. อื่นๆ</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="sub_profession_group">กลุ่มอาชีพย่อย</label>
+                <select id="sub_profession_group" name="sub_profession_group" required disabled>
+                    <option value="">--- กรุณาเลือกกลุ่มลูกค้าหลักก่อน ---</option>
+                </select>
+            </div>
+
+            <div class="input-group" id="otherSubProfessionInputGroup" style="display: none;">
+                <label for="other_sub_profession">ระบุกลุ่มอาชีพย่อยอื่นๆ</label>
+                <input type="text" id="other_sub_profession" name="other_sub_profession" placeholder="กรอกกลุ่มอาชีพย่อยอื่นๆ">
             </div>
 
             <div class="input-group">
@@ -425,128 +451,225 @@
     </div>
 
     <script>
-        // JavaScript for image preview and form clearing
-        document.addEventListener('DOMContentLoaded', function() {
-            const customerImageInput = document.getElementById('customer_images');
-            const imagePreviewsContainer = document.getElementById('imagePreviewsContainer');
-            const clearFormButton = document.getElementById('clearFormButton');
-            const customerForm = document.getElementById('customerForm');
-            const loadingOverlay = document.getElementById('loadingOverlay'); // Get the loading overlay element
-            const saveButton = customerForm.querySelector('button[type="submit"]'); // Get the save button
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- โค้ด JavaScript เดิมสำหรับ image preview และ form clearing ---
+        const customerImageInput = document.getElementById('customer_images');
+        const imagePreviewsContainer = document.getElementById('imagePreviewsContainer');
+        const clearFormButton = document.getElementById('clearFormButton');
+        const customerForm = document.getElementById('customerForm');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const saveButton = customerForm.querySelector('button[type="submit"]');
 
-            // Store selected files temporarily for preview
-            let selectedFiles = [];
+        let selectedFiles = [];
 
-            // Function to render image previews
-            function renderImagePreviews() {
-                imagePreviewsContainer.innerHTML = ''; // Clear existing previews
-                selectedFiles.forEach((file, index) => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const previewItem = document.createElement('div');
-                        previewItem.className = 'image-preview-item';
-                        previewItem.innerHTML = `
-                            <img src="${e.target.result}" alt="Image Preview">
-                            <span class="remove-image" data-index="${index}">X</span>
-                        `;
-                        imagePreviewsContainer.appendChild(previewItem);
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
+        function renderImagePreviews() {
+            imagePreviewsContainer.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'image-preview-item';
+                    previewItem.innerHTML = `
+                        <img src="${e.target.result}" alt="Image Preview">
+                        <span class="remove-image" data-index="${index}">X</span>
+                    `;
+                    imagePreviewsContainer.appendChild(previewItem);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
 
-            // Event listener for file input change
-            customerImageInput.addEventListener('change', function(event) {
-                const newlySelected = Array.from(event.target.files);
-                const uniqueNewFilesMap = new Map(); // Use a Map to store unique files by a key (e.g., name + size)
+        customerImageInput.addEventListener('change', function(event) {
+            const newlySelected = Array.from(event.target.files);
+            const uniqueNewFilesMap = new Map();
 
-                // Add existing files in selectedFiles to the map to preserve them
-                selectedFiles.forEach(file => {
-                    uniqueNewFilesMap.set(`${file.name}-${file.size}`, file);
-                });
-
-                // Add newly selected files, overwriting if duplicate name+size
-                newlySelected.forEach(file => {
-                    uniqueNewFilesMap.set(`${file.name}-${file.size}`, file);
-                });
-
-                selectedFiles = Array.from(uniqueNewFilesMap.values()); // Convert Map values back to array
-                renderImagePreviews();
+            selectedFiles.forEach(file => {
+                uniqueNewFilesMap.set(`${file.name}-${file.size}`, file);
             });
 
-            // Event listener for removing images from preview
-            imagePreviewsContainer.addEventListener('click', function(event) {
-                if (event.target.classList.contains('remove-image')) {
-                    const indexToRemove = parseInt(event.target.dataset.index);
-                    selectedFiles.splice(indexToRemove, 1); // Remove file from array
-                    renderImagePreviews(); // Re-render previews
-                    // Reset file input to allow re-selection of same file if needed (optional)
-                    customerImageInput.value = '';
-                }
+            newlySelected.forEach(file => {
+                uniqueNewFilesMap.set(`${file.name}-${file.size}`, file);
             });
 
-            // Event listener for form submission
-            customerForm.addEventListener('submit', function(event) {
-                event.preventDefault(); // Prevent default form submission (browser refresh)
-
-                // Show loading overlay and disable the save button
-                loadingOverlay.classList.add('visible');
-                saveButton.disabled = true; // Disable button to prevent multiple submissions
-                saveButton.textContent = 'กำลังบันทึก...'; // Change button text
-
-                // Create a new FormData object to manually append files
-                const formData = new FormData(customerForm);
-
-                // Remove existing 'customer_images' entries if any, as we'll re-add them from selectedFiles
-                formData.delete('customer_images');
-
-                // Append all selected files to the FormData object
-                selectedFiles.forEach(file => {
-                    formData.append('customer_images', file, file.name);
-                });
-
-                // Submit the form with the new FormData object using fetch
-                fetch(customerForm.action, {
-                    method: customerForm.method,
-                    body: formData
-                })
-                .then(response => response.text()) // Get response as text
-                .then(html => {
-                    // Hide loading overlay and re-enable the save button
-                    loadingOverlay.classList.remove('visible');
-                    saveButton.disabled = false;
-                    saveButton.textContent = 'บันทึกข้อมูล'; // Restore button text
-
-                    // Replace the current document with the new HTML from the response
-                    document.open();
-                    document.write(html);
-                    document.close();
-                })
-                .catch(error => {
-                    console.error('Error submitting form:', error);
-                    // Hide loading overlay and re-enable the save button in case of an error
-                    loadingOverlay.classList.remove('visible');
-                    saveButton.disabled = false;
-                    saveButton.textContent = 'บันทึกข้อมูล'; // Restore button text
-                    // Optionally, display an error message to the user
-                });
-            });
-
-
-            // Function to clear all form fields
-            clearFormButton.addEventListener('click', function() {
-                customerForm.reset(); // Resets all form fields
-                selectedFiles = []; // Clear selected images array
-                renderImagePreviews(); // Clear image previews
-            });
-
-            // Set current date for application_date field
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-            const day = String(today.getDate()).padStart(2, '0');
-            document.getElementById('application_date').value = `${year}-${month}-${day}`;
+            selectedFiles = Array.from(uniqueNewFilesMap.values());
+            renderImagePreviews();
         });
-    </script>
+
+        imagePreviewsContainer.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-image')) {
+                const indexToRemove = parseInt(event.target.dataset.index);
+                selectedFiles.splice(indexToRemove, 1);
+                renderImagePreviews();
+                customerImageInput.value = '';
+            }
+        });
+
+        customerForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            loadingOverlay.classList.add('visible');
+            saveButton.disabled = true;
+            saveButton.textContent = 'กำลังบันทึก...';
+
+            const formData = new FormData(customerForm);
+            formData.delete('customer_images');
+            selectedFiles.forEach(file => {
+                formData.append('customer_images', file, file.name);
+            });
+
+            fetch(customerForm.action, {
+                method: customerForm.method,
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                loadingOverlay.classList.remove('visible');
+                saveButton.disabled = false;
+                saveButton.textContent = 'บันทึกข้อมูล';
+
+                document.open();
+                document.write(html);
+                document.close();
+            })
+            .catch(error => {
+                console.error('Error submitting form:', error);
+                loadingOverlay.classList.remove('visible');
+                saveButton.disabled = false;
+                saveButton.textContent = 'บันทึกข้อมูล';
+            });
+        });
+
+        // Set current date for application_date field
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        document.getElementById('application_date').value = `${year}-${month}-${day}`;
+        // --- สิ้นสุดโค้ด JavaScript เดิม ---
+
+
+        // --- โค้ด JavaScript ใหม่สำหรับ Dynamic Dropdowns (ย้ายเข้ามาใน DOMContentLoaded) ---
+        const mainCustomerGroupSelect = document.getElementById('main_customer_group');
+        const subProfessionGroupSelect = document.getElementById('sub_profession_group');
+        const otherSubProfessionInputGroup = document.getElementById('otherSubProfessionInputGroup');
+        const otherSubProfessionInput = document.getElementById('other_sub_profession');
+
+        const subProfessionData = {
+            "ค้าปลีก-ค้าส่ง / ร้านค้า": [
+                "ร้านขายของชำ, มินิมาร์ท",
+                "ร้านวัสดุก่อสร้าง",
+                "ร้านขายอุปกรณ์ไฟฟ้า",
+                "ร้านขายมือถือ, อุปกรณ์ไอที",
+                "ร้านขายเสื้อผ้า, เครื่องสำอาง",
+                "ร้านขายส่งสินค้าเบ็ดเตล็ด",
+                "ร้านขายอาหารสัตว์, ปุ๋ย, เคมีเกษตร"
+            ],
+            "ธุรกิจบริการ / ร้านอาหาร": [
+                "ร้านอาหาร, ร้านกาแฟ",
+                "ร้านนวดแผนไทย",
+                "ร้านเสริมสวย, ทำเล็บ",
+                "ฟิตเนส, สตูดิโอโยคะ",
+                "ร้านซักอบรีด, ร้านคาร์แคร์",
+                "ร้านซ่อมเครื่องใช้ไฟฟ้า, คอมพิวเตอร์"
+            ],
+            "ผู้รับเหมาก่อสร้าง / งานโยธา": [
+                "บริษัทรับเหมาก่อสร้าง (บ้าน, อาคาร, ถนน)",
+                "หจก.งานระบบไฟฟ้า ประปา แอร์",
+                "ผู้รับเหมาตกแต่งภายใน",
+                "บริษัทจำหน่ายวัสดุก่อสร้างพร้อมติดตั้ง"
+            ],
+            "โลจิสติกส์ / ขนส่ง / ยานยนต์": [
+                "บริษัทขนส่งสินค้า / พัสดุ",
+                "บริษัทเช่ารถ / รถตู้",
+                "อู่ซ่อมรถยนต์, มอเตอร์ไซค์",
+                "บริษัทติดตั้ง GPS รถ, ระบบ Fleet"
+            ],
+            "เทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล": [
+                "บริษัทรับทำเว็บไซต์, ซอฟต์แวร์",
+                "บริษัทโฆษณา / กราฟิกดีไซน์",
+                "บริษัทรับทำเพจ / การตลาดออนไลน์",
+                "ผู้ให้บริการคลาวด์, ซัพพอร์ตไอที"
+            ],
+            "โรงงาน / การผลิต": [
+                "โรงงานผลิตอาหาร, เครื่องดื่ม",
+                "โรงงานผลิตสินค้าอุปโภคบริโภค",
+                "บริษัท OEM สินค้า",
+                "โรงงานบรรจุภัณฑ์",
+                "โรงงานแปรรูปไม้ / โลหะ / พลาสติก"
+            ],
+            "อสังหาริมทรัพย์ / บริหารทรัพย์สิน": [
+                "บริษัทพัฒนาโครงการบ้านจัดสรร / คอนโด",
+                "บริษัทบริหารหอพัก / อพาร์ตเมนต์",
+                "บริษัทรับบริหารทรัพย์สิน / นายหน้าอสังหา",
+                "บริษัทให้เช่าโกดัง / พื้นที่เชิงพาณิชย์"
+            ],
+            "นำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ": [
+                "บริษัทนำเข้าสินค้าอุตสาหกรรม",
+                "บริษัทส่งออกสินค้าเกษตร, อาหารแปรรูป",
+                "ตัวแทนจำหน่ายสินค้าต่างประเทศ",
+                "Logistics สำหรับธุรกิจ Cross-border eCommerce"
+            ],
+            "อื่นๆ": []
+        };
+
+        function updateSubProfessionOptions() {
+            const selectedMainGroup = mainCustomerGroupSelect.value;
+            const subProfessions = subProfessionData[selectedMainGroup] || [];
+
+            subProfessionGroupSelect.innerHTML = '<option value="">--- เลือกกลุ่มอาชีพย่อย ---</option>';
+            subProfessionGroupSelect.disabled = true;
+
+            if (selectedMainGroup) {
+                subProfessions.forEach(prof => {
+                    const option = document.createElement('option');
+                    option.value = prof;
+                    option.textContent = prof;
+                    subProfessionGroupSelect.appendChild(option);
+                });
+                const otherOption = document.createElement('option');
+                otherOption.value = "อื่นๆ";
+                otherOption.textContent = "อื่นๆ";
+                subProfessionGroupSelect.appendChild(otherOption);
+                subProfessionGroupSelect.disabled = false;
+            } else {
+                otherSubProfessionInputGroup.style.display = 'none';
+                otherSubProfessionInput.value = '';
+            }
+        }
+
+        function toggleOtherSubProfessionInput() {
+            if (subProfessionGroupSelect.value === "อื่นๆ") {
+                otherSubProfessionInputGroup.style.display = 'block';
+                otherSubProfessionInput.setAttribute('required', 'required');
+            } else {
+                otherSubProfessionInputGroup.style.display = 'none';
+                otherSubProfessionInput.value = '';
+                otherSubProfessionInput.removeAttribute('required');
+            }
+        }
+
+        mainCustomerGroupSelect.addEventListener('change', () => {
+            updateSubProfessionOptions();
+            toggleOtherSubProfessionInput();
+        });
+        subProfessionGroupSelect.addEventListener('change', toggleOtherSubProfessionInput);
+
+        updateSubProfessionOptions(); // Initial call
+        otherSubProfessionInputGroup.style.display = 'none';
+        otherSubProfessionInput.value = '';
+
+        // Modify clearFormButton functionality
+        clearFormButton.addEventListener('click', function() {
+            customerForm.reset();
+            selectedFiles = [];
+            renderImagePreviews();
+
+            mainCustomerGroupSelect.value = '';
+            updateSubProfessionOptions();
+            toggleOtherSubProfessionInput();
+        });
+        // --- สิ้นสุดโค้ด JavaScript ใหม่ ---
+    });
+</script>
 </body>
 </html>

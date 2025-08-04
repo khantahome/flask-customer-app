@@ -453,55 +453,55 @@
     <div class="results-container">
         <h3>{{ display_title }}</h3>
         {% for record in customer_records %}
-            <div class="customer-record-card">
-                <p><strong>ชื่อ-นามสกุล:</strong> {{ record.ชื่อ }} {{ record.นามสกุล }}</p>
-                <p><strong>เบอร์มือถือ:</strong> {{ record.เบอร์มือถือ }}</p>
-                <p><strong>เลขบัตรประชาชน:</strong> {{ record.เลขบัตรประชาชน }}</p>
-                <p><strong>จดทะเบียน:</strong> {{ record['จดทะเบียน'] }}</p>
-                <p><strong>ชื่อกิจการ:</strong> {{ record.ชื่อกิจการ }}</p>
-                <p><strong>ประเภทธุรกิจ:</strong> {{ record['ประเภทธุรกิจ'] }}</p>
-                <p><strong>ที่อยู่จดทะเบียน:</strong> {{ record['ที่อยู่จดทะเบียน'] }}</p>
-                <p><strong>สถานะ:</strong> {{ record.สถานะ }}</p>
-                <p><strong>วงเงินที่ต้องการ:</strong> {{ record['วงเงินที่ต้องการ'] }}</p>
-                <p><strong>วงเงินที่อนุมัติ:</strong> {{ record['วงเงินที่อนุมัติ'] }}</p>
-                <p><strong>เคยขอเข้ามาในเครือหรือยัง:</strong> {{ record['เคยขอเข้ามาในเครือหรือยัง'] }}</p>
-                <p><strong>เช็ค:</strong> {{ record['เช็ค'] }}</p>
-                <p><strong>LINE ID:</strong> {{ record['LINE ID'] }}</p>
-                <p><strong>ขอเข้ามาทางไหน:</strong> {{ record['ขอเข้ามาทางไหน'] }}</p>
-                <p><strong>หักดอกหัวท้าย:</strong> {{ record['หักดอกหัวท้าย'] }}</p>
-                <p><strong>ค่าดำเนินการ:</strong> {{ record['ค่าดำเนินการ'] }}</p>
-                <p><strong>วันที่ขอเข้ามา:</strong> {{ record['วันที่ขอเข้ามา'] }}</p>
-                <p><strong>ลิงค์โลเคชั่นบ้าน:</strong> <a href="{{ record['ลิงค์โลเคชั่นบ้าน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นบ้าน'] }}</a></p>
-                <p><strong>ลิงค์โลเคชั่นที่ทำงาน:</strong> <a href="{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}</a></p>
-                <p><strong>หมายเหตุ:</strong> {{ record.หมายเหตุ }}</p>
-                <p><strong>บันทึกโดย:</strong> {{ record['Logged In User'] }}</p>
-                
-                <p><strong>รูปภาพ:</strong>
-                    <div class="image-thumbnails" data-image-urls="{{ record['Image URLs'] if record['Image URLs'] != '-' else '' }}">
-                        {% if record['Image URLs'] and record['Image URLs'] != '-' %}
-                            {% set image_urls_list = record['Image URLs'].split(', ') | select('ne', '-') | map('trim') | list %}
-                            {% if image_urls_list %}
-                                {% for url in image_urls_list %}
-                                    {# Use Flask proxy route for image src #}
-                                    <img src="{{ url }}" alt="Thumbnail {{ loop.index }}" class="image-thumbnail" onerror="console.error('Thumbnail image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/80x80/FF0000/FFFFFF?text=Error';">
-                                {% endfor %}
-                            {% else %}
-                                <p>ไม่มีรูปภาพที่ถูกต้อง</p>
-                            {% endif %}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </div>
-                </p>
-                
-                <div class="record-buttons">
-                    {# Link to edit page with row_index #}
-                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไขข้อมูล</a>
-                    {# This button will also go to the edit page #}
-                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button">อัปโหลดรูปเพิ่มเติม</a>
-                </div>
+    <div class="customer-record-card">
+        <p><strong>ชื่อ-นามสกุล:</strong> {{ record.ชื่อ }} {{ record.นามสกุล }}</p>
+        <p><strong>เบอร์มือถือ:</strong> {{ record.เบอร์มือถือ }}</p>
+        <p><strong>เลขบัตรประชาชน:</strong> {{ record.เลขบัตรประชาชน }}</p>
+        <p><strong>จดทะเบียน:</strong> {{ record['จดทะเบียน'] }}</p>
+        <p><strong>ชื่อกิจการ:</strong> {{ record.ชื่อกิจการ }}</p>
+        <p><strong>ประเภทธุรกิจ:</strong> {{ record['ประเภทธุรกิจ'] }}</p>
+        <p><strong>ที่อยู่จดทะเบียน:</strong> {{ record['ที่อยู่จดทะเบียน'] }}</p>
+        <p><strong>สถานะ:</strong> {{ record.สถานะ }}</p>
+        <p><strong>วงเงินที่ต้องการ:</strong> {{ record['วงเงินที่ต้องการ'] }}</p>
+        <p><strong>วงเงินที่อนุมัติ:</strong> {{ record['วงเงินที่อนุมัติ'] }}</p>
+        <p><strong>เคยขอเข้ามาในเครือหรือยัง:</strong> {{ record['เคยขอเข้ามาในเครือหรือยัง'] }}</p>
+        <p><strong>เช็ค:</strong> {{ record['เช็ค'] }}</p>
+        <p><strong>LINE ID:</strong> {{ record['LINE ID'] }}</p>
+        <p><strong>ขอเข้ามาทางไหน:</strong> {{ record['ขอเข้ามาทางไหน'] }}</p>
+        <p><strong>หักดอกหัวท้าย:</strong> {{ record['หักดอกหัวท้าย'] }}</p>
+        <p><strong>ค่าดำเนินการ:</strong> {{ record['ค่าดำเนินการ'] }}</p>
+        <p><strong>วันที่ขอเข้ามา:</strong> {{ record['วันที่ขอเข้ามา'] }}</p>
+        <p><strong>ลิงค์โลเคชั่นบ้าน:</strong> <a href="{{ record['ลิงค์โลเคชั่นบ้าน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นบ้าน'] }}</a></p>
+        <p><strong>ลิงค์โลเคชั่นที่ทำงาน:</strong> <a href="{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}</a></p>
+        <p><strong>หมายเหตุ:</strong> {{ record.หมายเหตุ }}</p>
+        <p><strong>บันทึกโดย:</strong> {{ record['Logged In User'] }}</p>
+        
+        <p><strong>กลุ่มลูกค้าหลัก:</strong> {{ record.get('กลุ่มลูกค้าหลัก', '-') }}</p>
+        <p><strong>กลุ่มอาชีพย่อย:</strong> {{ record.get('กลุ่มอาชีพย่อย', '-') }}</p>
+        <p><strong>อาชีพย่อยอื่นๆ:</strong> {{ record.get('ระบุอาชีพย่อยอื่นๆ', '-') }}</p>
+        <p><strong>รูปภาพ:</strong>
+            <div class="image-thumbnails" data-image-urls="{{ record['Image URLs'] if record['Image URLs'] != '-' else '' }}">
+                {% if record['Image URLs'] and record['Image URLs'] != '-' %}
+                    {% set image_urls_list = record['Image URLs'].split(', ') | select('ne', '-') | map('trim') | list %}
+                    {% if image_urls_list %}
+                        {% for url in image_urls_list %}
+                            <img src="{{ url }}" alt="Thumbnail {{ loop.index }}" class="image-thumbnail" onerror="console.error('Thumbnail image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/80x80/FF0000/FFFFFF?text=Error';">
+                        {% endfor %}
+                    {% else %}
+                        <p>ไม่มีรูปภาพที่ถูกต้อง</p>
+                    {% endif %}
+                {% else %}
+                    -
+                {% endif %}
             </div>
-        {% endfor %}
+        </p>
+        
+        <div class="record-buttons">
+            <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไขข้อมูล</a>
+            <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button">อัปโหลดรูปเพิ่มเติม</a>
+        </div>
+    </div>
+{% endfor %}
     </div>
     {% endif %}
 

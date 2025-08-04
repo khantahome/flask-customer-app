@@ -39,6 +39,9 @@ USER_LOGIN_WORKSHEET_NAME = 'users'
 WORKSHEET_NAME = 'customer_records'
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
     'Timestamp', 'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
+    'กลุ่มลูกค้าหลัก',
+    'กลุ่มอาชีพย่อย',
+    'ระบุอาชีพย่อยอื่นๆ', 
     'จดทะเบียน', 'ชื่อกิจการ', 'ประเภทธุรกิจ', 'ที่อยู่จดทะเบียน', 'สถานะ',
     'วงเงินที่ต้องการ', 'วงเงินที่อนุมัติ', 'เคยขอเข้ามาในเครือหรือยัง', 'เช็ค',
     'ขอเข้ามาทางไหน', 'LINE ID', 'หักดอกหัวท้าย', 'ค่าดำเนินการ',
@@ -998,6 +1001,19 @@ def enter_customer_data():
             last_name = request.form.get('last_name', '') or '-'
             id_card_number = request.form.get('id_card_number', '') or '-' # This still uses ID card
             mobile_phone_number = request.form.get('mobile_phone_number', '') or '-'
+
+            # --- เพิ่มการดึงข้อมูลกลุ่มลูกค้าใหม่ตรงนี้ ---
+            main_customer_group = request.form.get('main_customer_group', '') or '-'
+            sub_profession_group = request.form.get('sub_profession_group', '') or '-'
+            other_sub_profession = request.form.get('other_sub_profession', '') or '-'
+
+            # Logic เพื่อกำหนดค่าสุดท้ายของ 'กลุ่มอาชีพย่อย'
+            final_sub_profession_value = sub_profession_group
+            if sub_profession_group == "อื่นๆ":
+                final_sub_profession_value = other_sub_profession
+
+            # --- สิ้นสุดการเพิ่มข้อมูลกลุ่มลูกค้าใหม่ ---
+
             registered = request.form.get('registered', '') or '-'
             business_name = request.form.get('business_name', '') or '-'
             business_type = request.form.get('business_type', '') or '-'
@@ -1022,6 +1038,7 @@ def enter_customer_data():
                 files = request.files.getlist('customer_images')
                 for customer_image in files:
                     if customer_image and customer_image.filename:
+                        # Make sure upload_image_to_cloudinary is defined elsewhere in app.py
                         url = upload_image_to_cloudinary(customer_image.stream, customer_image.filename)
                         if url:
                             image_urls.append(url)
@@ -1033,13 +1050,15 @@ def enter_customer_data():
             worksheet = get_customer_data_worksheet()
             if worksheet:
                 try:
-                    # Prepare the data row, ensuring order matches CUSTOMER_DATA_WORKSHEET_HEADERS exactly
                     row_data = {
                         'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         'ชื่อ': customer_name,
                         'นามสกุล': last_name,
-                        'เลขบัตรประชาชน': id_card_number, # Original ID card field
+                        'เลขบัตรประชาชน': id_card_number,
                         'เบอร์มือถือ': mobile_phone_number,
+                        'กลุ่มลูกค้าหลัก': main_customer_group,
+                        'กลุ่มอาชีพย่อย': final_sub_profession_value, 
+                        'ระบุอาชีพย่อยอื่นๆ': other_sub_profession,
                         'จดทะเบียน': registered,
                         'ชื่อกิจการ': business_name,
                         'ประเภทธุรกิจ': business_type,
