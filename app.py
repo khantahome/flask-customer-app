@@ -489,6 +489,62 @@ def get_all_customer_records():
     except Exception as e:
         print(f"ERROR in get_all_customer_records (original customer_records): {e}")
         return []
+# NEW: Route to get aggregated customer data for chart
+@app.route('/get_customer_chart_data')
+def get_customer_chart_data():
+    """
+    Retrieves customer data, aggregates it by year/month and 'กลุ่มลูกค้าหลัก',
+    and returns it as JSON for charting.
+    """
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    all_customers = get_all_customer_records()
+    
+    chart_data = {} # Stores aggregated data: {year: {month: {group: count}}}
+    unique_customer_groups = set()
+    unique_years = set()
+    
+    for record in all_customers:
+        # ใช้ 'Timestamp' และ 'กลุ่มลูกค้าหลัก' ซึ่งเป็นส่วนหนึ่งของ CUSTOMER_DATA_WORKSHEET_HEADERS ที่คุณมีอยู่แล้ว
+        timestamp_str = record.get('Timestamp') 
+        customer_group = record.get('กลุ่มลูกค้าหลัก')
+
+        if timestamp_str and customer_group:
+            try:
+                # Parse timestamp string (e.g., 'YYYY-MM-DD HH:MM:SS')
+                dt_object = datetime.strptime(timestamp_str.split(' ')[0], '%Y-%m-%d')
+                year = str(dt_object.year)
+                month = dt_object.strftime('%m') # '01', '02', etc.
+
+                unique_years.add(year)
+                unique_customer_groups.add(customer_group)
+
+                if year not in chart_data:
+                    chart_data[year] = {}
+                if month not in chart_data[year]:
+                    chart_data[year][month] = {}
+                
+                chart_data[year][month][customer_group] = chart_data[year][month].get(customer_group, 0) + 1
+            except ValueError:
+                # Handle cases where timestamp might be malformed
+                print(f"Warning: Could not parse timestamp '{timestamp_str}' for chart data.")
+                continue
+
+    # Convert sets to sorted lists for consistent ordering in frontend
+    sorted_years = sorted(list(unique_years))
+    sorted_customer_groups = sorted(list(unique_customer_groups))
+    
+    # Months list is fixed
+    all_months = [str(i).zfill(2) for i in range(1, 13)]
+
+    return jsonify({
+        'chart_data': chart_data,
+        'unique_customer_groups': sorted_customer_groups,
+        'unique_years': sorted_years,
+        'all_months': all_months
+    })
+
 @app.route('/update_loan_details', methods=['POST'])
 def update_loan_details():
     if 'username' not in session:

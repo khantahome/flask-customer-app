@@ -140,7 +140,117 @@
                 font-size: 1em;
             }
         }
+
+        /* Chart specific styles */
+        .chart-container {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-light);
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .chart-title {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .filters label {
+            font-weight: 400;
+            color: var(--text-color);
+            font-size: 1.1em;
+        }
+
+        .filter-select {
+            padding: 8px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Kanit', sans-serif;
+            font-size: 1em;
+            color: var(--text-color);
+            background-color: #FFFFFF;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            min-width: 120px; /* Ensure consistent width */
+        }
+
+        .filter-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+
+        .chart-canvas-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 800px; /* Max width for chart to keep it readable */
+            margin: 0 auto;
+            min-height: 300px; /* Minimum height to prevent collapse */
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            border-radius: 10px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div class="chart-container">
+        <h3 class="chart-title">กราฟจำนวนลูกค้าใหม่ตามกลุ่มลูกค้าหลัก</h3>
+        <div class="filters">
+            <label for="chartYearSelect">เลือกปี:</label>
+            <select id="chartYearSelect" class="filter-select"></select>
+
+            <label for="chartMonthSelect">เลือกเดือน:</label>
+            <select id="chartMonthSelect" class="filter-select"></select>
+
+            <label for="customerGroupSelect">เลือกกลุ่มลูกค้า:</label>
+            <select id="customerGroupSelect" class="filter-select"></select>
+        </div>
+        <div class="chart-canvas-wrapper">
+            <canvas id="customerChart"></canvas>
+            <div id="chartLoadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="spinner"></div>
+                <p>กำลังโหลดข้อมูล...</p>
+            </div>
+        </div>
+    </div>
 </head>
 <body>
     <div class="main-container">
@@ -164,5 +274,320 @@
             <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
         </div>
     </div>
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ดึงค่า CSS variable สำหรับใช้ใน Chart.js
+            const rootStyles = getComputedStyle(document.documentElement);
+            const textColor = rootStyles.getPropertyValue('--text-color').trim();
+            const primaryColor = rootStyles.getPropertyValue('--primary-color').trim();
+
+            const chartYearSelect = document.getElementById('chartYearSelect');
+            const chartMonthSelect = document.getElementById('chartMonthSelect');
+            const customerGroupSelect = document.getElementById('customerGroupSelect');
+            const chartCanvas = document.getElementById('customerChart');
+            const chartLoadingOverlay = document.getElementById('chartLoadingOverlay');
+            let customerChartInstance; // เก็บ instance ของ Chart.js
+            let rawChartData = {}; // เก็บข้อมูลทั้งหมดที่ดึงมาจาก API
+            let uniqueCustomerGroups = [];
+            let uniqueYears = [];
+            let allMonths = [];
+
+            // ฟังก์ชันสำหรับแสดง/ซ่อน loading overlay
+            function toggleLoading(show) {
+                if (show) {
+                    chartLoadingOverlay.style.display = 'flex';
+                } else {
+                    chartLoadingOverlay.style.display = 'none';
+                }
+            }
+
+            // ฟังก์ชันสำหรับดึงข้อมูลจาก Flask API
+            async function fetchChartData() {
+                toggleLoading(true);
+                try {
+                    const response = await fetch('/get_customer_chart_data');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    rawChartData = data.chart_data;
+                    uniqueCustomerGroups = data.unique_customer_groups;
+                    uniqueYears = data.unique_years;
+                    allMonths = data.all_months; // '01', '02', ...
+
+                    populateFilters();
+                    updateChart(); // แสดงกราฟครั้งแรก
+                } catch (error) {
+                    console.error('Error fetching chart data:', error);
+                    alert('ไม่สามารถโหลดข้อมูลกราฟได้ กรุณาลองใหม่อีกครั้ง');
+                } finally {
+                    toggleLoading(false);
+                }
+            }
+
+            // เติม dropdown ปีและเดือน
+            function populateFilters() {
+                // เติมปี
+                chartYearSelect.innerHTML = '<option value="">ทั้งหมด</option>'; // ตัวเลือกสำหรับทุกปี
+                uniqueYears.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    chartYearSelect.appendChild(option);
+                });
+                // เลือกปีปัจจุบันถ้ามี
+                const currentYear = new Date().getFullYear().toString();
+                if (uniqueYears.includes(currentYear)) {
+                    chartYearSelect.value = currentYear;
+                } else {
+                    chartYearSelect.value = uniqueYears.length > 0 ? uniqueYears[0] : ''; // เลือกปีแรกถ้าไม่พบปีปัจจุบัน
+                }
+                
+                // เติมเดือน
+                chartMonthSelect.innerHTML = '<option value="">ทั้งหมด</option>'; // ตัวเลือกสำหรับทุกเดือน
+                allMonths.forEach(month => {
+                    const option = document.createElement('option');
+                    option.value = month;
+                    option.textContent = new Date(2000, parseInt(month) - 1, 1).toLocaleString('th-TH', { month: 'long' });
+                    chartMonthSelect.appendChild(option);
+                });
+                // ไม่เลือกเดือนเริ่มต้น ให้แสดงทั้งหมด
+                chartMonthSelect.value = ''; 
+
+                // เติมกลุ่มลูกค้า
+                customerGroupSelect.innerHTML = '<option value="">ทั้งหมด</option>';
+                uniqueCustomerGroups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group;
+                    option.textContent = group;
+                    customerGroupSelect.appendChild(option);
+                });
+                customerGroupSelect.value = ''; // ไม่เลือกกลุ่มลูกค้าเริ่มต้น
+            }
+
+            // ฟังก์ชันสำหรับเตรียมข้อมูลสำหรับ Chart.js
+            function prepareChartData() {
+                const selectedYear = chartYearSelect.value;
+                const selectedMonth = chartMonthSelect.value;
+                const selectedGroup = customerGroupSelect.value;
+
+                let labels = [];
+                let datasets = [];
+
+                // ใช้สีจาก CSS variables หรือกำหนดสีคงที่
+                const colors = [
+                    primaryColor,  // Primary Blue from CSS variable
+                    'rgba(80, 227, 194, 0.7)',  // Secondary Mint
+                    'rgba(255, 99, 132, 0.7)',  // Red
+                    'rgba(255, 206, 86, 0.7)',  // Yellow
+                    'rgba(75, 192, 192, 0.7)',  // Teal
+                    'rgba(153, 102, 255, 0.7)', // Purple
+                    'rgba(255, 159, 64, 0.7)'   // Orange
+                ];
+                const borderColors = [
+                    rootStyles.getPropertyValue('--primary-color').trim(), // Primary Blue solid
+                    'rgba(80, 227, 194, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ];
+
+                if (selectedYear) {
+                    if (selectedMonth) {
+                        // แสดงตามกลุ่มสำหรับเดือนที่เฉพาะเจาะจงของปีที่เฉพาะเจาะจง
+                        labels = [new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1).toLocaleString('th-TH', { month: 'long', year: 'numeric' })];
+                        let dataForMonth = rawChartData[selectedYear]?.[selectedMonth] || {};
+                        
+                        if (selectedGroup) {
+                            // กลุ่มเดียวสำหรับเดือนที่เฉพาะเจาะจง
+                            const count = dataForMonth[selectedGroup] || 0;
+                            datasets.push({
+                                label: selectedGroup,
+                                data: [count],
+                                backgroundColor: colors[0],
+                                borderColor: borderColors[0],
+                                borderWidth: 1
+                            });
+                        } else {
+                            // ทุกกลุ่มสำหรับเดือนที่เฉพาะเจาะจง
+                            uniqueCustomerGroups.forEach((group, index) => {
+                                const count = dataForMonth[group] || 0;
+                                datasets.push({
+                                    label: group,
+                                    data: [count],
+                                    backgroundColor: colors[index % colors.length],
+                                    borderColor: borderColors[index % borderColors.length],
+                                    borderWidth: 1
+                                });
+                            });
+                        }
+                    } else {
+                        // แสดงตามเดือนสำหรับปีที่เฉพาะเจาะจง (ทุกเดือน)
+                        labels = allMonths.map(month => new Date(parseInt(selectedYear), parseInt(month) - 1, 1).toLocaleString('th-TH', { month: 'short' }));
+                        
+                        if (selectedGroup) {
+                            // กลุ่มเดียวสำหรับทุกเดือนของปีที่เฉพาะเจาะจง
+                            const dataCounts = allMonths.map(month => rawChartData[selectedYear]?.[month]?.[selectedGroup] || 0);
+                            datasets.push({
+                                label: selectedGroup,
+                                data: dataCounts,
+                                backgroundColor: colors[0],
+                                borderColor: borderColors[0],
+                                borderWidth: 1
+                            });
+                        } else {
+                            // ทุกกลุ่มสำหรับทุกเดือนของปีที่เฉพาะเจาะจง (stacked bar chart)
+                            uniqueCustomerGroups.forEach((group, groupIndex) => {
+                                const dataCounts = allMonths.map(month => rawChartData[selectedYear]?.[month]?.[group] || 0);
+                                datasets.push({
+                                    label: group,
+                                    data: dataCounts,
+                                    backgroundColor: colors[groupIndex % colors.length],
+                                    borderColor: borderColors[groupIndex % borderColors.length],
+                                    borderWidth: 1
+                                });
+                            });
+                        }
+                    }
+                } else {
+                    // แสดงตามปี (ทุกปี) - ผลรวม aggregated สำหรับแต่ละกลุ่มต่อปี
+                    labels = uniqueYears; // ปีเป็น label
+                    
+                    if (selectedGroup) {
+                        // กลุ่มเดียวสำหรับทุกปี
+                        const dataCounts = uniqueYears.map(year => {
+                            let sum = 0;
+                            for (const month in rawChartData[year]) {
+                                sum += rawChartData[year][month][selectedGroup] || 0;
+                            }
+                            return sum;
+                        });
+                        datasets.push({
+                            label: selectedGroup,
+                            data: dataCounts,
+                            backgroundColor: colors[0],
+                            borderColor: borderColors[0],
+                            borderWidth: 1
+                        });
+                    } else {
+                        // ทุกกลุ่มสำหรับทุกปี (stacked bar chart)
+                        uniqueCustomerGroups.forEach((group, groupIndex) => {
+                            const dataCounts = uniqueYears.map(year => {
+                                let sum = 0;
+                                for (const month in rawChartData[year]) {
+                                    sum += rawChartData[year][month][group] || 0;
+                                }
+                                return sum;
+                            });
+                            datasets.push({
+                                label: group,
+                                data: dataCounts,
+                                backgroundColor: colors[groupIndex % colors.length],
+                                borderColor: borderColors[groupIndex % borderColors.length],
+                                borderWidth: 1
+                            });
+                        });
+                    }
+                }
+
+                return {
+                    labels: labels,
+                    datasets: datasets
+                };
+            }
+
+            // ฟังก์ชันสำหรับอัปเดตกราฟ
+            function updateChart() {
+                const chartData = prepareChartData();
+
+                if (customerChartInstance) {
+                    customerChartInstance.destroy(); // ทำลาย instance กราฟเก่า
+                }
+
+                const ctx = chartCanvas.getContext('2d');
+                customerChartInstance = new Chart(ctx, {
+                    type: 'bar', // สามารถเป็น 'line', 'bar', 'pie' ได้
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: chartData.datasets.length > 1 || customerGroupSelect.value === '', // แสดง legend ถ้ามีหลาย dataset หรือเลือก 'ทุกกลุ่ม'
+                                position: 'top',
+                                labels: {
+                                    font: {
+                                        family: 'Kanit',
+                                        size: 14
+                                    },
+                                    color: textColor // แก้ไขตรงนี้
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: `จำนวนลูกค้าใหม่`,
+                                font: {
+                                    family: 'Kanit',
+                                    size: 18,
+                                    weight: 'bold'
+                                },
+                                color: textColor // แก้ไขตรงนี้
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: customerGroupSelect.value === '' && (chartYearSelect.value === '' || chartMonthSelect.value === ''), // Stacked ถ้าทุกกลุ่มและไม่ใช่เดือน/ปีที่เฉพาะเจาะจง
+                                title: {
+                                    display: true,
+                                    text: chartYearSelect.value && !chartMonthSelect.value ? 'เดือน' : (chartYearSelect.value ? 'วันที่/เดือน/ปี' : 'ปี'),
+                                    font: {
+                                        family: 'Kanit',
+                                        size: 16
+                                    },
+                                    color: textColor // แก้ไขตรงนี้
+                                },
+                                ticks: {
+                                    font: {
+                                        family: 'Kanit'
+                                    },
+                                    color: textColor // แก้ไขตรงนี้
+                                }
+                            },
+                            y: {
+                                stacked: customerGroupSelect.value === '' && (chartYearSelect.value === '' || chartMonthSelect.value === ''),
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'จำนวนลูกค้า',
+                                    font: {
+                                        family: 'Kanit',
+                                        size: 16
+                                    },
+                                    color: textColor // แก้ไขตรงนี้
+                                },
+                                ticks: {
+                                    precision: 0, // ตรวจสอบให้เป็นจำนวนเต็ม
+                                    font: {
+                                        family: 'Kanit'
+                                    },
+                                    color: textColor // แก้ไขตรงนี้
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // เพิ่ม event listeners สำหรับการเปลี่ยนแปลง filter
+            chartYearSelect.addEventListener('change', updateChart);
+            chartMonthSelect.addEventListener('change', updateChart);
+            customerGroupSelect.addEventListener('change', updateChart);
+
+            // ดึงข้อมูลเมื่อหน้าเว็บโหลด
+            fetchChartData();
+        });
+    </script>
 </body>
 </html>
