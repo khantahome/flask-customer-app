@@ -288,6 +288,8 @@
             const chartCanvas = document.getElementById('customerChart');
             const chartLoadingOverlay = document.getElementById('chartLoadingOverlay');
             let customerChartInstance; // เก็บ instance ของ Chart.js
+
+            // *** ตัวแปร Global สำหรับเก็บข้อมูลและตัวเลือกต่างๆ ***
             let rawChartData = {}; // เก็บข้อมูลทั้งหมดที่ดึงมาจาก API
             let uniqueCustomerGroups = [];
             let uniqueYears = [];
@@ -311,13 +313,23 @@
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     const data = await response.json();
+                    
+                    // กำหนดค่าให้ตัวแปร global
                     rawChartData = data.chart_data;
                     uniqueCustomerGroups = data.unique_customer_groups;
                     uniqueYears = data.unique_years;
                     allMonths = data.all_months; // '01', '02', ...
 
+                    console.log('Raw Chart Data fetched (Global):', {
+                        chart_data: rawChartData,
+                        unique_customer_groups: uniqueCustomerGroups,
+                        unique_years: uniqueYears,
+                        all_months: allMonths
+                    });
+
                     populateFilters();
-                    updateChart(); // แสดงกราฟครั้งแรก
+                    updateChart(); // *** เรียก updateChart โดยไม่ต้องส่ง parameter ***
+                                   // เพราะ updateChart จะเข้าถึง rawChartData ที่เป็น Global เอง
                 } catch (error) {
                     console.error('Error fetching chart data:', error);
                     alert('ไม่สามารถโหลดข้อมูลกราฟได้ กรุณาลองใหม่อีกครั้ง');
@@ -367,7 +379,13 @@
             }
 
             // ฟังก์ชันสำหรับเตรียมข้อมูลสำหรับ Chart.js
-            function prepareChartData() {
+            function prepareChartData(data) { // *** รับ parameter เพื่อให้ชัดเจนว่าใช้ข้อมูลที่ส่งเข้ามา ***
+                // *** เพิ่มการตรวจสอบว่า data มีข้อมูลก่อนที่จะเข้าเงื่อนไขต่างๆ ***
+                if (!data || Object.keys(data).length === 0) {
+                    console.warn("prepareChartData: Raw data is empty or invalid. Returning empty chart data.");
+                    return { labels: [], datasets: [] };
+                }
+
                 const selectedYear = chartYearSelect.value;
                 const selectedMonth = chartMonthSelect.value;
                 const selectedGroup = customerGroupSelect.value;
@@ -399,7 +417,7 @@
                     if (selectedMonth) {
                         // แสดงตามกลุ่มสำหรับเดือนที่เฉพาะเจาะจงของปีที่เฉพาะเจาะจง
                         labels = [new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1).toLocaleString('th-TH', { month: 'long', year: 'numeric' })];
-                        let dataForMonth = rawChartData[selectedYear]?.[selectedMonth] || {};
+                        let dataForMonth = data[selectedYear]?.[selectedMonth] || {}; // ใช้ 'data' parameter
                         
                         if (selectedGroup) {
                             // กลุ่มเดียวสำหรับเดือนที่เฉพาะเจาะจง
@@ -430,7 +448,7 @@
                         
                         if (selectedGroup) {
                             // กลุ่มเดียวสำหรับทุกเดือนของปีที่เฉพาะเจาะจง
-                            const dataCounts = allMonths.map(month => rawChartData[selectedYear]?.[month]?.[selectedGroup] || 0);
+                            const dataCounts = allMonths.map(month => data[selectedYear]?.[month]?.[selectedGroup] || 0); // ใช้ 'data' parameter
                             datasets.push({
                                 label: selectedGroup,
                                 data: dataCounts,
@@ -441,7 +459,7 @@
                         } else {
                             // ทุกกลุ่มสำหรับทุกเดือนของปีที่เฉพาะเจาะจง (stacked bar chart)
                             uniqueCustomerGroups.forEach((group, groupIndex) => {
-                                const dataCounts = allMonths.map(month => rawChartData[selectedYear]?.[month]?.[group] || 0);
+                                const dataCounts = allMonths.map(month => data[selectedYear]?.[month]?.[group] || 0); // ใช้ 'data' parameter
                                 datasets.push({
                                     label: group,
                                     data: dataCounts,
@@ -460,8 +478,8 @@
                         // กลุ่มเดียวสำหรับทุกปี
                         const dataCounts = uniqueYears.map(year => {
                             let sum = 0;
-                            for (const month in rawChartData[year]) {
-                                sum += rawChartData[year][month][selectedGroup] || 0;
+                            for (const month in data[year]) { // ใช้ 'data' parameter
+                                sum += data[year][month][selectedGroup] || 0; // ใช้ 'data' parameter
                             }
                             return sum;
                         });
@@ -477,8 +495,8 @@
                         uniqueCustomerGroups.forEach((group, groupIndex) => {
                             const dataCounts = uniqueYears.map(year => {
                                 let sum = 0;
-                                for (const month in rawChartData[year]) {
-                                    sum += rawChartData[year][month][group] || 0;
+                                for (const month in data[year]) { // ใช้ 'data' parameter
+                                    sum += data[year][month][group] || 0; // ใช้ 'data' parameter
                                 }
                                 return sum;
                             });
@@ -499,9 +517,21 @@
                 };
             }
 
-            // ฟังก์ชันสำหรับอัปเดตกราฟ
-            function updateChart() {
-                const chartData = prepareChartData();
+            // ฟังก์ชันสำหรับอัปเดตกราฟ (แก้ไขบรรทัดนี้)
+            function updateChart() { // *** ไม่รับ parameter ตรงนี้แล้ว ***
+                // เพิ่มการตรวจสอบว่า rawChartData (global) มีข้อมูลหรือไม่
+                if (!rawChartData || Object.keys(rawChartData).length === 0) {
+                    console.warn("No raw data available for chart. Chart cannot be updated.");
+                    if (customerChartInstance) {
+                        customerChartInstance.destroy(); // ทำลาย instance กราฟเก่า
+                        customerChartInstance = null; // ตั้งค่าเป็น null
+                    }
+                    // อาจแสดงข้อความบน UI ว่า "ไม่มีข้อมูลสำหรับกราฟ" ที่นี่
+                    return; // ออกจากฟังก์ชัน
+                }
+
+                // ส่ง global rawChartData ไปยัง prepareChartData
+                const chartData = prepareChartData(rawChartData);
                 console.log('Chart Data being passed to Chart.js:', chartData);
 
                 if (customerChartInstance) {
@@ -517,14 +547,14 @@
                         maintainAspectRatio: false,
                         plugins: {
                             legend: {
-                                display: chartData.datasets.length > 1 || customerGroupSelect.value === '', // แสดง legend ถ้ามีหลาย dataset หรือเลือก 'ทุกกลุ่ม'
+                                display: chartData.datasets.length > 1 || customerGroupSelect.value === '',
                                 position: 'top',
                                 labels: {
                                     font: {
                                         family: 'Kanit',
                                         size: 14
                                     },
-                                    color: textColor // แก้ไขตรงนี้
+                                    color: textColor
                                 }
                             },
                             title: {
@@ -535,12 +565,12 @@
                                     size: 18,
                                     weight: 'bold'
                                 },
-                                color: textColor // แก้ไขตรงนี้
+                                color: textColor
                             }
                         },
                         scales: {
                             x: {
-                                stacked: customerGroupSelect.value === '' && (chartYearSelect.value === '' || chartMonthSelect.value === ''), // Stacked ถ้าทุกกลุ่มและไม่ใช่เดือน/ปีที่เฉพาะเจาะจง
+                                stacked: customerGroupSelect.value === '' && (chartYearSelect.value === '' || chartMonthSelect.value === ''),
                                 title: {
                                     display: true,
                                     text: chartYearSelect.value && !chartMonthSelect.value ? 'เดือน' : (chartYearSelect.value ? 'วันที่/เดือน/ปี' : 'ปี'),
@@ -548,13 +578,13 @@
                                         family: 'Kanit',
                                         size: 16
                                     },
-                                    color: textColor // แก้ไขตรงนี้
+                                    color: textColor
                                 },
                                 ticks: {
                                     font: {
                                         family: 'Kanit'
                                     },
-                                    color: textColor // แก้ไขตรงนี้
+                                    color: textColor
                                 }
                             },
                             y: {
@@ -567,22 +597,23 @@
                                         family: 'Kanit',
                                         size: 16
                                     },
-                                    color: textColor // แก้ไขตรงนี้
+                                    color: textColor
                                 },
                                 ticks: {
-                                    precision: 0, // ตรวจสอบให้เป็นจำนวนเต็ม
+                                    precision: 0,
                                     font: {
                                         family: 'Kanit'
                                     },
-                                    color: textColor // แก้ไขตรงนี้
+                                    color: textColor
                                 }
                             }
                         }
                     }
                 });
             }
-
+    
             // เพิ่ม event listeners สำหรับการเปลี่ยนแปลง filter
+            // *** ไม่ต้องแก้ไขบรรทัดเหล่านี้แล้ว เพราะ updateChart ไม่รับ parameter ***
             chartYearSelect.addEventListener('change', updateChart);
             chartMonthSelect.addEventListener('change', updateChart);
             customerGroupSelect.addEventListener('change', updateChart);
