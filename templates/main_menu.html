@@ -8,13 +8,18 @@
     <style>
         /* Define CSS variables for easy theme customization */
         :root {
-            --primary-color: #4A90E2; /* Main blue color */
-            --secondary-color: #50E3C2; /* Secondary mint green color */
-            --background-color: #F0F2F5; /* Light background color */
-            --card-background: #FFFFFF; /* Background color for cards/containers */
-            --text-color: #333333; /* General text color */
-            --border-color: #DDDDDD; /* Border color for elements */
-            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow */
+            --primary-color: #8A2BE2; /* A vibrant purple for accent */
+            --secondary-color: #00BCD4; /* Cyan for secondary accent */
+            --background-color: #1A1A2E; /* Deep dark blue-purple for main background */
+            --card-background: #1F283E; /* Slightly lighter dark blue-purple for cards */
+            --text-color: #E0E0E0; /* Light grey for general text */
+            --light-text-color: #B0B0B0; /* Even lighter for secondary text */
+            --border-color: #3A3A5A; /* Darker border for elements */
+            --shadow-light: 0 6px 20px rgba(0, 0, 0, 0.4); /* Stronger shadow for dark mode */
+            --success-bg: #28A745; /* Green for success messages */
+            --success-text: #FFFFFF;
+            --error-bg: #DC3545; /* Red for error messages */
+            --error-text: #FFFFFF;
         }
 
         /* Basic styles for the body to center content and set font */
@@ -24,14 +29,57 @@
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            display: flex;
-            flex-direction: column; 
-            justify-content: center;
-            align-items: center; 
-            min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 0; /* Remove padding from body, will be handled by dashboard-layout */
             box-sizing: border-box;
+            color: var(--text-color); /* Apply global text color */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            display: flex; /* Use flexbox for the main layout */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+        }
+
+        /* Dashboard Layout */
+        .dashboard-layout {
+            display: flex;
+            width: 100%;
+            max-width: 1200px; /* Max width for the entire dashboard */
+            min-height: 90vh; /* Make dashboard take most of the screen height */
+            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay over background image */
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            overflow: hidden; /* For rounded corners */
+            margin: 20px; /* Margin around the entire dashboard */
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: 250px;
+            background-color: var(--card-background);
+            padding: 30px 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+        }
+
+        .sidebar-title {
+            color: var(--primary-color);
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        /* Main content area */
+        .main-content-area {
+            flex-grow: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px; /* Space between main-container and chart-container */
+            overflow-y: auto; /* Enable scrolling if content overflows */
         }
 
         /* Main container for the menu */
@@ -42,7 +90,7 @@
             box-shadow: var(--shadow-light);
             text-align: center;
             width: 100%;
-            max-width: 500px;
+            max-width: none; /* Remove max-width here, handled by main-content-area */
             animation: fadeIn 0.8s ease-out;
         }
 
@@ -61,7 +109,7 @@
 
         /* Logged in user info */
         .logged-in-user {
-            color: var(--text-color);
+            color: var(--light-text-color); /* Use lighter text color */
             margin-bottom: 25px;
             font-size: 1.1em;
             font-weight: 400;
@@ -69,10 +117,10 @@
 
         /* Flash messages styling */
         .flash-message {
-            background-color: #d4edda; /* Light green for success */
-            color: #155724; /* Dark green text */
-            border: 1px solid #c3e6cb;
+            background-color: var(--success-bg);
+            color: var(--success-text);
             padding: 12px 20px;
+            border: 1px solid var(--success-bg); /* Use solid border for success */
             border-radius: 8px;
             margin-bottom: 20px;
             font-size: 1em;
@@ -91,7 +139,8 @@
             display: flex;
             flex-direction: column;
             gap: 15px; /* Space between buttons */
-            margin-top: 30px;
+            width: 100%; /* Make buttons take full width of sidebar */
+            margin-top: 0; /* Remove top margin, handled by sidebar padding */
         }
 
         /* Individual action button style */
@@ -105,51 +154,35 @@
             font-size: 1.1em;
             font-weight: 500;
             transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Darker shadow for dark mode */
+            text-align: center;
         }
 
         .action-button:hover {
-            background-color: #3a7bd5; /* Slightly darker blue on hover */
+            background-color: #6A1B9A; /* Slightly darker purple on hover */
             transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
 
         /* Logout button specific style */
         .action-button.logout {
-            background-color: #DC3545; /* Red for logout */
-            margin-top: 25px; /* More space above logout */
+            background-color: var(--error-bg); /* Red for logout */
+            margin-top: 40px; /* More space above logout */
         }
 
         .action-button.logout:hover {
-            background-color: #C82333; /* Darker red on hover */
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            .main-container {
-                padding: 30px;
-                margin-bottom: 15px;
-            }
-            .main-container h2 {
-                font-size: 1.8em;
-            }
-            .action-button {
-                padding: 12px 20px;
-                font-size: 1em;
-            }
+            background-color: #B02A37; /* Darker red on hover */
         }
 
         /* Chart specific styles */
         .chart-container {
             background-color: var(--card-background);
             padding: 25px;
-            border-radius: 10px;
+            border-radius: 12px; /* Consistent border radius */
             box-shadow: var(--shadow-light);
-            margin-top: 30px;
+            margin-top: 0; /* Remove margin-top, handled by main-content-area gap */
             text-align: center;
+            flex-grow: 1; /* Allow chart container to grow */
         }
 
         .chart-title {
@@ -170,7 +203,7 @@
 
         .filters label {
             font-weight: 400;
-            color: var(--text-color);
+            color: var(--light-text-color); /* Lighter text for labels */
             font-size: 1.1em;
         }
 
@@ -181,16 +214,21 @@
             font-family: 'Kanit', sans-serif;
             font-size: 1em;
             color: var(--text-color);
-            background-color: #FFFFFF;
+            background-color: var(--background-color); /* Darker background for select */
             cursor: pointer;
             outline: none;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
             min-width: 120px; /* Ensure consistent width */
+            appearance: none; /* Remove default select arrow */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23E0E0E0%22%20d%3D%22M287%2C197.3L159.5%2C69.8c-4.7-4.7-12.3-4.7-17%2C0L5.4%2C197.3c-4.7%2C4.7-4.7%2C12.3%2C0%2C17l19.7%2C19.7c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0L146%2C118.4l103.9%2C103.9c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0l19.7-19.7C291.7%2C209.6%2C291.7%2C202%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E'); /* Custom arrow */
+            background-repeat: no-repeat;
+            background-position: right 10px top 50%;
+            background-size: 12px auto;
         }
 
         .filter-select:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+            box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.3); /* Shadow for focus */
         }
 
         .chart-canvas-wrapper {
@@ -208,7 +246,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(30, 40, 62, 0.8); /* Darker overlay */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -218,7 +256,7 @@
         }
 
         .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
+            border: 4px solid rgba(255, 255, 255, 0.2); /* Lighter spinner border */
             border-left-color: var(--primary-color);
             border-radius: 50%;
             width: 40px;
@@ -230,47 +268,112 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) { /* Adjust for smaller screens (tablets) */
+            .dashboard-layout {
+                flex-direction: column;
+                min-height: unset; /* Allow height to adjust */
+                max-width: 90%;
+            }
+            .sidebar {
+                width: 100%;
+                padding: 20px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .main-content-area {
+                padding: 20px;
+            }
+            .main-container, .chart-container {
+                padding: 30px;
+            }
+            .action-button-group {
+                flex-direction: row; /* Buttons in a row on smaller screens */
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .action-button {
+                flex-basis: 48%; /* Two buttons per row */
+            }
+            .action-button.logout {
+                margin-top: 15px;
+                flex-basis: 98%; /* Logout button takes full width */
+            }
+            .sidebar-title {
+                margin-bottom: 20px;
+            }
+        }
+
+        @media (max-width: 600px) { /* Adjust for mobile screens */
+            .dashboard-layout {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            .main-container h2 {
+                font-size: 1.8em;
+            }
+            .action-button {
+                padding: 12px 20px;
+                font-size: 1em;
+                flex-basis: 100%; /* Single column buttons on very small screens */
+            }
+            .filters {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .filter-select {
+                width: 100%;
+            }
+        }
     </style>
 
 </head>
 <body>
-    <div class="main-container">
-        <h2>เมนูหลัก</h2>
-
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="flash-message">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
-
-        <div class="action-button-group">
-            <a href="{{ url_for('enter_customer_data') }}" class="action-button">กรอกข้อมูลลูกค้าใหม่</a>
-            {# แก้ไขตรงนี้: ลบ 'search_' ที่ซ้ำออก #}
-            <a href="{{ url_for('search_customer_data') }}" class="action-button">ค้นหาข้อมูลลูกค้า</a>
-            <a href="{{ url_for('loan_management') }}" class="action-button">จัดการสินเชื่อ</a>
+    <div class="dashboard-layout">
+        <div class="sidebar">
+            <h3 class="sidebar-title">เมนู</h3>
+            <div class="action-button-group">
+                <a href="{{ url_for('enter_customer_data') }}" class="action-button">กรอกข้อมูลลูกค้าใหม่</a>
+                {# แก้ไขตรงนี้: ลบ 'search_' ที่ซ้ำออก #}
+                <a href="{{ url_for('search_customer_data') }}" class="action-button">ค้นหาข้อมูลลูกค้า</a>
+                <a href="{{ url_for('loan_management') }}" class="action-button">จัดการสินเชื่อ</a>
+            </div>
             <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
         </div>
-    </div>
-     <div class="chart-container">
-        <h3 class="chart-title">กราฟข้อมูลลูกค้าใหม่</h3>
-        <div class="filters">
-            <label for="chartYearSelect">ปี:</label>
-            <select id="chartYearSelect" class="filter-select"></select>
+        <div class="main-content-area">
+            <div class="main-container">
+                <h2>เมนูหลัก</h2>
 
-            <label for="chartMonthSelect">เดือน:</label>
-            <select id="chartMonthSelect" class="filter-select"></select>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="flash-message">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
 
-            <label for="customerGroupSelect">กลุ่มลูกค้า:</label>
-            <select id="customerGroupSelect" class="filter-select"></select>
-        </div>
-        <div class="chart-canvas-wrapper">
-            <canvas id="customerChart"></canvas>
-            <div id="chartLoadingOverlay" class="loading-overlay" style="display: none;">
-                <div class="spinner"></div>
+                <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
+            </div>
+             <div class="chart-container">
+                <h3 class="chart-title">กราฟข้อมูลลูกค้าใหม่</h3>
+                <div class="filters">
+                    <label for="chartYearSelect">ปี:</label>
+                    <select id="chartYearSelect" class="filter-select"></select>
+
+                    <label for="chartMonthSelect">เดือน:</label>
+                    <select id="chartMonthSelect" class="filter-select"></select>
+
+                    <label for="customerGroupSelect">กลุ่มลูกค้า:</label>
+                    <select id="customerGroupSelect" class="filter-select"></select>
+                </div>
+                <div class="chart-canvas-wrapper">
+                    <canvas id="customerChart"></canvas>
+                    <div id="chartLoadingOverlay" class="loading-overlay" style="display: none;">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
