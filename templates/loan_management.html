@@ -8,91 +8,113 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
+        /* Define CSS variables for easy theme customization */
+        :root {
+            --primary-color: #8A2BE2; /* A vibrant purple for accent */
+            --secondary-color: #00BCD4; /* Cyan for secondary accent */
+            --background-color: #1A1A2E; /* Deep dark blue-purple for main background */
+            --card-background: #1F283E; /* Slightly lighter dark blue-purple for cards */
+            --text-color: #E0E0E0; /* Light grey for general text */
+            --light-text-color: #B0B0B0; /* Even lighter for secondary text */
+            --border-color: #3A3A5A; /* Darker border for elements */
+            --shadow-light: 0 6px 20px rgba(0, 0, 0, 0.4); /* Stronger shadow for dark mode */
+            --success-bg: #28A745; /* Green for success messages */
+            --success-text: #FFFFFF;
+            --error-bg: #DC3545; /* Red for error messages */
+            --error-text: #FFFFFF;
+            --info-bg: #17A2B8; /* Blue for info messages */
+            --info-text: #FFFFFF;
+            --warning-bg: #FFC107; /* Orange for warning messages */
+            --warning-text: #333333; /* Dark text for warning */
+            --table-header-bg: #2A3850; /* Darker header for tables */
+            --table-row-odd: #2A3850; /* Dark background for odd rows */
+            --table-row-even: #1F283E; /* Slightly lighter dark background for even rows */
+            --table-border-color: #3A3A5A; /* Darker border for table cells */
+        }
+
         /* General Body Styling */
         body {
             font-family: 'Sarabun', sans-serif; /* Using Sarabun font */
-            background-color: #f5f7fa; /* Light background */
-            color: #333;
+            background-color: var(--background-color);
+            color: var(--text-color);
             margin: 0;
             padding: 0;
             line-height: 1.6;
             min-height: 100vh; /* Ensure body takes full viewport height */
             opacity: 0; /* Hide content initially */
             transition: opacity 0.5s ease-in-out; /* Smooth fade in for content */
+            background-image: url('/static/images/your_background_image.jpg'); /* Keep background image */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex; /* Use flexbox for the main layout */
+            justify-content: center; /* Center horizontally */
+            align-items: flex-start; /* Align content to the top (for mobile scroll) */
         }
 
         body.loaded {
             opacity: 1; /* Show content when loaded */
         }
 
-        /* Navigation Bar Styling */
-        .navbar {
-            background-color: #28a745; /* Green for success/money theme */
-            padding: 15px 20px;
-            color: white;
+        /* Dashboard Layout (New) */
+        .dashboard-layout {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 1200px; /* Max width for the entire dashboard */
+            min-height: 90vh; /* Make dashboard take most of the screen height */
+            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay over background image */
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            overflow: hidden; /* For rounded corners */
+            margin-top: 20px; /* Space from top */
+            margin-bottom: 20px; /* Space from bottom */
+            margin-left: 20px;
+            margin-right: 20px;
         }
 
-        .navbar-brand {
-            font-size: 1.5em;
+        /* Sidebar styles (New) */
+        .sidebar {
+            width: 250px;
+            background-color: var(--card-background);
+            padding: 30px 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+        }
+
+        .sidebar-title {
+            color: var(--primary-color);
+            font-size: 1.8em;
             font-weight: 600;
-            color: white;
-            text-decoration: none;
+            margin-bottom: 40px;
+            text-align: center;
         }
 
-        .navbar-links {
+        /* Main content area (New) */
+        .main-content-area {
+            flex-grow: 1;
+            padding: 30px;
             display: flex;
-            gap: 20px;
+            flex-direction: column;
+            gap: 30px; /* Space between main-container and results-container */
+            overflow-y: auto; /* Enable scrolling if content overflows */
         }
 
-        .navbar-links a {
-            color: white;
-            text-decoration: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        .navbar-links a:hover,
-        .navbar-links a.active {
-            background-color: #218838; /* Darker green on hover/active */
-        }
-
-        .user-info {
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-info a {
-            color: white;
-            text-decoration: none;
-            padding: 5px 10px;
-            border: 1px solid rgba(255,255,255,0.5);
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        .user-info a:hover {
-            background-color: rgba(255,255,255,0.2);
-        }
-
-        /* Container for content */
+        /* Container for content - now inside main-content-area */
         .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            background-color: #ffffff;
+            max-width: none; /* Override original max-width */
+            margin: 0; /* Override original margin */
+            background-color: var(--card-background); /* Keep card background */
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            box-sizing: border-box;
         }
 
         h2, h3 {
-            color: #28a745; /* Green headings */
+            color: var(--primary-color); /* Primary color headings */
             text-align: center;
             margin-bottom: 30px;
             font-weight: 700;
@@ -105,47 +127,47 @@
 
         .alert {
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 8px; /* More rounded */
             margin-bottom: 15px;
             font-weight: 500;
         }
 
         .alert.alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid var(--success-bg);
         }
 
         .alert.alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid var(--error-bg);
         }
         
         .alert.alert-warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
+            background-color: var(--warning-bg);
+            color: var(--warning-text);
+            border: 1px solid var(--warning-bg);
         }
 
         .alert.alert-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+            background-color: var(--info-bg);
+            color: var(--info-text);
+            border: 1px solid var(--info-bg);
         }
 
         /* Card Styling for New Loan Form */
         .card {
-            background-color: #f8f9fa; /* Light grey card background */
+            background-color: var(--card-background);
             padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-radius: 12px; /* More rounded */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Stronger shadow */
             margin-bottom: 40px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--border-color);
         }
 
         .card-title {
-            color: #333;
+            color: var(--primary-color);
             font-size: 1.8em;
             margin-bottom: 25px;
             text-align: center;
@@ -160,23 +182,30 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #555;
+            color: var(--light-text-color); /* Lighter text for labels */
         }
 
         .form-input {
             width: 100%;
             padding: 12px 15px;
-            border: 1px solid #ced4da;
-            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px; /* More rounded */
             font-size: 1em;
             box-sizing: border-box; /* Include padding in width */
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+            background-color: var(--background-color); /* Darker input background */
+            color: var(--text-color); /* Input text color */
+        }
+
+        .form-input::placeholder { /* Placeholder text color */
+            color: var(--light-text-color);
+            opacity: 0.7;
         }
 
         .form-input:focus {
-            border-color: #28a745; /* Green border on focus */
+            border-color: var(--primary-color); /* Primary color border on focus */
             outline: none;
-            box-shadow: 0 0 0 0.2rem rgba(40,167,69,0.25);
+            box-shadow: 0 0 0 0.2rem rgba(138,43,226,0.25); /* Primary color shadow */
         }
 
         textarea.form-input {
@@ -188,48 +217,50 @@
         .btn {
             display: inline-block;
             padding: 12px 25px;
-            border-radius: 5px;
+            border-radius: 8px; /* More rounded */
             text-decoration: none;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
             text-align: center;
             border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); /* Subtle shadow */
         }
 
         .btn-primary {
-            background-color: #28a745; /* Green primary button */
+            background-color: var(--primary-color); /* Primary color button */
             color: white;
             width: 100%; /* Full width for submit button */
             margin-top: 15px;
         }
 
         .btn-primary:hover {
-            background-color: #218838;
+            background-color: #6A1B9A; /* Darker primary on hover */
             transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
         }
 
         .btn-info {
-            background-color: #17a2b8; /* Info blue */
-            color: white;
+            background-color: var(--secondary-color); /* Secondary color for info buttons */
+            color: var(--card-background); /* Dark text on light button */
             padding: 8px 15px;
             font-size: 0.9em;
             margin-right: 5px;
         }
 
         .btn-info:hover {
-            background-color: #138496;
+            background-color: #008C9E; /* Darker secondary on hover */
         }
 
         .btn-success {
-            background-color: #007bff; /* Success blue for payment */
+            background-color: #28A745; /* Green for payment button */
             color: white;
             padding: 8px 15px;
             font-size: 0.9em;
         }
 
         .btn-success:hover {
-            background-color: #0056b3;
+            background-color: #218838;
         }
 
         /* Table Styling */
@@ -242,9 +273,9 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            background-color: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border-radius: 8px;
+            background-color: var(--card-background);
+            box-shadow: var(--shadow-light);
+            border-radius: 12px; /* More rounded */
             overflow: hidden; /* Ensures rounded corners apply to content */
         }
 
@@ -252,25 +283,34 @@
         .data-table td {
             padding: 12px 15px;
             text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid var(--table-border-color); /* Darker border */
+            color: var(--text-color); /* Table text color */
         }
 
         .data-table thead {
-            background-color: #e9ecef; /* Light grey header */
+            background-color: var(--table-header-bg); /* Darker header */
         }
 
         .data-table th {
             font-weight: 600;
-            color: #495057;
+            color: var(--light-text-color); /* Lighter text for headers */
             white-space: nowrap; /* Prevent headers from wrapping */
         }
 
         .data-table tbody tr:hover {
-            background-color: #f5f5f5; /* Slight hover effect */
+            background-color: rgba(0, 0, 0, 0.1); /* Subtle hover effect */
         }
 
         .data-table tbody tr:last-child td {
             border-bottom: none;
+        }
+
+        /* Alternating row colors for data table */
+        .data-table tbody tr:nth-child(odd) {
+            background-color: var(--table-row-odd);
+        }
+        .data-table tbody tr:nth-child(even) {
+            background-color: var(--table-row-even);
         }
 
         .text-center {
@@ -279,7 +319,6 @@
 
         /* Modal Styles - IMPROVED */
         .modal {
-            /* display: none; */ /* ลบหรือคอมเมนต์บรรทัดนี้ออกไป */
             position: fixed; /* Stay in place */
             z-index: 1000; /* Sit on top */
             left: 0;
@@ -287,37 +326,37 @@
             width: 100%; /* Full width */
             height: 100%; /* Full height */
             overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.6); /* Darker overlay */
-            /* display: flex; */ /* ลบหรือคอมเมนต์บรรทัดนี้ออกไป เพื่อให้ถูกควบคุมด้วย .modal.show */
+            background-color: rgba(0,0,0,0.8); /* Darker overlay */
             align-items: center;
             justify-content: center;
             opacity: 0; /* Start hidden for animation */
             transition: opacity 0.3s ease-out;
-            pointer-events: none; /* NEW: ป้องกันการคลิกผ่านเมื่อ modal ยังไม่แสดง */
+            pointer-events: none; /* Prevent clicks through when modal is not visible */
+            display: flex; /* Always flex, visibility controlled by opacity/pointer-events */
         }
         .modal.show {
             opacity: 1; /* Show with fade in */
-            display: flex; /* NEW: กำหนด display: flex เมื่อมี class 'show' */
-            pointer-events: auto; /* NEW: อนุญาตให้คลิกได้เมื่อ modal แสดง */
+            pointer-events: auto; /* Allow clicks when modal is visible */
         }
 
         .modal-content {
-            background-color: #ffffff; /* White background */
+            background-color: var(--card-background); /* Dark background for modal content */
             padding: 30px;
-            border-radius: 12px; /* More rounded corners */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); /* Stronger, softer shadow */
+            border-radius: 15px; /* More rounded corners */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); /* Stronger, softer shadow */
             width: 90%;
             max-width: 550px; /* Slightly wider modal */
             position: relative;
             transform: scale(0.95); /* Start slightly smaller for animation */
             transition: transform 0.3s ease-out;
+            color: var(--text-color); /* Modal text color */
         }
         .modal.show .modal-content {
             transform: scale(1); /* Scale up on show */
         }
 
         .close-button {
-            color: #888;
+            color: var(--light-text-color);
             position: absolute;
             top: 15px;
             right: 20px;
@@ -329,12 +368,12 @@
 
         .close-button:hover,
         .close-button:focus {
-            color: #333;
+            color: var(--primary-color); /* Primary color on hover */
             text-decoration: none;
         }
 
         .modal-title {
-            color: #28a745;
+            color: var(--primary-color);
             text-align: center;
             margin-bottom: 30px; /* More space below title */
             font-size: 2em; /* Larger title */
@@ -355,14 +394,21 @@
             text-align: right; /* Align labels to the right */
             margin-bottom: 0; /* Remove bottom margin if on same line */
             font-size: 0.95em;
-            color: #444;
+            color: var(--light-text-color);
         }
 
         .modal .form-input {
             flex-grow: 1; /* Allow input to take remaining space */
             padding: 10px 12px;
             font-size: 0.95em;
-            border-radius: 6px;
+            border-radius: 8px; /* More rounded */
+            background-color: var(--background-color); /* Darker input background */
+            color: var(--text-color); /* Input text color */
+            border: 1px solid var(--border-color); /* Input border */
+        }
+        .modal .form-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(138,43,226,0.25);
         }
 
         /* Responsive adjustments for modal form on smaller screens */
@@ -381,13 +427,13 @@
 
         .modal .btn-primary {
             margin-top: 25px; /* More space above modal submit button */
-            padding: 12px 20px;
+            padding: 14px 25px; /* Larger padding */
             font-size: 1.1em;
             border-radius: 8px; /* More rounded button */
-            box-shadow: 0 4px 10px rgba(40,167,69,0.2); /* Subtle shadow for button */
+            box-shadow: 0 4px 10px rgba(138,43,226,0.2); /* Subtle shadow for button */
         }
         .modal .btn-primary:hover {
-            box-shadow: 0 6px 15px rgba(40,167,69,0.3);
+            box-shadow: 0 6px 15px rgba(138,43,226,0.3);
         }
 
         /* New Modal for Payment History */
@@ -403,7 +449,7 @@
             margin-top: 0; /* Override default table margin */
             max-height: 400px; /* Limit height for scrollable table */
             overflow-y: auto; /* Enable vertical scrolling */
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--table-border-color);
             border-radius: 8px;
         }
         #paymentHistoryModal .data-table {
@@ -425,7 +471,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+            background-color: rgba(30, 40, 62, 0.9); /* Darker semi-transparent background */
             display: flex; /* Ensure it's visible by default */
             flex-direction: column;
             justify-content: center;
@@ -440,24 +486,26 @@
             pointer-events: none; /* Allow clicks through when hidden */
         }
          button[type="submit"] {
-        background-color: #28a745;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 1rem;
-        border-radius: 50px;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.2s ease;
+            background-color: var(--primary-color); /* Use primary color */
+            color: white;
+            border: none;
+            padding: 12px 25px; /* Larger padding */
+            font-size: 1.1em;
+            border-radius: 8px; /* More rounded */
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
         button[type="submit"]:hover {
-        background-color: #218838;
-        transform: translateY(-2px);
+            background-color: #6A1B9A; /* Darker primary on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
         }
 
         .spinner {
-            border: 6px solid #f3f3f3; /* Light grey */
-            border-top: 6px solid #28a745; /* Green */
+            border: 6px solid rgba(255, 255, 255, 0.2); /* Lighter grey for spinner */
+            border-top: 6px solid var(--primary-color); /* Primary color */
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -471,9 +519,198 @@
         }
 
         .loading-text {
-            color: #333;
+            color: var(--text-color); /* Text color for loading */
             font-size: 1.2em;
             font-weight: 500;
+        }
+
+        /* Search form specific styles */
+        form[method="get"][action="{{ url_for('loan_management') }}"] {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+            justify-content: center;
+        }
+
+        form[method="get"][action="{{ url_for('loan_management') }}"] input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-size: 1em;
+        }
+
+        form[method="get"][action="{{ url_for('loan_management') }}"] button[type="submit"] {
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 8px;
+            background-color: var(--secondary-color); /* Use secondary color for search button */
+            color: var(--card-background); /* Dark text on light button */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        form[method="get"][action="{{ url_for('loan_management') }}"] button[type="submit"]:hover {
+            background-color: #008C9E; /* Darker secondary on hover */
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+        }
+
+        /* Action button group (for sidebar) */
+        .action-button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Space between buttons */
+            width: 100%; /* Make buttons take full width of sidebar */
+            margin-top: 0; /* Remove top margin, handled by sidebar padding */
+        }
+
+        /* Individual action button style (for sidebar) */
+        .action-button {
+            display: block; /* Make buttons take full width */
+            padding: 15px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Darker shadow for dark mode */
+            text-align: center;
+        }
+
+        .action-button:hover {
+            background-color: #6A1B9A; /* Slightly darker purple on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Active state for navigation buttons */
+        .action-button.active {
+            background-color: var(--secondary-color); /* Use secondary color for active state */
+            color: var(--card-background); /* Dark text on active button */
+            box-shadow: 0 4px 10px rgba(0, 189, 212, 0.4); /* Stronger shadow for active */
+        }
+        .action-button.active:hover {
+            background-color: #008C9E; /* Darker secondary on hover for active */
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 189, 212, 0.5);
+        }
+
+        /* Logout button specific style (for sidebar) */
+        .action-button.logout {
+            background-color: var(--error-bg); /* Red for logout */
+            margin-top: 40px; /* More space above logout */
+        }
+
+        .action-button.logout:hover {
+            background-color: #B02A37; /* Darker red on hover */
+        }
+
+        .logged-in-user {
+            color: var(--light-text-color); /* Use lighter text color */
+            margin-top: 25px; /* Space from buttons */
+            font-size: 1em;
+            font-weight: 400;
+            text-align: center;
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) { /* Adjust for smaller screens (tablets) */
+            .dashboard-layout {
+                flex-direction: column;
+                min-height: unset; /* Allow height to adjust */
+                max-width: 90%;
+            }
+            .sidebar {
+                width: 100%;
+                padding: 20px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .main-content-area {
+                padding: 20px;
+            }
+            .container {
+                padding: 30px;
+                margin-top: 0; /* Handled by main-content-area gap */
+                margin-bottom: 0; /* Handled by main-content-area gap */
+            }
+            .action-button-group {
+                flex-direction: row; /* Buttons in a row on smaller screens */
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .action-button {
+                flex-basis: 48%; /* Two buttons per row */
+            }
+            .action-button.logout {
+                margin-top: 15px;
+                flex-basis: 98%; /* Logout button takes full width */
+            }
+            .sidebar-title {
+                margin-bottom: 20px;
+            }
+            .logged-in-user {
+                margin-top: 15px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 0; /* Remove body padding, dashboard-layout handles margin */
+            }
+            .dashboard-layout {
+                margin: 10px; /* Reduced margin for mobile */
+                border-radius: 10px;
+            }
+            .container {
+                padding: 25px;
+            }
+            h2, h3, .card-title, .modal-title {
+                font-size: 1.8em;
+            }
+            .action-button {
+                padding: 12px 20px;
+                font-size: 1em;
+                width: 100%; /* Full width on small screens */
+                min-width: unset; /* Remove min-width for full width */
+            }
+            .action-button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .modal .form-group {
+                flex-direction: column; /* Stack label and input vertically on small screens */
+                align-items: flex-start; /* Align items to the start when stacked */
+                gap: 5px; /* Smaller gap when stacked */
+            }
+            .modal .form-label {
+                width: auto; /* Auto width for labels when stacked */
+                text-align: left; /* Align labels to the left when stacked */
+                margin-bottom: 5px; /* Add back bottom margin for labels when stacked */
+            }
+            .modal .form-input {
+                padding: 8px 10px;
+                font-size: 0.9em;
+            }
+            .modal .btn-primary {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+            .data-table th, .data-table td {
+                padding: 8px 10px;
+                font-size: 0.9em;
+            }
+            .btn-info, .btn-success {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
         }
     </style>
 </head>
@@ -484,374 +721,375 @@
         <div class="loading-text">กำลังโหลดข้อมูล...</div>
     </div>
 
-    <nav class="navbar">
-        <a class="navbar-brand" href="{{ url_for('dashboard') }}">หน้าหลัก</a>
-        <div class="navbar-links">
-            <a href="{{ url_for('enter_customer_data') }}">เพิ่มข้อมูลลูกค้า</a>
-            <a href="{{ url_for('search_customer_data') }}">ค้นหา/แก้ไขข้อมูลลูกค้า</a>
-            <a class="active" href="{{ url_for('loan_management') }}">จัดการสินเชื่อ</a>
+    <div class="dashboard-layout">
+        <div class="sidebar">
+            <h3 class="sidebar-title">เมนู</h3>
+            <div class="action-button-group">
+                <a href="{{ url_for('dashboard') }}" class="action-button">หน้าหลัก</a>
+                <a href="{{ url_for('enter_customer_data') }}" class="action-button">กรอกข้อมูลลูกค้าใหม่</a>
+                <a href="{{ url_for('search_customer_data') }}" class="action-button">ค้นหา/แก้ไขข้อมูลลูกค้า</a>
+                <a class="active action-button" href="{{ url_for('loan_management') }}">จัดการสินเชื่อ</a>
+            </div>
+            <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
+            <p class="logged-in-user">สวัสดี, {{ username }}</p>
         </div>
-        <div class="user-info">
-            <span>สวัสดี, {{ username }}</span>
-            <a href="{{ url_for('logout') }}">ออกจากระบบ</a>
-        </div>
-    </nav>
-
-    <div class="container">
-        <h2>จัดการสินเชื่อ</h2>
-        <form method="get" action="{{ url_for('loan_management') }}" style="margin-bottom: 20px;">
-            <input type="text" name="search_query" placeholder="ค้นหาโดย รหัสลูกค้า / รหัสเงินกู้ / ชื่อ / นามสกุล" required>
-            <button type="submit">🔍 ค้นหา</button>
-        </form>
+        <div class="main-content-area">
+            <div class="container">
+                <h2>จัดการสินเชื่อ</h2>
+                <form method="get" action="{{ url_for('loan_management') }}" style="margin-bottom: 20px;">
+                    <input type="text" name="search_query" placeholder="ค้นหาโดย รหัสลูกค้า / รหัสเงินกู้ / ชื่อ / นามสกุล" required>
+                    <button type="submit">🔍 ค้นหา</button>
+                </form>
 
 
-        <div class="flash-messages">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
-
-        <div class="card">
-            <h4 class="card-title">เพิ่มรายการเงินกู้ใหม่</h4>
-            <form id="addLoanForm" action="{{ url_for('add_loan_record') }}" method="POST">
-                <div class="form-group">
-                    <label for="customer_new_id" class="form-label">รหัสลูกค้า (เลือกหรือกรอกใหม่):</label>
-                    <input type="text" class="form-input" id="customer_new_id" name="customer_new_id" placeholder="เลือกจากรายการ หรือเว้นว่างเพื่อกรอกชื่อใหม่" list="customer_suggestions">
-                    {# Datalist for customer suggestions - This will be populated by Flask (all_customers) #}
-                    <datalist id="customer_suggestions">
-                        {% if all_customers %}
-                            {% for customer in all_customers %}
-                                {# The value sent to the backend will be the 'รหัสลูกค้า' #}
-                                {# The displayed text will be 'ชื่อ' and 'นามสกุล' #}
-                                <option value="{{ customer.get('รหัสลูกค้า', '') }}">{{ customer.get('ชื่อ', '') }} {{ customer.get('นามสกุล', '') }}</option>
+                <div class="flash-messages">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
                             {% endfor %}
                         {% endif %}
-                    </datalist>
+                    {% endwith %}
                 </div>
 
-                <div class="form-group">
-                    <label for="new_customer_name" class="form-label">ชื่อลูกค้าใหม่ (กรอกหากไม่มีรหัสลูกค้า):</label>
-                    <input type="text" class="form-input" id="new_customer_name" name="new_customer_name" placeholder="กรอกชื่อลูกค้าใหม่">
-                </div>
-                <div class="form-group">
-                    <label for="new_customer_surname" class="form-label">นามสกุลลูกค้าใหม่ (กรอกหากไม่มีรหัสลูกค้า):</label>
-                    <input type="text" class="form-input" id="new_customer_surname" name="new_customer_surname" placeholder="กรอกนามสกุลลูกค้าใหม่">
+                <div class="card">
+                    <h4 class="card-title">เพิ่มรายการเงินกู้ใหม่</h4>
+                    <form id="addLoanForm" action="{{ url_for('add_loan_record') }}" method="POST">
+                        <div class="form-group">
+                            <label for="customer_new_id" class="form-label">รหัสลูกค้า (เลือกหรือกรอกใหม่):</label>
+                            <input type="text" class="form-input" id="customer_new_id" name="customer_new_id" placeholder="เลือกจากรายการ หรือเว้นว่างเพื่อกรอกชื่อใหม่" list="customer_suggestions">
+                            {# Datalist for customer suggestions - This will be populated by Flask (all_customers) #}
+                            <datalist id="customer_suggestions">
+                                {% if all_customers %}
+                                    {% for customer in all_customers %}
+                                        {# The value sent to the backend will be the 'รหัสลูกค้า' #}
+                                        {# The displayed text will be 'ชื่อ' and 'นามสกุล' #}
+                                        <option value="{{ customer.get('รหัสลูกค้า', '') }}">{{ customer.get('ชื่อ', '') }} {{ customer.get('นามสกุล', '') }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </datalist>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="new_customer_name" class="form-label">ชื่อลูกค้าใหม่ (กรอกหากไม่มีรหัสลูกค้า):</label>
+                            <input type="text" class="form-input" id="new_customer_name" name="new_customer_name" placeholder="กรอกชื่อลูกค้าใหม่">
+                        </div>
+                        <div class="form-group">
+                            <label for="new_customer_surname" class="form-label">นามสกุลลูกค้าใหม่ (กรอกหากไม่มีรหัสลูกค้า):</label>
+                            <input type="text" class="form-input" id="new_customer_surname" name="new_customer_surname" placeholder="กรอกนามสกุลลูกค้าใหม่">
+                        </div>
+
+                        {# NEW: Dropdown for Company Name #}
+                        <div class="form-group">
+                            <label for="company_name" class="form-label">ชื่อบริษัทผู้ปล่อยกู้:</label>
+                            <select class="form-input" id="company_name" name="company_name" required>
+                                <option value="">-- เลือกบริษัท --</option>
+                                <option value="Starloan">Starloan</option>
+                                <option value="Glorycash">Glorycash</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                                {# เพิ่ม option สำหรับบริษัทอื่นๆ ที่นี่ได้เลย #}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="loan_amount" class="form-label">วงเงินกู้ (บาท):</label>
+                            <input type="number" class="form-input" id="loan_amount" name="loan_amount" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="interest_rate" class="form-label">ดอกเบี้ย (%):</label>
+                            <input type="number" class="form-input" id="interest_rate" name="interest_rate" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="processing_fee" class="form-label">ค่าดำเนินการ (บาท):</label>
+                            <input type="number" class="form-input" id="processing_fee" name="processing_fee" step="0.01" value="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="front_back_interest_deduction" class="form-label">หักดอกหัวท้าย (บาท):</label>
+                            <input type="number" class="form-input" id="front_back_interest_deduction" name="front_back_interest_deduction" step="0.01" value="0" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="principal_to_return" class="form-label">ยอดเงินที่ต้องโอน (บาท):</label>
+                            <input type="text" class="form-input" id="principal_to_return" name="principal_to_return" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="daily_amount_to_return" class="form-label">ยอดเงินต้องคืนรายวัน (บาท):</label>
+                            <input type="text" class="form-input" id="daily_amount_to_return" name="daily_amount_to_return" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="start_date" class="form-label">วันที่เริ่มกู้:</label>
+                            <input type="date" class="form-input" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loan_note" class="form-label">หมายเหตุเงินกู้:</label>
+                            <textarea class="form-input" id="loan_note" name="loan_note" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="addLoanSubmitBtn">บันทึกรายการเงินกู้</button>
+                    </form>
                 </div>
 
-                {# NEW: Dropdown for Company Name #}
-                <div class="form-group">
-                    <label for="company_name" class="form-label">ชื่อบริษัทผู้ปล่อยกู้:</label>
-                    <select class="form-input" id="company_name" name="company_name" required>
-                        <option value="">-- เลือกบริษัท --</option>
-                        <option value="Starloan">Starloan</option>
-                        <option value="Glorycash">Glorycash</option>
-                        <option value="อื่นๆ">อื่นๆ</option>
-                        {# เพิ่ม option สำหรับบริษัทอื่นๆ ที่นี่ได้เลย #}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="loan_amount" class="form-label">วงเงินกู้ (บาท):</label>
-                    <input type="number" class="form-input" id="loan_amount" name="loan_amount" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="interest_rate" class="form-label">ดอกเบี้ย (%):</label>
-                    <input type="number" class="form-input" id="interest_rate" name="interest_rate" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="processing_fee" class="form-label">ค่าดำเนินการ (บาท):</label>
-                    <input type="number" class="form-input" id="processing_fee" name="processing_fee" step="0.01" value="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="front_back_interest_deduction" class="form-label">หักดอกหัวท้าย (บาท):</label>
-                    <input type="number" class="form-input" id="front_back_interest_deduction" name="front_back_interest_deduction" step="0.01" value="0" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="principal_to_return" class="form-label">ยอดเงินที่ต้องโอน (บาท):</label>
-                    <input type="text" class="form-input" id="principal_to_return" name="principal_to_return" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="daily_amount_to_return" class="form-label">ยอดเงินต้องคืนรายวัน (บาท):</label>
-                    <input type="text" class="form-input" id="daily_amount_to_return" name="daily_amount_to_return" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="start_date" class="form-label">วันที่เริ่มกู้:</label>
-                    <input type="date" class="form-input" id="start_date" name="start_date" required>
-                </div>
-                <div class="form-group">
-                    <label for="loan_note" class="form-label">หมายเหตุเงินกู้:</label>
-                    <textarea class="form-input" id="loan_note" name="loan_note" rows="3"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary" id="addLoanSubmitBtn">บันทึกรายการเงินกู้</button>
-            </form>
-        </div>
-
-        {% if loan_records %}
-        <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                       {% for header in loan_headers %}
-                            <th>{{ header }}</th>
-                        {% endfor %}
-                        <th>ดำเนินการ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set color_classes = ['bg-light', 'bg-white', 'bg-warning-subtle', 'bg-success-subtle'] %}
-                    {% for record in loan_records %}
-                            <tr class="{{ color_classes[loop.index0 % color_classes|length] }}">
-                                <td>{{ record.get('Timestamp', '-') }}</td>
-                                <td>{{ record.get('รหัสเงินกู้', '-') }}</td>
-                                <td>{{ record.get('รหัสลูกค้า', '-') }}</td>
-                                <td>{{ record.get('ชื่อลูกค้า', '-') }}</td>
-                                <td>{{ record.get('นามสกุลลูกค้า', '-') }}</td>
-                                <td>{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '-') }}</td>
-                                <td>{{ record.get('วงเงินกู้', '-') }}</td>
-                                <td>{{ record.get('ดอกเบี้ย (%)', '-') }}</td>
-                                <td>{{ record.get('วันที่เริ่มกู้', '-') }}</td>
-                                <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td> 
-                                <td>{{ record.get('ยอดเงินต้นที่ต้องคืน', '-') }}</td> 
-                                <td>{{ record.get('ค่าดำเนินการ', '-') }}</td>
-                                <td>{{ record.get('ยอดที่ต้องชำระรายวัน', '-') }}</td>
-                                <td>{{ record.get('ยอดชำระแล้ว', '-') }}</td>
-                                <td>{{ record.get('ยอดค้างชำระ', '-') }}</td>
-                                <td>{{ record.get('สถานะเงินกู้', '-') }}</td>
-                                <td>{{ record.get('หมายเหตุเงินกู้', '-') }}</td>
-                                <td>{{ record.get('ผู้บันทึก', '-') }}</td>
-                                <td>
-                                    {# Button for Edit/Top-up Loan (MODIFIED data-attributes) #}
-                                    <button class="btn btn-info edit-topup-loan-btn"
-                                            data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
-                                            data-row-index="{{ loop.index + 1 }}"
-                                            data-loan-amount="{{ record.get('วงเงินกู้', '') }}"
-                                            data-interest-rate="{{ record.get('ดอกเบี้ย (%)', '') }}"
-                                            data-principal-to-return="{{ record.get('ยอดค้างชำระ', '') }}" {# Use outstanding amount as current principal #}
-                                            data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
-                                            data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
-                                            data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
-                                            data-loan-note="{{ record.get('หมายเหตุเงินกู้', '') }}"
-                                            data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
-                                            >แก้ไข/เพิ่มยอด</button>
-                                    
-                                    {# Button for View Payment History (MODIFIED data-attributes) #}
-                                    <button class="btn btn-info view-payment-history-btn"
-                                            data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
-                                            data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
-                                            >ดูบันทึกการชำระ</button>
-                                    <button class="btn btn-success record-payment-btn"
-                                            data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
-                                            data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
-                                            data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
-                                            data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
-                                            data-outstanding-amount="{{ record.get('ยอดค้างชำระ', '') }}"
-                                            data-amount-paid="{{ record.get('ยอดชำระแล้ว', '') }}"
-                                            data-row-index="{{ loop.index + 1 }}" {# +1 because loop.index is 0-based, and headers are row 1 #}
-                                            data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
-                                            >บันทึกชำระ</button>
-                                    <button class="btn btn-info btn-sm reloan-loan-btn"
-                                        data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
-                                        data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
-                                        data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
-                                        data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
-                                        data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}">
-                                        เปิดยอดใหม่
-                                    </button>
-                                </td>
+                {% if loan_records %}
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                               {% for header in loan_headers %}
+                                    <th>{{ header }}</th>
+                                {% endfor %}
+                                <th>ดำเนินการ</th>
                             </tr>
-                        {% endfor %}
-                </tbody>
-            </table>
+                        </thead>
+                        <tbody>
+                            {# Removed Bootstrap bg-light/bg-white classes as custom dark theme rows are applied #}
+                            {% for record in loan_records %}
+                                    <tr> {# No Bootstrap class here, custom CSS handles alternating rows #}
+                                        <td>{{ record.get('Timestamp', '-') }}</td>
+                                        <td>{{ record.get('รหัสเงินกู้', '-') }}</td>
+                                        <td>{{ record.get('รหัสลูกค้า', '-') }}</td>
+                                        <td>{{ record.get('ชื่อลูกค้า', '-') }}</td>
+                                        <td>{{ record.get('นามสกุลลูกค้า', '-') }}</td>
+                                        <td>{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '-') }}</td>
+                                        <td>{{ record.get('วงเงินกู้', '-') }}</td>
+                                        <td>{{ record.get('ดอกเบี้ย (%)', '-') }}</td>
+                                        <td>{{ record.get('วันที่เริ่มกู้', '-') }}</td>
+                                        <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td> 
+                                        <td>{{ record.get('ยอดเงินต้นที่ต้องคืน', '-') }}</td> 
+                                        <td>{{ record.get('ค่าดำเนินการ', '-') }}</td>
+                                        <td>{{ record.get('ยอดที่ต้องชำระรายวัน', '-') }}</td>
+                                        <td>{{ record.get('ยอดชำระแล้ว', '-') }}</td>
+                                        <td>{{ record.get('ยอดค้างชำระ', '-') }}</td>
+                                        <td>{{ record.get('สถานะเงินกู้', '-') }}</td>
+                                        <td>{{ record.get('หมายเหตุเงินกู้', '-') }}</td>
+                                        <td>{{ record.get('ผู้บันทึก', '-') }}</td>
+                                        <td>
+                                            {# Button for Edit/Top-up Loan (MODIFIED data-attributes) #}
+                                            <button class="btn btn-info edit-topup-loan-btn"
+                                                    data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
+                                                    data-row-index="{{ loop.index + 1 }}"
+                                                    data-loan-amount="{{ record.get('วงเงินกู้', '') }}"
+                                                    data-interest-rate="{{ record.get('ดอกเบี้ย (%)', '') }}"
+                                                    data-principal-to-return="{{ record.get('ยอดค้างชำระ', '') }}" {# Use outstanding amount as current principal #}
+                                                    data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
+                                                    data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
+                                                    data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
+                                                    data-loan-note="{{ record.get('หมายเหตุเงินกู้', '') }}"
+                                                    data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
+                                                    >แก้ไข/เพิ่มยอด</button>
+                                            
+                                            {# Button for View Payment History (MODIFIED data-attributes) #}
+                                            <button class="btn btn-info view-payment-history-btn"
+                                                    data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
+                                                    data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
+                                                    >ดูบันทึกการชำระ</button>
+                                            <button class="btn btn-success record-payment-btn"
+                                                    data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
+                                                    data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
+                                                    data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
+                                                    data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
+                                                    data-outstanding-amount="{{ record.get('ยอดค้างชำระ', '') }}"
+                                                    data-amount-paid="{{ record.get('ยอดชำระแล้ว', '') }}"
+                                                    data-row-index="{{ loop.index + 1 }}" {# +1 because loop.index is 0-based, and headers are row 1 #}
+                                                    data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}" {# <-- NEW: เพิ่มชื่อบริษัท #}
+                                                    >บันทึกชำระ</button>
+                                            <button class="btn btn-info btn-sm reloan-loan-btn"
+                                                data-loan-id="{{ record.get('รหัสเงินกู้', '') }}"
+                                                data-customer-name="{{ record.get('ชื่อลูกค้า', '') }}"
+                                                data-customer-surname="{{ record.get('นามสกุลลูกค้า', '') }}"
+                                                data-customer-id="{{ record.get('รหัสลูกค้า', '') }}"
+                                                data-company-name="{{ record.get('ชื่อบริษัทผู้ปล่อยกู้', '') }}">
+                                                เปิดยอดใหม่
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center mt-4" style="color: var(--light-text-color);">กรุณากรอกคำค้นหาด้านบนเพื่อแสดงรายการ</p>
+                {% endif %}
+
+            {# Payment Modal Structure (ไม่มีการเปลี่ยนแปลงโครงสร้าง) #}
+            <div id="paymentModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button">&times;</span>
+                    <h4 class="modal-title">บันทึกการชำระเงิน</h4>
+                    <form id="paymentForm" action="{{ url_for('record_payment') }}" method="POST">
+                        <input type="hidden" id="modal_loan_id" name="loan_id">
+                        <input type="hidden" id="modal_current_amount_paid" name="current_amount_paid">
+                        <input type="hidden" id="modal_current_outstanding_amount" name="current_outstanding_amount">
+                        <input type="hidden" id="modal_company_name" name="company_name"> {# <-- NEW: Hidden field for company name #}
+
+                        <div class="form-group">
+                            <label for="payment_modal_amount_paid" class="form-label">ยอดชำระแล้ว:</label>
+                            <input type="text" class="form-input" id="payment_modal_amount_paid" readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="modal_customer_info" class="form-label">ลูกค้า:</label>
+                            <input type="text" class="form-input" id="modal_customer_info" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="modal_company_name_display" class="form-label">บริษัทผู้ปล่อยกู้:</label> {# <-- NEW: Display company name #}
+                            <input type="text" class="form-input" id="modal_company_name_display" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="modal_outstanding_display" class="form-label">ยอดค้างชำระปัจจุบัน:</label>
+                            <input type="text" class="form-input" id="modal_outstanding_display" readonly>
+                        </div>
+                        
+                        {# Field for Floating Interest Payment #}
+                        <div class="form-group">
+                            <label for="payment_amount" class="form-label">จำนวนเงินที่ชำระ (บาท):</label>
+                            <input type="number" class="form-input" id="payment_amount" name="payment_amount" step="0.01" value="0">
+                        </div>
+
+                        {# Field for Principal Repayment #}
+                        <div class="form-group">
+                            <label for="principal_payment_amount" class="form-label">จำนวนเงินที่ชำระคืนต้น (บาท):</label>
+                            <input type="number" class="form-input" id="principal_payment_amount" name="principal_payment_amount" step="0.01" value="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="payment_date" class="form-label">วันที่ชำระ:</label>
+                            <input type="date" class="form-input" id="payment_date" name="payment_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="payment_note" class="form-label">หมายเหตุการชำระ:</label>
+                            <textarea class="form-input" id="payment_note" name="payment_note" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="paymentSubmitBtn">บันทึกการชำระ</button>
+                    </form>
+                </div>
+            </div>
+
+            {# Payment History Modal Structure (MODIFIED title) #}
+            <div id="paymentHistoryModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button history-close-button">&times;</span>
+                    <h4 class="modal-title">บันทึกการชำระเงินสำหรับ <span id="history_loan_id_display"></span> (บริษัท: <span id="history_company_name_display"></span>)</h4> {# <-- NEW: แสดงชื่อบริษัท #}
+                    <div class="table-container">
+                        <table class="data-table" id="paymentHistoryTable">
+                            <thead>
+                                <tr>
+                                    {# Headers will be dynamically loaded by JS #}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {# Payment history data will be dynamically loaded by JS #}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="noPaymentHistoryMessage" style="text-align: center; color: var(--light-text-color); margin-top: 20px; display: none;">ไม่พบประวัติการชำระเงินสำหรับสินเชื่อนี้</p>
+                </div>
+            </div>
+
+            {# Edit/Top-up Loan Modal Structure (MODIFIED title) #}
+            <div id="editLoanModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button edit-loan-close-button">&times;</span>
+                    <h4 class="modal-title">แก้ไข/เพิ่มยอดสินเชื่อ</h4>
+                    <form id="editLoanForm" action="{{ url_for('update_loan_details') }}" method="POST">
+                        <input type="hidden" id="edit_modal_loan_id" name="loan_id">
+                        <input type="hidden" id="edit_modal_original_loan_amount" name="original_loan_amount"> {# Store original loan amount #}
+                        <input type="hidden" id="edit_modal_original_interest_rate" name="original_interest_rate"> {# Store original interest rate #}
+                        <input type="hidden" id="edit_modal_original_principal_to_return" name="original_principal_to_return"> {# Store original principal to return (current outstanding principal) #}
+                        <input type="hidden" id="edit_modal_company_name" name="company_name"> {# <-- NEW: Hidden field for company name #}
+
+                        <div class="form-group">
+                            <label for="edit_modal_customer_info" class="form-label">ลูกค้า:</label>
+                            <input type="text" class="form-input" id="edit_modal_customer_info" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_modal_company_name_display" class="form-label">บริษัทผู้ปล่อยกู้:</label> {# <-- NEW: Display company name #}
+                            <input type="text" class="form-input" id="edit_modal_company_name_display" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_modal_current_loan_amount" class="form-label">วงเงินกู้ปัจจุบัน:</label>
+                            <input type="text" class="form-input" id="edit_modal_current_loan_amount" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_modal_current_interest_rate" class="form-label">ดอกเบี้ยปัจจุบัน (%):</label>
+                            <input type="text" class="form-input" id="edit_modal_current_interest_rate" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_modal_current_outstanding_principal" class="form-label">ยอดเงินต้นคงเหลือ:</label>
+                            <input type="text" class="form-input" id="edit_modal_current_outstanding_principal" readonly>
+                        </div>
+                        
+                        <hr style="margin: 25px 0; border: 0; border-top: 1px solid var(--border-color);">
+
+                        <div class="form-group">
+                            <label for="top_up_amount" class="form-label">จำนวนเงินที่ต้องการเพิ่ม (บาท):</label>
+                            <input type="number" class="form-input" id="top_up_amount" name="top_up_amount" step="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_loan_note" class="form-label">หมายเหตุ (เพิ่มยอด):</label>
+                            <textarea class="form-input" id="edit_loan_note" name="edit_loan_note" rows="2" placeholder="ระบุเหตุผลในการเพิ่มยอดหรือแก้ไข"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="editLoanSubmitBtn">บันทึกการแก้ไข/เพิ่มยอด</button>
+                    </form>
+                </div>
+            </div>
+            <div id="reloanModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button reloan-close-button">&times;</span>
+                <h4 class="modal-title">เปิดยอดสินเชื่อใหม่ (สำหรับลูกค้าเดิม)</h4>
+                <form id="reloanForm" action="{{ url_for('create_new_loan_for_existing') }}" method="POST">
+                    <input type="hidden" id="reloan_modal_original_loan_id" name="original_loan_id">
+                    
+                    <div class="form-group">
+                        <label for="reloan_modal_customer_info" class="form-label">ลูกค้า:</label>
+                        <input type="text" class="form-input" id="reloan_modal_customer_info" name="reloan_modal_customer_info" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="reloan_modal_company_name_display" class="form-label">บริษัทผู้ปล่อยกู้:</label>
+                        <input type="text" class="form-input" id="reloan_modal_company_name_display" readonly>
+                    </div>
+                    
+                    <hr style="margin: 25px 0; border: 0; border-top: 1px solid var(--border-color);">
+
+                    <div class="form-group">
+                        <label for="reloan_loan_amount" class="form-label">วงเงินกู้ใหม่ (บาท):</label>
+                        <input type="number" class="form-input" id="reloan_loan_amount" name="loan_amount" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reloan_interest_rate" class="form-label">อัตราดอกเบี้ยใหม่ (%):</label>
+                        <input type="number" class="form-input" id="reloan_interest_rate" name="interest_rate" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reloan_processing_fee" class="form-label">ค่าดำเนินการ (บาท):</label>
+                        <input type="number" class="form-input" id="reloan_processing_fee" name="processing_fee" step="0.01" value="0" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="reloan_upfront_interest_deduction" class="form-label">หักดอกหัวท้าย (บาท):</label>
+                        <input type="number" class="form-input" id="reloan_upfront_interest_deduction" name="upfront_interest_deduction" step="0.01" value="0" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="reloan_principal_to_transfer" class="form-label">ยอดเงินที่ต้องโอน (บาท):</label>
+                        <input type="number" class="form-input" id="reloan_principal_to_transfer" name="principal_to_transfer" step="0.01" value="0" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="reloan_daily_return_amount" class="form-label">ยอดเงินต้องคืนรายวัน (บาท):</label>
+                        <input type="number" class="form-input" id="reloan_daily_return_amount" name="daily_return_amount" step="0.01" value="0" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reloan_loan_start_date" class="form-label">วันที่เปิดยอดใหม่:</label>
+                        <input type="date" class="form-input" id="reloan_loan_start_date" name="loan_start_date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reloan_loan_note" class="form-label">หมายเหตุเงินกู้:</label>
+                        <textarea class="form-input" id="reloan_loan_note" name="loan_note" rows="2" placeholder="ระบุเหตุผลหรือรายละเอียดของยอดใหม่"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="reloanSubmitBtn">บันทึกยอดสินเชื่อใหม่</button>
+                </form>
+            </div>
         </div>
-        {% else %}
-        <p class="text-center mt-4">กรุณากรอกคำค้นหาด้านบนเพื่อแสดงรายการ</p>
-        {% endif %}
-
-    {# Payment Modal Structure (ไม่มีการเปลี่ยนแปลงโครงสร้าง) #}
-    <div id="paymentModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h4 class="modal-title">บันทึกการชำระเงิน</h4>
-            <form id="paymentForm" action="{{ url_for('record_payment') }}" method="POST">
-                <input type="hidden" id="modal_loan_id" name="loan_id">
-                <input type="hidden" id="modal_current_amount_paid" name="current_amount_paid">
-                <input type="hidden" id="modal_current_outstanding_amount" name="current_outstanding_amount">
-                <input type="hidden" id="modal_company_name" name="company_name"> {# <-- NEW: Hidden field for company name #}
-
-                <div class="form-group">
-                    <label for="payment_modal_amount_paid" class="form-label">ยอดชำระแล้ว:</label>
-                    <input type="text" class="form-input" id="payment_modal_amount_paid" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label for="modal_customer_info" class="form-label">ลูกค้า:</label>
-                    <input type="text" class="form-input" id="modal_customer_info" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="modal_company_name_display" class="form-label">บริษัทผู้ปล่อยกู้:</label> {# <-- NEW: Display company name #}
-                    <input type="text" class="form-input" id="modal_company_name_display" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="modal_outstanding_display" class="form-label">ยอดค้างชำระปัจจุบัน:</label>
-                    <input type="text" class="form-input" id="modal_outstanding_display" readonly>
-                </div>
-                
-                {# Field for Floating Interest Payment #}
-                <div class="form-group">
-                    <label for="payment_amount" class="form-label">จำนวนเงินที่ชำระ (บาท):</label>
-                    <input type="number" class="form-input" id="payment_amount" name="payment_amount" step="0.01" value="0">
-                </div>
-
-                {# Field for Principal Repayment #}
-                <div class="form-group">
-                    <label for="principal_payment_amount" class="form-label">จำนวนเงินที่ชำระคืนต้น (บาท):</label>
-                    <input type="number" class="form-input" id="principal_payment_amount" name="principal_payment_amount" step="0.01" value="0">
-                </div>
-
-                <div class="form-group">
-                    <label for="payment_date" class="form-label">วันที่ชำระ:</label>
-                    <input type="date" class="form-input" id="payment_date" name="payment_date" required>
-                </div>
-                <div class="form-group">
-                    <label for="payment_note" class="form-label">หมายเหตุการชำระ:</label>
-                    <textarea class="form-input" id="payment_note" name="payment_note" rows="2"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary" id="paymentSubmitBtn">บันทึกการชำระ</button>
-            </form>
         </div>
     </div>
-
-    {# Payment History Modal Structure (MODIFIED title) #}
-    <div id="paymentHistoryModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button history-close-button">&times;</span>
-            <h4 class="modal-title">บันทึกการชำระเงินสำหรับ <span id="history_loan_id_display"></span> (บริษัท: <span id="history_company_name_display"></span>)</h4> {# <-- NEW: แสดงชื่อบริษัท #}
-            <div class="table-container">
-                <table class="data-table" id="paymentHistoryTable">
-                    <thead>
-                        <tr>
-                            {# Headers will be dynamically loaded by JS #}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {# Payment history data will be dynamically loaded by JS #}
-                    </tbody>
-                </table>
-            </div>
-            <p id="noPaymentHistoryMessage" style="text-align: center; color: #666; margin-top: 20px; display: none;">ไม่พบประวัติการชำระเงินสำหรับสินเชื่อนี้</p>
-        </div>
-    </div>
-
-    {# Edit/Top-up Loan Modal Structure (MODIFIED title) #}
-    <div id="editLoanModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button edit-loan-close-button">&times;</span>
-            <h4 class="modal-title">แก้ไข/เพิ่มยอดสินเชื่อ</h4>
-            <form id="editLoanForm" action="{{ url_for('update_loan_details') }}" method="POST">
-                <input type="hidden" id="edit_modal_loan_id" name="loan_id">
-                <input type="hidden" id="edit_modal_original_loan_amount" name="original_loan_amount"> {# Store original loan amount #}
-                <input type="hidden" id="edit_modal_original_interest_rate" name="original_interest_rate"> {# Store original interest rate #}
-                <input type="hidden" id="edit_modal_original_principal_to_return" name="original_principal_to_return"> {# Store original principal to return (current outstanding principal) #}
-                <input type="hidden" id="edit_modal_company_name" name="company_name"> {# <-- NEW: Hidden field for company name #}
-
-                <div class="form-group">
-                    <label for="edit_modal_customer_info" class="form-label">ลูกค้า:</label>
-                    <input type="text" class="form-input" id="edit_modal_customer_info" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="edit_modal_company_name_display" class="form-label">บริษัทผู้ปล่อยกู้:</label> {# <-- NEW: Display company name #}
-                    <input type="text" class="form-input" id="edit_modal_company_name_display" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="edit_modal_current_loan_amount" class="form-label">วงเงินกู้ปัจจุบัน:</label>
-                    <input type="text" class="form-input" id="edit_modal_current_loan_amount" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="edit_modal_current_interest_rate" class="form-label">ดอกเบี้ยปัจจุบัน (%):</label>
-                    <input type="text" class="form-input" id="edit_modal_current_interest_rate" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="edit_modal_current_outstanding_principal" class="form-label">ยอดเงินต้นคงเหลือ:</label>
-                    <input type="text" class="form-input" id="edit_modal_current_outstanding_principal" readonly>
-                </div>
-                
-                <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
-
-                <div class="form-group">
-                    <label for="top_up_amount" class="form-label">จำนวนเงินที่ต้องการเพิ่ม (บาท):</label>
-                    <input type="number" class="form-input" id="top_up_amount" name="top_up_amount" step="0.01" value="0">
-                </div>
-                <div class="form-group">
-                    <label for="edit_loan_note" class="form-label">หมายเหตุ (เพิ่มยอด):</label>
-                    <textarea class="form-input" id="edit_loan_note" name="edit_loan_note" rows="2" placeholder="ระบุเหตุผลในการเพิ่มยอดหรือแก้ไข"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary" id="editLoanSubmitBtn">บันทึกการแก้ไข/เพิ่มยอด</button>
-            </form>
-        </div>
-    </div>
-    <div id="reloanModal" class="modal">
-    <div class="modal-content">
-        <span class="close-button reloan-close-button">&times;</span>
-        <h4 class="modal-title">เปิดยอดสินเชื่อใหม่ (สำหรับลูกค้าเดิม)</h4>
-        <form id="reloanForm" action="{{ url_for('create_new_loan_for_existing') }}" method="POST">
-            <input type="hidden" id="reloan_modal_original_loan_id" name="original_loan_id">
-            
-            <div class="form-group">
-                <label for="reloan_modal_customer_info" class="form-label">ลูกค้า:</label>
-                <input type="text" class="form-input" id="reloan_modal_customer_info" name="reloan_modal_customer_info" readonly>
-            </div>
-            <div class="form-group">
-                <label for="reloan_modal_company_name_display" class="form-label">บริษัทผู้ปล่อยกู้:</label>
-                <input type="text" class="form-input" id="reloan_modal_company_name_display" readonly>
-            </div>
-            
-            <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
-
-            <div class="form-group">
-                <label for="reloan_loan_amount" class="form-label">วงเงินกู้ใหม่ (บาท):</label>
-                <input type="number" class="form-input" id="reloan_loan_amount" name="loan_amount" step="0.01" required>
-            </div>
-            <div class="form-group">
-                <label for="reloan_interest_rate" class="form-label">อัตราดอกเบี้ยใหม่ (%):</label>
-                <input type="number" class="form-input" id="reloan_interest_rate" name="interest_rate" step="0.01" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="reloan_processing_fee" class="form-label">ค่าดำเนินการ (บาท):</label>
-                <input type="number" class="form-input" id="reloan_processing_fee" name="processing_fee" step="0.01" value="0" readonly>
-            </div>
-            <div class="form-group">
-                <label for="reloan_upfront_interest_deduction" class="form-label">หักดอกหัวท้าย (บาท):</label>
-                <input type="number" class="form-input" id="reloan_upfront_interest_deduction" name="upfront_interest_deduction" step="0.01" value="0" readonly>
-            </div>
-            <div class="form-group">
-                <label for="reloan_principal_to_transfer" class="form-label">ยอดเงินที่ต้องโอน (บาท):</label>
-                <input type="number" class="form-input" id="reloan_principal_to_transfer" name="principal_to_transfer" step="0.01" value="0" readonly>
-            </div>
-            <div class="form-group">
-                <label for="reloan_daily_return_amount" class="form-label">ยอดเงินต้องคืนรายวัน (บาท):</label>
-                <input type="number" class="form-input" id="reloan_daily_return_amount" name="daily_return_amount" step="0.01" value="0" readonly>
-            </div>
-
-            <div class="form-group">
-                <label for="reloan_loan_start_date" class="form-label">วันที่เปิดยอดใหม่:</label>
-                <input type="date" class="form-input" id="reloan_loan_start_date" name="loan_start_date" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="reloan_loan_note" class="form-label">หมายเหตุเงินกู้:</label>
-                <textarea class="form-input" id="reloan_loan_note" name="loan_note" rows="2" placeholder="ระบุเหตุผลหรือรายละเอียดของยอดใหม่"></textarea>
-            </div>
-            
-            <button type="submit" class="btn btn-primary" id="reloanSubmitBtn">บันทึกยอดสินเชื่อใหม่</button>
-        </form>
-    </div>
-</div>
-    <body class="initial-hidden">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1039,7 +1277,7 @@
             paymentHistoryTable.querySelector('tbody').innerHTML = '';
             noPaymentHistoryMessage.style.display = 'none';
 
-            paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center;">กำลังโหลดประวัติการชำระเงิน...</td></tr>';
+            paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--light-text-color);">กำลังโหลดประวัติการชำระเงิน...</td></tr>';
 
             try {
                 const response = await fetch(`/get_payment_history/${loanId}`);
@@ -1073,7 +1311,7 @@
                 }
             } catch (error) {
                 console.error('Error fetching payment history:', error);
-                paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; color: red;">ไม่สามารถโหลดประวัติการชำระเงินได้</td></tr>';
+                paymentHistoryTable.querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--error-bg);">ไม่สามารถโหลดประวัติการชำระเงินได้</td></tr>';
             }
 
             paymentHistoryModal.classList.add('show');

@@ -8,18 +8,22 @@
     <style>
         /* Define CSS variables for easy theme customization */
         :root {
-            --primary-color: #4A90E2; /* Main blue color */
-            --secondary-color: #50E3C2; /* Secondary mint green color */
-            --background-color: #F0F2F5; /* Light background color */
-            --card-background: #FFFFFF; /* Background color for the form card */
-            --text-color: #333333; /* General text color */
-            --border-color: #DDDDDD; /* Border color for input fields */
-            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow for the card */
-            --success-color: #28A745; /* Green for success messages */
-            --error-color: #DC3545; /* Red for error messages */
-            --info-color: #17A2B8; /* Blue for info messages */
-            --record-bg-odd: #F9F9F9; /* Background for odd records */
-            --record-bg-even: #EFEFEF; /* Background for even records */
+            --primary-color: #8A2BE2; /* A vibrant purple for accent */
+            --secondary-color: #00BCD4; /* Cyan for secondary accent */
+            --background-color: #1A1A2E; /* Deep dark blue-purple for main background */
+            --card-background: #1F283E; /* Slightly lighter dark blue-purple for cards */
+            --text-color: #E0E0E0; /* Light grey for general text */
+            --light-text-color: #B0B0B0; /* Even lighter for secondary text */
+            --border-color: #3A3A5A; /* Darker border for elements */
+            --shadow-light: 0 6px 20px rgba(0, 0, 0, 0.4); /* Stronger shadow for dark mode */
+            --success-bg: #28A745; /* Green for success messages */
+            --success-text: #FFFFFF;
+            --error-bg: #DC3545; /* Red for error messages */
+            --error-text: #FFFFFF;
+            --info-bg: #17A2B8; /* Blue for info messages */
+            --info-text: #FFFFFF;
+            --record-bg-odd: #2A3850; /* Background for odd records in dark mode */
+            --record-bg-even: #1F283E; /* Background for even records in dark mode */
         }
 
         /* Basic styles for the body to center content and set font */
@@ -32,13 +36,63 @@
             align-items: center; /* Center horizontally */
             min-height: 100vh; /* Ensure body takes full viewport height */
             margin: 0;
-            padding: 20px; /* Add padding around the content */
+            padding: 0; /* Remove padding from body, will be handled by dashboard-layout */
             color: var(--text-color);
             line-height: 1.6; /* Improve readability */
             box-sizing: border-box; /* Include padding in element's total width and height */
+            background-image: url('/static/images/your_background_image.jpg'); /* Keep background image */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
-        /* Styles for the main container */
+        /* Dashboard Layout (New) */
+        .dashboard-layout {
+            display: flex;
+            width: 100%;
+            max-width: 1200px; /* Max width for the entire dashboard */
+            min-height: 90vh; /* Make dashboard take most of the screen height */
+            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay over background image */
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            overflow: hidden; /* For rounded corners */
+            margin-top: 20px; /* Space from top */
+            margin-bottom: 20px; /* Space from bottom */
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        /* Sidebar styles (New) */
+        .sidebar {
+            width: 250px;
+            background-color: var(--card-background);
+            padding: 30px 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+        }
+
+        .sidebar-title {
+            color: var(--primary-color);
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        /* Main content area (New) */
+        .main-content-area {
+            flex-grow: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px; /* Space between main-container and results-container */
+            overflow-y: auto; /* Enable scrolling if content overflows */
+        }
+
+        /* Styles for the main container (search form) */
         .main-container {
             background-color: var(--card-background);
             padding: 40px;
@@ -46,9 +100,10 @@
             box-shadow: var(--shadow-light);
             text-align: center;
             width: 100%;
-            max-width: 800px; /* Wider max-width for search results */
+            max-width: none; /* Remove max-width here, handled by main-content-area */
             box-sizing: border-box;
-            margin-bottom: 20px; /* Space below the search form */
+            margin-bottom: 0; /* Managed by gap in main-content-area */
+            margin-top: 0; /* Managed by gap in main-content-area */
         }
 
         /* Styles for the heading */
@@ -56,43 +111,70 @@
             color: var(--primary-color);
             margin-bottom: 10px;
             font-weight: 600;
-            font-size: 2em;
+            font-size: 2.2em; /* Slightly larger heading */
         }
 
         /* Style for the logged-in user display */
         .logged-in-user {
-            font-size: 0.9em;
-            color: #666;
+            font-size: 1em; /* Slightly larger */
+            color: var(--light-text-color);
             margin-bottom: 20px;
+        }
+
+        /* Flash messages styling */
+        .flash-message {
+            padding: 15px 20px; /* Larger padding */
+            border-radius: 8px;
+            margin-bottom: 25px; /* More space below */
+            font-weight: 500;
+            text-align: center;
+            font-size: 1.05em;
+        }
+        .flash-message.success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid var(--success-bg);
+        }
+        .flash-message.error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid var(--error-bg);
+        }
+        .flash-message.info {
+            background-color: var(--info-bg);
+            color: var(--info-text);
+            border: 1px solid var(--info-bg);
         }
 
         /* Styles for input groups (label + input) */
         .input-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px; /* More space between input groups */
             text-align: left;
         }
 
         .input-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px; /* More space between label and input */
             font-weight: 400;
-            color: var(--text-color);
-            font-size: 0.95em;
+            color: var(--light-text-color); /* Lighter text for labels */
+            font-size: 1em; /* Slightly larger font */
         }
 
         .input-group input[type="text"] {
             width: 100%;
-            padding: 12px 15px;
+            padding: 14px 18px; /* Larger padding */
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            font-size: 1em;
+            font-size: 1.1em; /* Larger font size */
             box-sizing: border-box;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+            background-color: var(--background-color); /* Darker background for input */
+            color: var(--text-color); /* Text color for input */
         }
 
         .input-group input[type="text"]:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+            box-shadow: 0 0 0 4px rgba(138, 43, 226, 0.3); /* Stronger shadow for focus */
             outline: none;
         }
 
@@ -101,86 +183,107 @@
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
-            margin-top: 20px;
+            margin-top: 30px; /* More space above buttons */
             justify-content: center;
         }
 
         .search-button {
             background-color: var(--primary-color);
             color: white;
-            padding: 14px 25px;
+            padding: 16px 30px; /* Larger padding */
             border: none;
             border-radius: 8px;
-            font-size: 1.1em;
+            font-size: 1.2em; /* Larger font size */
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
             flex: 1;
-            min-width: 120px;
+            min-width: 150px; /* Wider min-width */
             font-weight: 600;
             letter-spacing: 0.5px;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .search-button.clear {
             background-color: #FFC107; /* Orange for clear button */
-            color: #333;
+            color: #333; /* Dark text for clear button */
         }
 
         .search-button:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
         .search-button:active {
             transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         .search-button.clear:hover {
             background-color: #e0a800;
         }
 
-        /* Styles for flash messages */
-        .flash-message {
-            padding: 10px 15px;
+        /* Action button group (for sidebar) */
+        .action-button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Space between buttons */
+            width: 100%; /* Make buttons take full width of sidebar */
+            margin-top: 0; /* Remove top margin, handled by sidebar padding */
+        }
+
+        /* Individual action button style (for sidebar) */
+        .action-button {
+            display: block; /* Make buttons take full width */
+            padding: 15px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
             border-radius: 8px;
-            margin-bottom: 20px;
+            font-size: 1.1em;
             font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Darker shadow for dark mode */
             text-align: center;
         }
-        .flash-message.success {
-            background-color: #D4EDDA;
-            color: var(--success-color);
-            border: 1px solid var(--success-color);
+
+        .action-button:hover {
+            background-color: #6A1B9A; /* Slightly darker purple on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
-        .flash-message.error {
-            background-color: #F8D7DA;
-            color: var(--error-color);
-            border: 1px solid var(--error-color);
+
+        /* Logout button specific style (for sidebar) */
+        .action-button.logout {
+            background-color: var(--error-bg); /* Red for logout */
+            margin-top: 40px; /* More space above logout */
         }
-        .flash-message.info {
-            background-color: #D1ECF1;
-            color: var(--info-color);
-            border: 1px solid var(--info-color);
+
+        .action-button.logout:hover {
+            background-color: #B02A37; /* Darker red on hover */
         }
+
 
         /* Styles for search results container */
         .results-container {
-            background-color: var(--card-background);
-            padding: 30px;
+            /* Inherits styles from .main-container for consistency */
+            background-color: var(--card-background); /* Explicitly set for clarity */
+            padding: 30px; /* Adjust padding for results */
             border-radius: 12px;
             box-shadow: var(--shadow-light);
             width: 100%;
-            max-width: 800px;
+            max-width: none; /* Handled by main-content-area */
             box-sizing: border-box;
-            margin-top: 20px; /* Space above results */
+            margin-top: 0; /* Managed by gap in main-content-area */
             text-align: left;
         }
 
         .results-container h3 {
             color: var(--primary-color);
-            margin-bottom: 20px;
+            margin-bottom: 25px; /* More space below heading */
             font-weight: 600;
-            font-size: 1.5em;
+            font-size: 1.8em; /* Larger heading */
             text-align: center;
         }
 
@@ -188,13 +291,15 @@
         .customer-record-card {
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease;
+            padding: 25px; /* More padding */
+            margin-bottom: 20px; /* More space between cards */
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background-color: var(--record-bg-even); /* Default to even for consistency */
         }
         .customer-record-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
 
         /* Alternating background colors for records */
@@ -206,34 +311,49 @@
         }
 
         .customer-record-card p {
-            margin: 5px 0;
-            font-size: 0.95em;
+            margin: 8px 0; /* More space between paragraphs */
+            font-size: 1em; /* Slightly larger font */
             word-wrap: break-word; /* Ensure long links wrap */
+            display: flex; /* Use flex for label-value alignment */
+            align-items: baseline;
+            gap: 10px; /* Space between strong and value */
         }
         .customer-record-card p strong {
-            color: var(--primary-color);
-            min-width: 120px; /* Align labels */
+            color: var(--secondary-color); /* Use secondary color for labels */
+            min-width: 180px; /* Wider min-width for labels to align values */
             display: inline-block;
+            flex-shrink: 0; /* Prevent label from shrinking */
+        }
+        .customer-record-card p a {
+            color: var(--secondary-color); /* Link color */
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .customer-record-card p a:hover {
+            text-decoration: underline;
+            color: var(--primary-color);
         }
 
         /* Image thumbnails */
         .image-thumbnails {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 12px; /* More space between thumbnails */
+            margin-top: 15px; /* More space above */
+            justify-content: flex-start;
         }
         .image-thumbnail {
-            width: 80px;
-            height: 80px;
+            width: 90px; /* Slightly larger thumbnails */
+            height: 90px;
             object-fit: cover;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
+            border: 2px solid var(--border-color); /* Thicker border */
+            border-radius: 8px; /* More rounded */
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, border-color 0.2s ease;
         }
         .image-thumbnail:hover {
-            transform: scale(1.05);
+            transform: scale(1.08); /* More pronounced hover effect */
+            border-color: var(--primary-color);
         }
 
         /* Lightbox/Modal Styles */
@@ -243,7 +363,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9); /* Darker overlay */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -258,8 +378,8 @@
         }
         .lightbox-content {
             position: relative;
-            max-width: 90%;
-            max-height: 90%;
+            max-width: 95%; /* Allow more width */
+            max-height: 95%; /* Allow more height */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -270,242 +390,333 @@
             object-fit: contain;
             transform: scale(1); /* Initial zoom level */
             transition: transform 0.2s ease;
+            border-radius: 8px; /* Rounded corners for image */
         }
         .lightbox-nav {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6); /* Darker nav background */
             color: white;
-            padding: 10px 15px;
+            padding: 12px 18px; /* Larger padding */
             cursor: pointer;
-            border-radius: 5px;
-            font-size: 1.5em;
+            border-radius: 8px; /* More rounded */
+            font-size: 1.8em; /* Larger font size */
             user-select: none;
+            transition: background-color 0.2s ease;
         }
-        .lightbox-nav.prev { left: 10px; }
-        .lightbox-nav.next { right: 10px; }
+        .lightbox-nav:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        .lightbox-nav.prev { left: 20px; } /* More distance from edge */
+        .lightbox-nav.next { right: 20px; }
         .lightbox-close {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.5);
+            top: 20px; /* More distance from top */
+            right: 20px; /* More distance from right */
+            background: rgba(0, 0, 0, 0.6);
             color: white;
-            padding: 5px 10px;
+            padding: 8px 12px;
             cursor: pointer;
             border-radius: 50%; /* Changed to circle */
-            width: 30px; /* Make it a clear circle */
-            height: 30px;
+            width: 40px; /* Make it a clear circle */
+            height: 40px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.2em;
+            font-size: 1.5em; /* Larger font size */
             user-select: none;
+            transition: background-color 0.2s ease;
+        }
+        .lightbox-close:hover {
+            background-color: rgba(0, 0, 0, 0.8);
         }
         .lightbox-zoom-controls {
             position: absolute;
-            bottom: 15px;
+            bottom: 20px; /* More distance from bottom */
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
+            padding: 8px 15px;
+            border-radius: 8px;
             display: flex;
-            gap: 10px;
+            gap: 15px; /* More space between buttons */
         }
         .lightbox-zoom-controls button {
             background: none;
             border: none;
             color: white;
-            font-size: 1.2em;
+            font-size: 1.5em; /* Larger font size */
             cursor: pointer;
+            transition: color 0.2s ease;
         }
-
+        .lightbox-zoom-controls button:hover {
+            color: var(--primary-color); /* Highlight on hover */
+        }
 
         .record-buttons {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 12px; /* More space between buttons */
+            margin-top: 20px; /* More space above buttons */
             justify-content: flex-end; /* Align buttons to the right */
         }
 
         .record-button {
             background-color: var(--secondary-color);
-            color: var(--text-color);
-            padding: 8px 15px;
+            color: var(--card-background); /* Dark text for light button */
+            padding: 10px 20px; /* Larger padding */
             border: none;
             border-radius: 6px;
-            font-size: 0.9em;
+            font-size: 1em;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
         }
         .record-button.edit {
             background-color: var(--primary-color);
             color: white;
         }
         .record-button:hover {
-            transform: translateY(-1px);
-            opacity: 0.9;
+            transform: translateY(-2px);
+            opacity: 0.95;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+        }
+        .record-button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
         }
 
-        /* Back to Main Menu button at the bottom */
-        .back-to-main-menu {
-            display: block;
-            margin: 30px auto 0; /* Center horizontally, space above */
-            padding: 12px 25px;
-            background-color: #6c757d;
-            color: white;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 1.1em;
-            transition: background-color 0.3s ease;
-            width: 100%;
-            max-width: 300px;
-            box-sizing: border-box;
-            font-weight: 600;
-            text-align: center;
-        }
-        .back-to-main-menu:hover {
-            background-color: #5a6268;
-        }
+        /* Back to Main Menu button at the bottom (Removed, replaced by sidebar) */
+        /* .back-to-main-menu { ... } */
 
         /* Responsive adjustments */
+        @media (max-width: 992px) { /* Adjust for smaller screens (tablets) */
+            .dashboard-layout {
+                flex-direction: column;
+                min-height: unset; /* Allow height to adjust */
+                max-width: 90%;
+            }
+            .sidebar {
+                width: 100%;
+                padding: 20px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .main-content-area {
+                padding: 20px;
+            }
+            .main-container, .results-container {
+                padding: 30px;
+                margin-top: 0; /* Handled by main-content-area gap */
+                margin-bottom: 0; /* Handled by main-content-area gap */
+            }
+            .action-button-group {
+                flex-direction: row; /* Buttons in a row on smaller screens */
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .action-button {
+                flex-basis: 48%; /* Two buttons per row */
+            }
+            .action-button.logout {
+                margin-top: 15px;
+                flex-basis: 98%; /* Logout button takes full width */
+            }
+            .sidebar-title {
+                margin-bottom: 20px;
+            }
+        }
+
         @media (max-width: 600px) {
             body {
-                padding: 10px;
+                padding: 0; /* Remove body padding, dashboard-layout handles margin */
+            }
+            .dashboard-layout {
+                margin: 10px; /* Reduced margin for mobile */
+                border-radius: 10px;
             }
             .main-container, .results-container {
                 padding: 25px;
-                margin-bottom: 15px;
             }
             .main-container h2 {
                 font-size: 1.8em;
             }
-            .search-button, .back-to-main-menu {
-                padding: 10px 15px;
+            .input-group label {
+                font-size: 0.9em;
+            }
+            .input-group input[type="text"] {
+                padding: 12px 15px;
+                font-size: 1em;
+            }
+            .search-button {
+                padding: 12px 20px;
                 font-size: 1em;
                 width: 100%; /* Full width on small screens */
+                min-width: unset; /* Remove min-width for full width */
             }
             .search-button-group, .record-buttons {
                 flex-direction: column;
+                gap: 10px;
             }
             .customer-record-card {
-                padding: 15px;
+                padding: 18px;
+                margin-bottom: 15px;
             }
             .customer-record-card p {
                 font-size: 0.9em;
+                flex-direction: column; /* Stack label and value on small screens */
+                align-items: flex-start;
+                gap: 3px;
             }
             .customer-record-card p strong {
-                display: block; /* Stack label and value on small screens */
                 min-width: unset;
                 margin-bottom: 3px;
+                font-size: 0.95em; /* Slightly smaller for mobile labels */
+            }
+            .image-thumbnails {
+                gap: 8px;
+                justify-content: center; /* Center thumbnails on mobile */
+            }
+            .image-thumbnail {
+                width: 70px;
+                height: 70px;
+                border-width: 1px;
             }
             .lightbox-nav {
-                font-size: 1.2em;
-                padding: 8px 12px;
+                font-size: 1.5em;
+                padding: 10px 15px;
+                left: 10px;
+                right: 10px;
             }
             .lightbox-close {
-                font-size: 1em;
-                padding: 3px 8px;
+                font-size: 1.2em;
+                width: 35px;
+                height: 35px;
+                top: 10px;
+                right: 10px;
             }
             .lightbox-zoom-controls {
-                font-size: 1em;
-                padding: 3px 8px;
+                font-size: 1.2em;
+                padding: 5px 10px;
+                bottom: 10px;
             }
+            .record-button {
+                padding: 8px 15px;
+                font-size: 0.9em;
+                width: 100%;
+            }
+            /* Remove back-to-main-menu button's specific mobile styles as it's removed */
+            /* .back-to-main-menu { ... } */
         }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <h2>ค้นหาข้อมูลลูกค้า</h2>
-        <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form method="GET" action="{{ url_for('search_customer_data') }}" class="search-form">
-            <div class="input-group">
-                <label for="search_keyword">คำค้นหา (ชื่อ, นามสกุล, เบอร์มือถือ, เลขบัตรประชาชน, ชื่อกิจการ)</label>
-                <input type="text" id="search_keyword" name="search_keyword" placeholder="กรอกคำค้นหา" value="{{ search_keyword if search_keyword else '' }}">
+    <div class="dashboard-layout">
+        <div class="sidebar">
+            <h3 class="sidebar-title">เมนู</h3>
+            <div class="action-button-group">
+                <a href="{{ url_for('enter_customer_data') }}" class="action-button">กรอกข้อมูลลูกค้าใหม่</a>
+                <a href="{{ url_for('search_customer_data') }}" class="action-button">ค้นหาข้อมูลลูกค้า</a>
+                <a href="{{ url_for('loan_management') }}" class="action-button">จัดการสินเชื่อ</a>
             </div>
-            
-            <div class="search-button-group">
-                <button type="submit" class="search-button">ค้นหาข้อมูล</button>
-                <button type="button" class="search-button clear" id="clearSearchButton">ล้างข้อมูลการค้นหา</button>
-            </div>
-        </form>
-    </div>
+            <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
+        </div>
+        <div class="main-content-area">
+            <div class="main-container">
+                <h2>ค้นหาข้อมูลลูกค้า</h2>
+                <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
 
-    {# Only display results container if there are records to show #}
-    {% if customer_records %}
-    <div class="results-container">
-        <h3>{{ display_title }}</h3>
-        {% for record in customer_records %}
-    <div class="customer-record-card">
-        <p><strong>ชื่อ-นามสกุล:</strong> {{ record.ชื่อ }} {{ record.นามสกุล }}</p>
-        <p><strong>เบอร์มือถือ:</strong> {{ record.เบอร์มือถือ }}</p>
-        <p><strong>เลขบัตรประชาชน:</strong> {{ record.เลขบัตรประชาชน }}</p>
-        <p><strong>จดทะเบียน:</strong> {{ record['จดทะเบียน'] }}</p>
-        <p><strong>ชื่อกิจการ:</strong> {{ record.ชื่อกิจการ }}</p>
-        <p><strong>ประเภทธุรกิจ:</strong> {{ record['ประเภทธุรกิจ'] }}</p>
-        <p><strong>ที่อยู่จดทะเบียน:</strong> {{ record['ที่อยู่จดทะเบียน'] }}</p>
-        <p><strong>สถานะ:</strong> {{ record.สถานะ }}</p>
-        <p><strong>วงเงินที่ต้องการ:</strong> {{ record['วงเงินที่ต้องการ'] }}</p>
-        <p><strong>วงเงินที่อนุมัติ:</strong> {{ record['วงเงินที่อนุมัติ'] }}</p>
-        <p><strong>เคยขอเข้ามาในเครือหรือยัง:</strong> {{ record['เคยขอเข้ามาในเครือหรือยัง'] }}</p>
-        <p><strong>เช็ค:</strong> {{ record['เช็ค'] }}</p>
-        <p><strong>LINE ID:</strong> {{ record['LINE ID'] }}</p>
-        <p><strong>ขอเข้ามาทางไหน:</strong> {{ record['ขอเข้ามาทางไหน'] }}</p>
-        <p><strong>หักดอกหัวท้าย:</strong> {{ record['หักดอกหัวท้าย'] }}</p>
-        <p><strong>ค่าดำเนินการ:</strong> {{ record['ค่าดำเนินการ'] }}</p>
-        <p><strong>วันที่ขอเข้ามา:</strong> {{ record['วันที่ขอเข้ามา'] }}</p>
-        <p><strong>ลิงค์โลเคชั่นบ้าน:</strong> <a href="{{ record['ลิงค์โลเคชั่นบ้าน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นบ้าน'] }}</a></p>
-        <p><strong>ลิงค์โลเคชั่นที่ทำงาน:</strong> <a href="{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}</a></p>
-        <p><strong>หมายเหตุ:</strong> {{ record.หมายเหตุ }}</p>
-        <p><strong>บันทึกโดย:</strong> {{ record['Logged In User'] }}</p>
-        
-        <p><strong>กลุ่มลูกค้าหลัก:</strong> {{ record.get('กลุ่มลูกค้าหลัก', '-') }}</p>
-        <p><strong>กลุ่มอาชีพย่อย:</strong> {{ record.get('กลุ่มอาชีพย่อย', '-') }}</p>
-        <p><strong>อาชีพย่อยอื่นๆ:</strong> {{ record.get('ระบุอาชีพย่อยอื่นๆ', '-') }}</p>
-        <p><strong>รูปภาพ:</strong>
-            <div class="image-thumbnails" data-image-urls="{{ record['Image URLs'] if record['Image URLs'] != '-' else '' }}">
-                {% if record['Image URLs'] and record['Image URLs'] != '-' %}
-                    {% set image_urls_list = record['Image URLs'].split(', ') | select('ne', '-') | map('trim') | list %}
-                    {% if image_urls_list %}
-                        {% for url in image_urls_list %}
-                            <img src="{{ url }}" alt="Thumbnail {{ loop.index }}" class="image-thumbnail" onerror="console.error('Thumbnail image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/80x80/FF0000/FFFFFF?text=Error';">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
                         {% endfor %}
-                    {% else %}
-                        <p>ไม่มีรูปภาพที่ถูกต้อง</p>
                     {% endif %}
-                {% else %}
-                    -
-                {% endif %}
+                {% endwith %}
+
+                <form method="GET" action="{{ url_for('search_customer_data') }}" class="search-form">
+                    <div class="input-group">
+                        <label for="search_keyword">คำค้นหา (ชื่อ, นามสกุล, เบอร์มือถือ, เลขบัตรประชาชน, ชื่อกิจการ)</label>
+                        <input type="text" id="search_keyword" name="search_keyword" placeholder="กรอกคำค้นหา" value="{{ search_keyword if search_keyword else '' }}">
+                    </div>
+                    
+                    <div class="search-button-group">
+                        <button type="submit" class="search-button">ค้นหาข้อมูล</button>
+                        <button type="button" class="search-button clear" id="clearSearchButton">ล้างข้อมูลการค้นหา</button>
+                    </div>
+                </form>
             </div>
-        </p>
-        
-        <div class="record-buttons">
-            <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไขข้อมูล</a>
-            <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button">อัปโหลดรูปเพิ่มเติม</a>
+
+            {# Only display results container if there are records to show #}
+            {% if customer_records %}
+            <div class="results-container">
+                <h3>{{ display_title }}</h3>
+                {% for record in customer_records %}
+            <div class="customer-record-card">
+                <p><strong>ชื่อ-นามสกุล:</strong> {{ record.ชื่อ }} {{ record.นามสกุล }}</p>
+                <p><strong>เบอร์มือถือ:</strong> {{ record.เบอร์มือถือ }}</p>
+                <p><strong>เลขบัตรประชาชน:</strong> {{ record.เลขบัตรประชาชน }}</p>
+                <p><strong>จดทะเบียน:</strong> {{ record['จดทะเบียน'] }}</p>
+                <p><strong>ชื่อกิจการ:</strong> {{ record.ชื่อกิจการ }}</p>
+                <p><strong>ประเภทธุรกิจ:</strong> {{ record['ประเภทธุรกิจ'] }}</p>
+                <p><strong>ที่อยู่จดทะเบียน:</strong> {{ record['ที่อยู่จดทะเบียน'] }}</p>
+                <p><strong>สถานะ:</strong> {{ record.สถานะ }}</p>
+                <p><strong>วงเงินที่ต้องการ:</strong> {{ record['วงเงินที่ต้องการ'] }}</p>
+                <p><strong>วงเงินที่อนุมัติ:</strong> {{ record['วงเงินที่อนุมัติ'] }}</p>
+                <p><strong>เคยขอเข้ามาในเครือหรือยัง:</strong> {{ record['เคยขอเข้ามาในเครือหรือยัง'] }}</p>
+                <p><strong>เช็ค:</strong> {{ record['เช็ค'] }}</p>
+                <p><strong>LINE ID:</strong> {{ record['LINE ID'] }}</p>
+                <p><strong>ขอเข้ามาทางไหน:</strong> {{ record['ขอเข้ามาทางไหน'] }}</p>
+                <p><strong>หักดอกหัวท้าย:</strong> {{ record['หักดอกหัวท้าย'] }}</p>
+                <p><strong>ค่าดำเนินการ:</strong> {{ record['ค่าดำเนินการ'] }}</p>
+                <p><strong>วันที่ขอเข้ามา:</strong> {{ record['วันที่ขอเข้ามา'] }}</p>
+                <p><strong>ลิงค์โลเคชั่นบ้าน:</strong> <a href="{{ record['ลิงค์โลเคชั่นบ้าน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นบ้าน'] }}</a></p>
+                <p><strong>ลิงค์โลเคชั่นที่ทำงาน:</strong> <a href="{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}</a></p>
+                <p><strong>หมายเหตุ:</strong> {{ record.หมายเหตุ }}</p>
+                <p><strong>บันทึกโดย:</strong> {{ record['Logged In User'] }}</p>
+                
+                <p><strong>กลุ่มลูกค้าหลัก:</strong> {{ record.get('กลุ่มลูกค้าหลัก', '-') }}</p>
+                <p><strong>กลุ่มอาชีพย่อย:</strong> {{ record.get('กลุ่มอาชีพย่อย', '-') }}</p>
+                <p><strong>อาชีพย่อยอื่นๆ:</strong> {{ record.get('ระบุอาชีพย่อยอื่นๆ', '-') }}</p>
+                <p><strong>รูปภาพ:</strong>
+                    <div class="image-thumbnails" data-image-urls="{{ record['Image URLs'] if record['Image URLs'] != '-' else '' }}">
+                        {% if record['Image URLs'] and record['Image URLs'] != '-' %}
+                            {% set image_urls_list = record['Image URLs'].split(', ') | select('ne', '-') | map('trim') | list %}
+                            {% if image_urls_list %}
+                                {% for url in image_urls_list %}
+                                    <img src="{{ url }}" alt="Thumbnail {{ loop.index }}" class="image-thumbnail" onerror="console.error('Thumbnail image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/90x90/FF0000/FFFFFF?text=Error';">
+                                {% endfor %}
+                            {% else %}
+                                <p style="color: var(--light-text-color);">ไม่มีรูปภาพที่ถูกต้อง</p>
+                            {% endif %}
+                        {% else %}
+                            <p style="color: var(--light-text-color);">-</p>
+                        {% endif %}
+                    </div>
+                </p>
+                
+                <div class="record-buttons">
+                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไขข้อมูล</a>
+                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button">อัปโหลดรูปเพิ่มเติม</a>
+                </div>
+            </div>
+        {% endfor %}
+            </div>
+            {% endif %}
+
+            {# Removed the old back-to-main-menu button as sidebar handles navigation #}
+            <!-- <a href="{{ url_for('dashboard') }}" class="back-to-main-menu">กลับสู่เมนูหลัก</a> -->
+
         </div>
     </div>
-{% endfor %}
-    </div>
-    {% endif %}
-
-    <a href="{{ url_for('dashboard') }}" class="back-to-main-menu">กลับสู่เมนูหลัก</a>
 
     <div class="lightbox-overlay" id="lightboxOverlay">
         <div class="lightbox-content">

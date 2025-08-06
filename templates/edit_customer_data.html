@@ -8,15 +8,18 @@
     <style>
         /* Define CSS variables for easy theme customization */
         :root {
-            --primary-color: #4A90E2; /* Main blue color */
-            --secondary-color: #50E3C2; /* Secondary mint green color */
-            --background-color: #F0F2F5; /* Light background color */
-            --card-background: #FFFFFF; /* Background color for the form card */
-            --text-color: #333333; /* General text color */
-            --border-color: #DDDDDD; /* Border color for input fields */
-            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow for the card */
-            --success-color: #28A745; /* Green for success messages */
-            --error-color: #DC3545; /* Red for error messages */
+            --primary-color: #8A2BE2; /* A vibrant purple for accent */
+            --secondary-color: #00BCD4; /* Cyan for secondary accent */
+            --background-color: #1A1A2E; /* Deep dark blue-purple for main background */
+            --card-background: #1F283E; /* Slightly lighter dark blue-purple for cards */
+            --text-color: #E0E0E0; /* Light grey for general text */
+            --light-text-color: #B0B0B0; /* Even lighter for secondary text */
+            --border-color: #3A3A5A; /* Darker border for elements */
+            --shadow-light: 0 6px 20px rgba(0, 0, 0, 0.4); /* Stronger shadow for dark mode */
+            --success-bg: #28A745; /* Green for success messages */
+            --success-text: #FFFFFF;
+            --error-bg: #DC3545; /* Red for error messages */
+            --error-text: #FFFFFF;
         }
 
         /* Basic styles for the body to center content and set font */
@@ -25,11 +28,17 @@
             background-color: var(--background-color);
             display: flex; /* Use Flexbox for centering */
             justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
+            align-items: flex-start; /* Align content to the top (for mobile scroll) */
             min-height: 100vh; /* Ensure body takes full viewport height */
             margin: 0;
+            padding: 20px; /* Add padding around the content */
             color: var(--text-color);
             line-height: 1.6; /* Improve readability */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            background-image: url('/static/images/your_background_image.jpg'); /* Keep background image */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
         /* Styles for the main form container (the "card") */
@@ -40,7 +49,7 @@
             box-shadow: var(--shadow-light); /* Subtle shadow */
             text-align: center;
             width: 100%;
-            max-width: 600px; /* Increased max-width for more fields */
+            max-width: 700px; /* Increased max-width for more fields */
             box-sizing: border-box; /* Include padding and border in element's total width and height */
             margin: 20px auto; /* Add margin for responsiveness on larger screens */
         }
@@ -50,47 +59,70 @@
             color: var(--primary-color);
             margin-bottom: 10px; /* Adjusted margin */
             font-weight: 600;
-            font-size: 2em;
+            font-size: 2.2em;
         }
 
         /* Style for the logged-in user display */
         .logged-in-user {
-            font-size: 0.9em;
-            color: #666;
+            font-size: 1em; /* Slightly larger */
+            color: var(--light-text-color);
             margin-bottom: 20px;
+        }
+
+        /* Styles for flash messages */
+        .flash-message {
+            padding: 15px 20px; /* Larger padding */
+            border-radius: 8px;
+            margin-bottom: 25px; /* More space below */
+            font-weight: 500;
+            text-align: center;
+            font-size: 1.05em;
+        }
+        .flash-message.success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid var(--success-bg);
+        }
+        .flash-message.error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid var(--error-bg);
         }
 
         /* Styles for input groups (label + input) */
         .input-group {
-            margin-bottom: 15px; /* Slightly reduced margin */
+            margin-bottom: 20px; /* More space between input groups */
             text-align: left;
         }
 
         .input-group label {
             display: block; /* Make label appear on its own line */
-            margin-bottom: 5px; /* Reduced margin */
+            margin-bottom: 8px; /* More space between label and input */
             font-weight: 400;
-            color: var(--text-color);
-            font-size: 0.95em;
+            color: var(--light-text-color); /* Lighter text for labels */
+            font-size: 1em; /* Slightly larger font */
         }
 
         .input-group input[type="text"],
         .input-group input[type="tel"],
         .input-group input[type="number"],
         .input-group input[type="date"],
-        .input-group textarea {
+        .input-group textarea,
+        .input-group select { /* Add select for consistency */
             width: 100%; /* Make input fields take full width of their container */
-            padding: 12px 15px;
+            padding: 14px 18px;
             border: 1px solid var(--border-color);
             border-radius: 8px; /* Rounded corners for inputs */
-            font-size: 1em;
+            font-size: 1.1em;
             box-sizing: border-box;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition on focus */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; /* Smooth transition on focus */
+            background-color: var(--background-color); /* Darker background for input */
+            color: var(--text-color); /* Text color for input */
         }
 
         /* Specific style for textarea */
         .input-group textarea {
-            min-height: 80px;
+            min-height: 100px; /* Slightly taller textarea */
             resize: vertical; /* Allow vertical resizing */
         }
 
@@ -101,6 +133,7 @@
             border: none; /* Remove border */
             border-radius: 0; /* Remove border-radius */
             background-color: transparent; /* Transparent background */
+            color: var(--text-color); /* Ensure file input text color is visible */
         }
         /* Styles for input fields when focused */
         .input-group input[type="text"]:focus,
@@ -108,9 +141,10 @@
         .input-group input[type="number"]:focus,
         .input-group input[type="date"]:focus,
         .input-group textarea:focus,
+        .input-group select:focus,
         .input-group input[type="file"]:focus {
             border-color: var(--primary-color); /* Change border color on focus */
-            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); /* Add subtle shadow on focus */
+            box-shadow: 0 0 0 4px rgba(138, 43, 226, 0.3); /* Add subtle shadow on focus */
             outline: none; /* Remove default browser outline */
         }
 
@@ -126,83 +160,68 @@
         .action-button {
             background-color: var(--primary-color);
             color: white;
-            padding: 14px 25px;
+            padding: 16px 30px; /* Larger padding */
             border: none;
             border-radius: 8px;
-            font-size: 1.1em;
+            font-size: 1.2em; /* Larger font size */
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
             flex: 1; /* Allow buttons to grow */
-            min-width: 150px; /* Minimum width for buttons */
+            min-width: 180px; /* Minimum width for buttons */
             font-weight: 600;
             letter-spacing: 0.5px;
             text-decoration: none; /* For link buttons */
             display: inline-flex; /* For centering text in button */
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .action-button.cancel {
             background-color: #6c757d; /* Grey for cancel button */
         }
         .action-button:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
         .action-button:active {
             transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         .action-button.cancel:hover {
             background-color: #5a6268; /* Darker grey */
         }
 
-        /* Styles for flash messages */
-        .flash-message {
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-weight: 500;
-            text-align: center;
-        }
-        .flash-message.success {
-            background-color: #D4EDDA;
-            color: var(--success-color);
-            border: 1px solid var(--success-color);
-        }
-        .flash-message.error {
-            background-color: #F8D7DA;
-            color: var(--error-color);
-            border: 1px solid var(--error-color);
-        }
-
         /* Existing Image Previews */
         .existing-images-section {
-            margin-top: 20px;
-            padding-top: 15px;
+            margin-top: 30px; /* More space from previous elements */
+            padding-top: 20px;
             border-top: 1px solid var(--border-color);
             text-align: left;
         }
         .existing-images-section h4 {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             color: var(--primary-color);
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 1.2em;
         }
         .existing-image-previews {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px; /* More space between images */
             margin-bottom: 15px;
         }
         .existing-image-item {
             position: relative;
-            width: 100px;
-            height: 100px;
-            border: 1px solid var(--border-color);
+            width: 110px; /* Slightly larger previews */
+            height: 110px;
+            border: 2px solid var(--border-color); /* Thicker border */
             border-radius: 8px;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #f9f9f9;
+            background-color: var(--background-color); /* Darker background */
         }
         .existing-image-item img {
             max-width: 100%;
@@ -213,49 +232,54 @@
             position: absolute;
             top: 5px;
             right: 5px;
-            background-color: rgba(255, 0, 0, 0.7);
+            background-color: var(--error-bg); /* Red for remove button */
             color: white;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 25px; /* Larger remove button */
+            height: 25px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.8em;
+            font-size: 0.9em;
             cursor: pointer;
             line-height: 1;
             font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+        .existing-image-item .remove-image:hover {
+            background-color: #B02A37; /* Darker red on hover */
         }
 
         /* New Image Upload Previews */
         .new-images-section {
-            margin-top: 20px;
-            padding-top: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
             border-top: 1px solid var(--border-color);
             text-align: left;
         }
         .new-images-section h4 {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             color: var(--primary-color);
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 1.2em;
         }
         #newImagePreviewsContainer {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 15px;
         }
         .new-image-preview-item {
             position: relative;
-            width: 100px;
-            height: 100px;
-            border: 1px solid var(--border-color);
+            width: 110px;
+            height: 110px;
+            border: 2px solid var(--border-color);
             border-radius: 8px;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #f9f9f9;
+            background-color: var(--background-color);
         }
         .new-image-preview-item img {
             max-width: 100%;
@@ -266,43 +290,22 @@
             position: absolute;
             top: 5px;
             right: 5px;
-            background-color: rgba(255, 0, 0, 0.7);
+            background-color: var(--error-bg);
             color: white;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 25px;
+            height: 25px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.8em;
+            font-size: 0.9em;
             cursor: pointer;
             line-height: 1;
             font-weight: bold;
+            transition: background-color 0.2s ease;
         }
-
-        /* Responsive adjustments */
-        @media (max-width: 600px) {
-            .form-container {
-                margin: 20px;
-                padding: 25px;
-            }
-            .form-container h2 {
-                font-size: 1.6em;
-                margin-bottom: 15px;
-            }
-            .logged-in-user {
-                font-size: 0.85em;
-                margin-bottom: 15px;
-            }
-            .action-button {
-                padding: 12px 20px;
-                font-size: 1em;
-                min-width: unset;
-                width: 100%;
-            }
-            .button-group {
-                flex-direction: column;
-            }
+        .new-image-preview-item .remove-image:hover {
+            background-color: #B02A37;
         }
 
         /* Styles for the loading overlay */
@@ -312,7 +315,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+            background-color: rgba(30, 40, 62, 0.8); /* Darker semi-transparent background */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -329,7 +332,7 @@
 
         /* Spinner animation */
         .spinner {
-            border: 6px solid #f3f3f3; /* Light grey */
+            border: 6px solid rgba(255, 255, 255, 0.2); /* Lighter grey for spinner */
             border-top: 6px solid var(--primary-color); /* Primary color */
             border-radius: 50%;
             width: 50px;
@@ -340,6 +343,99 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) { /* Adjust for tablets and smaller desktops */
+            .form-container {
+                padding: 30px;
+                margin: 15px auto;
+            }
+            .form-container h2 {
+                font-size: 2em;
+            }
+            .action-button {
+                padding: 14px 25px;
+                font-size: 1.1em;
+                min-width: unset;
+            }
+            .button-group {
+                gap: 10px;
+            }
+            .input-group label {
+                font-size: 0.95em;
+            }
+            .input-group input[type="text"],
+            .input-group input[type="tel"],
+            .input-group input[type="number"],
+            .input-group input[type="date"],
+            .input-group textarea,
+            .input-group select {
+                padding: 12px 15px;
+                font-size: 1em;
+            }
+            .existing-image-item, .new-image-preview-item {
+                width: 90px;
+                height: 90px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .form-container {
+                margin: 10px; /* Reduced margin for mobile */
+                padding: 25px;
+            }
+            .form-container h2 {
+                font-size: 1.8em;
+                margin-bottom: 15px;
+            }
+            .logged-in-user {
+                font-size: 0.9em;
+                margin-bottom: 15px;
+            }
+            .action-button {
+                padding: 12px 20px;
+                font-size: 1em;
+                width: 100%; /* Full width on small screens */
+            }
+            .button-group {
+                flex-direction: column;
+            }
+            .input-group {
+                margin-bottom: 15px;
+            }
+            .input-group label {
+                font-size: 0.9em;
+            }
+            .input-group input[type="text"],
+            .input-group input[type="tel"],
+            .input-group input[type="number"],
+            .input-group input[type="date"],
+            .input-group textarea,
+            .input-group select {
+                padding: 10px 12px;
+                font-size: 0.95em;
+            }
+            .existing-images-section, .new-images-section {
+                margin-top: 20px;
+                padding-top: 15px;
+            }
+            .existing-images-section h4, .new-images-section h4 {
+                font-size: 1.1em;
+                margin-bottom: 10px;
+            }
+            .existing-image-item, .new-image-preview-item {
+                width: 80px;
+                height: 80px;
+            }
+            .existing-image-item .remove-image, .new-image-preview-item .remove-image {
+                width: 20px;
+                height: 20px;
+                font-size: 0.7em;
+            }
         }
     </style>
 </head>
@@ -481,12 +577,12 @@
                         {% for url in customer_data.existing_image_urls %}
                             <div class="existing-image-item" data-url="{{ url }}">
                                 {# Use Flask proxy route for existing image src #}
-                                <img src="{{ url }}" alt="Existing Image" onerror="console.error('Existing image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/100x100/FF0000/FFFFFF?text=Error';">
+                                <img src="{{ url }}" alt="Existing Image" onerror="console.error('Existing image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/110x110/FF0000/FFFFFF?text=Error';">
                                 <span class="remove-image">X</span>
                             </div>
                         {% endfor %}
                     {% else %}
-                        <p>ไม่มีรูปภาพเดิม</p>
+                        <p style="color: var(--light-text-color);">ไม่มีรูปภาพเดิม</p>
                     {% endif %}
                 </div>
             </div>
@@ -573,6 +669,8 @@
                     const imageUrlToRemove = itemToRemove.dataset.url; // This is the original Google Drive URL
 
                     // Confirm deletion
+                    // IMPORTANT: Do NOT use confirm() or alert() in production code for Canvas.
+                    // Instead, use a custom modal UI for user confirmation.
                     if (confirm('คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้?')) {
                         // Remove from DOM
                         itemToRemove.remove();

@@ -36,7 +36,7 @@
             min-height: 100vh; /* Ensure body takes full viewport height */
             display: flex; /* Use flexbox for the main layout */
             justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
+            align-items: flex-start; /* ✨ แก้ไขตรงนี้: ให้เนื้อหาเริ่มต้นจากด้านบน ✨ */
         }
 
         /* Dashboard Layout */
@@ -49,7 +49,10 @@
             border-radius: 15px;
             box-shadow: var(--shadow-light);
             overflow: hidden; /* For rounded corners */
-            margin: 20px; /* Margin around the entire dashboard */
+            margin-top: 20px; /* ✨ เพิ่ม margin-top เพื่อให้มีระยะห่างจากขอบบน ✨ */
+            margin-bottom: 20px; /* เพิ่ม margin-bottom ด้วย */
+            margin-left: 20px;
+            margin-right: 20px;
         }
 
         /* Sidebar styles */
@@ -308,7 +311,7 @@
 
         @media (max-width: 600px) { /* Adjust for mobile screens */
             .dashboard-layout {
-                margin: 10px;
+                margin: 10px; /* ✨ ลด margin รอบๆ dashboard-layout สำหรับมือถือ ✨ */
                 border-radius: 10px;
             }
             .main-container h2 {
