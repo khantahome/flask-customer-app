@@ -6,6 +6,8 @@
     <title>จัดการสินเชื่อ</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- เพิ่ม Font Awesome สำหรับไอคอน -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <style>
         /* Define CSS variables for easy theme customization */
@@ -618,6 +620,63 @@
             text-align: center;
         }
 
+        /* NEW: Styles for the new function buttons */
+        .function-buttons-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* Space between main dropdown buttons */
+            margin-bottom: 30px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+
+        .function-buttons-group .btn-group {
+            flex: 1; /* Allow buttons to grow and shrink */
+            min-width: 150px; /* Minimum width for each button group */
+            max-width: 200px; /* Maximum width for each button group */
+        }
+
+        .function-buttons-group .btn {
+            width: 100%; /* Make dropdown toggle button fill its group */
+            padding: 12px 15px; /* Adjust padding for better fit */
+            font-size: 1em; /* Adjust font size */
+            border-radius: 8px; /* Consistent border-radius */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); /* Consistent shadow */
+        }
+
+        .function-buttons-group .dropdown-menu {
+            border-radius: 8px;
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+
+        .function-buttons-group .dropdown-item {
+            color: var(--text-color);
+            padding: 10px 15px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .function-buttons-group .dropdown-item:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Specific button colors */
+        .btn-approve { background-color: #28a745; color: white; } /* Green */
+        .btn-approve:hover { background-color: #218838; }
+
+        .btn-close-job { background-color: #007bff; color: white; } /* Blue */
+        .btn-close-job:hover { background-color: #0056b3; }
+
+        .btn-bad-debt { background-color: #dc3545; color: white; } /* Red */
+        .btn-bad-debt:hover { background-color: #c82333; }
+
+        .btn-pull-plug { background-color: #ffc107; color: #333; } /* Yellow/Orange */
+        .btn-pull-plug:hover { background-color: #e0a800; }
+
+        .btn-return-principal { background-color: #17a2b8; color: white; } /* Cyan/Info */
+        .btn-return-principal:hover { background-color: #138496; }
+
 
         /* Responsive adjustments */
         @media (max-width: 992px) { /* Adjust for smaller screens (tablets) */
@@ -658,6 +717,9 @@
             }
             .logged-in-user {
                 margin-top: 15px;
+            }
+            .function-buttons-group .btn-group {
+                flex: 1 1 48%; /* Two buttons per row on medium screens */
             }
         }
 
@@ -711,6 +773,10 @@
                 padding: 6px 10px;
                 font-size: 0.8em;
             }
+            .function-buttons-group .btn-group {
+                flex: 1 1 100%; /* One button per row on small screens */
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -741,6 +807,63 @@
                     <button type="submit">🔍 ค้นหา</button>
                 </form>
 
+                <!-- NEW: ปุ่มฟังก์ชันเสริมต่างๆ -->
+                <div class="function-buttons-group">
+                    <!-- ปุ่ม "อนุมัติยอด" -->
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-approve dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-check-circle"></i> อนุมัติยอด
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" id="openAddLoanModalBtn">ทำอนุมัติยอด</a></li>
+                            <li><a class="dropdown-item" href="#">ตารางอนุมัติลูกค้า</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- ปุ่ม "ปิดจ๊อบ" -->
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-close-job dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-clipboard-check"></i> ปิดจ๊อบ
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">ตารางปิดจ๊อบ</a></li>
+                            <li><a class="dropdown-item" href="#">ทำปิดจ๊อบ</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- ปุ่ม "ตัวเสีย" -->
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-bad-debt dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-times-circle"></i> ตัวเสีย
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">ตารางตัวเสีย</a></li>
+                            <li><a class="dropdown-item" href="#">ทำตัวเสีย</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- ปุ่ม "ชั๊กปลั๊ก" -->
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-pull-plug dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-plug"></i> ชั๊กปลั๊ก
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">ตารางชั๊กปลั๊ก</a></li>
+                            <li><a class="dropdown-item" href="#">ทำชั๊กปลั๊ก</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- ปุ่ม "ทำคืนต้น" -->
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-return-principal dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-redo"></i> ทำคืนต้น
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">ตารางลูกค้าคืนต้น</a></li>
+                            <li><a class="dropdown-item" href="#">ทำคืนต้น</a></li>
+                        </ul>
+                    </div>
+                </div>
 
                 <div class="flash-messages">
                     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -752,80 +875,7 @@
                     {% endwith %}
                 </div>
 
-                <div class="card">
-                    <h4 class="card-title">เพิ่มรายการเงินกู้ใหม่</h4>
-                    <form id="addLoanForm" action="{{ url_for('add_loan_record') }}" method="POST">
-                        <div class="form-group">
-                            <label for="customer_new_id" class="form-label">รหัสลูกค้า (เลือกหรือกรอกใหม่):</label>
-                            <input type="text" class="form-input" id="customer_new_id" name="customer_new_id" placeholder="เลือกจากรายการ หรือเว้นว่างเพื่อกรอกชื่อใหม่" list="customer_suggestions">
-                            {# Datalist for customer suggestions - This will be populated by Flask (all_customers) #}
-                            <datalist id="customer_suggestions">
-                                {% if all_customers %}
-                                    {% for customer in all_customers %}
-                                        {# The value sent to the backend will be the 'รหัสลูกค้า' #}
-                                        {# The displayed text will be 'ชื่อ' and 'นามสกุล' #}
-                                        <option value="{{ customer.get('รหัสลูกค้า', '') }}">{{ customer.get('ชื่อ', '') }} {{ customer.get('นามสกุล', '') }}</option>
-                                    {% endfor %}
-                                {% endif %}
-                            </datalist>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="new_customer_name" class="form-label">ชื่อลูกค้าใหม่ (กรอกหากไม่มีรหัสลูกค้า):</label>
-                            <input type="text" class="form-input" id="new_customer_name" name="new_customer_name" placeholder="กรอกชื่อลูกค้าใหม่">
-                        </div>
-                        <div class="form-group">
-                            <label for="new_customer_surname" class="form-label">นามสกุลลูกค้าใหม่ (กรอกหากไม่มีรหัสลูกค้า):</label>
-                            <input type="text" class="form-input" id="new_customer_surname" name="new_customer_surname" placeholder="กรอกนามสกุลลูกค้าใหม่">
-                        </div>
-
-                        {# NEW: Dropdown for Company Name #}
-                        <div class="form-group">
-                            <label for="company_name" class="form-label">ชื่อบริษัทผู้ปล่อยกู้:</label>
-                            <select class="form-input" id="company_name" name="company_name" required>
-                                <option value="">-- เลือกบริษัท --</option>
-                                <option value="Starloan">Starloan</option>
-                                <option value="Glorycash">Glorycash</option>
-                                <option value="อื่นๆ">อื่นๆ</option>
-                                {# เพิ่ม option สำหรับบริษัทอื่นๆ ที่นี่ได้เลย #}
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="loan_amount" class="form-label">วงเงินกู้ (บาท):</label>
-                            <input type="number" class="form-input" id="loan_amount" name="loan_amount" step="0.01" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="interest_rate" class="form-label">ดอกเบี้ย (%):</label>
-                            <input type="number" class="form-input" id="interest_rate" name="interest_rate" step="0.01" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="processing_fee" class="form-label">ค่าดำเนินการ (บาท):</label>
-                            <input type="number" class="form-input" id="processing_fee" name="processing_fee" step="0.01" value="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="front_back_interest_deduction" class="form-label">หักดอกหัวท้าย (บาท):</label>
-                            <input type="number" class="form-input" id="front_back_interest_deduction" name="front_back_interest_deduction" step="0.01" value="0" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="principal_to_return" class="form-label">ยอดเงินที่ต้องโอน (บาท):</label>
-                            <input type="text" class="form-input" id="principal_to_return" name="principal_to_return" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="daily_amount_to_return" class="form-label">ยอดเงินต้องคืนรายวัน (บาท):</label>
-                            <input type="text" class="form-input" id="daily_amount_to_return" name="daily_amount_to_return" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="start_date" class="form-label">วันที่เริ่มกู้:</label>
-                            <input type="date" class="form-input" id="start_date" name="start_date" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="loan_note" class="form-label">หมายเหตุเงินกู้:</label>
-                            <textarea class="form-input" id="loan_note" name="loan_note" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary" id="addLoanSubmitBtn">บันทึกรายการเงินกู้</button>
-                    </form>
-                </div>
+                {# Removed the original "เพิ่มรายการเงินกู้ใหม่" card from here #}
 
                 {% if loan_records %}
                 <div class="table-container">
@@ -1474,6 +1524,29 @@
             reloanModal.classList.remove('show');
         }
     });
+
+    // --- NEW: Add Loan Modal Logic (Moved from original card) ---
+    const addLoanModal = document.getElementById('addLoanModal');
+    const openAddLoanModalBtn = document.getElementById('openAddLoanModalBtn');
+    const addLoanCloseButton = addLoanModal.querySelector('.add-loan-close-button');
+
+    if (openAddLoanModalBtn) {
+        openAddLoanModalBtn.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent default link behavior
+            addLoanModal.classList.add('show');
+        });
+    }
+
+    addLoanCloseButton.addEventListener('click', function() {
+        addLoanModal.classList.remove('show');
+    });
+
+    window.addEventListener('click', function(event) {
+        if (event.target == addLoanModal) {
+            addLoanModal.classList.remove('show');
+        }
+    });
+
 });
     </script>
 </body>
