@@ -36,6 +36,15 @@ USER_LOGIN_SPREADSHEET_NAME = 'UserLoginData'
 USER_LOGIN_WORKSHEET_NAME = 'users'
 
 APPROVE_WORKSHEET_NAME = 'approove'
+APPROVE_WORKSHEET_HEADERS = [
+    'สถานะ', 
+    'Customer ID', 
+    'ชื่อลูกค้า', 
+    'เบอร์มือถือ', 
+    'วันที่ขอเข้ามา', 
+    'วงเงินที่อนุมัติ', 
+    'ผู้บันทึก'
+]
 
 # Original Customer Records Sheet (uses เลขบัตรประชาชน)
 WORKSHEET_NAME = 'customer_records'
@@ -640,36 +649,23 @@ def edit_customer_data(row_index):
         return redirect(url_for('search_customer_data'))
 
     # (ค่าที่รับมาจากลูกค้ารอดำเนินการ)
-    if request.method == 'GET':
-        try:
-            row_values = worksheet.row_values(row_index)
-            if row_values:
-                # Add 'Customer ID' to headers for consistent dictionary creation
-                headers = ["Customer ID"] + CUSTOMER_DATA_WORKSHEET_HEADERS
-                customer_data = dict(zip(headers, row_values))
-                # NEW: Split the full name into 'ชื่อ' and 'นามสกุล'
-                full_name = customer_data.get('ชื่อ', '').split(' ', 1)
-                customer_data['ชื่อ'] = full_name[0] if len(full_name) > 0 else ''
-                customer_data['นามสกุล'] = full_name[1] if len(full_name) > 1 else ''
-                if 'Image URLs' in customer_data and customer_data['Image URLs'] != '-':
-                    customer_data['existing_image_urls'] = customer_data['Image URLs'].split(', ')
-                else:
-                    customer_data['existing_image_urls'] = []
+    try:
+        row_values = worksheet.row_values(row_index)
+        if row_values:
+            customer_data = dict(zip(CUSTOMER_DATA_WORKSHEET_HEADERS, row_values))
+            if 'Image URLs' in customer_data and customer_data['Image URLs'] != '-':
+                customer_data['existing_image_urls'] = customer_data['Image URLs'].split(', ')
             else:
-                flash('ไม่พบข้อมูลลูกค้าในแถวที่ระบุ', 'error')
-                return redirect(url_for('search_customer_data'))
-        except Exception as e:
-            flash(f'เกิดข้อผิดพลาดในการดึงข้อมูลลูกค้าเพื่อแก้ไข: {e}', 'error')
-            print(f"Error fetching row {row_index} for edit: {e}")
+                customer_data['existing_image_urls'] = []
+        else:
+            flash('ไม่พบข้อมูลลูกค้าในแถวที่ระบุ', 'error')
             return redirect(url_for('search_customer_data'))
-        
-        return render_template('edit_customer_data.html', 
-                               username=logged_in_user, 
-                               customer_data=customer_data, 
-                               row_index=row_index)
+    except Exception as e:
+        flash(f'เกิดข้อผิดพลาดในการดึงข้อมูลลูกค้าเพื่อแก้ไข: {e}', 'error')
+        print(f"Error fetching row {row_index} for edit: {e}")
+        return redirect(url_for('search_customer_data'))
 
-    # Process form submission on POST request
-    elif request.method == 'POST':
+    if request.method == 'POST':
         # Get updated text data from the form
         updated_data = {
             'Timestamp': customer_data.get('Timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
@@ -765,7 +761,7 @@ def edit_customer_data(row_index):
         
         # Prepare the row to update in the correct order of headers
         try:
-            worksheet_headers = ["Customer ID"] + CUSTOMER_DATA_WORKSHEET_HEADERS
+            worksheet_headers = CUSTOMER_DATA_WORKSHEET_HEADERS  # ไม่มี Customer ID
             row_to_update = [updated_data.get(header, '-') for header in worksheet_headers]
             worksheet.update(f'A{row_index}', [row_to_update])
             flash('บันทึกการแก้ไขข้อมูลลูกค้าเรียบร้อยแล้ว!', 'success')
