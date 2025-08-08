@@ -480,6 +480,33 @@
                 <input type="tel" id="mobile_phone_number" name="mobile_phone_number" placeholder="กรอกเบอร์มือถือ" pattern="\d{10}" title="กรุณากรอกเบอร์มือถือ 10 หลัก" value="{{ customer_data.เบอร์มือถือ if customer_data.เบอร์มือถือ != '-' else '' }}">
             </div>
 
+            <div class="form-group">
+            <label for="main_customer_group">กลุ่มลูกค้าหลัก:</label>
+            <select class="form-control" id="main_customer_group" name="main_customer_group" required>
+                <option value="" disabled>--- เลือก ---</option>
+                <option value="กลุ่มพ่อค้าแม่ค้า" {% if customer_data['กลุ่มลูกค้าหลัก'] == "กลุ่มพ่อค้าแม่ค้า" %}selected{% endif %}>กลุ่มพ่อค้าแม่ค้า</option>
+                <option value="กลุ่มพนักงานประจำ" {% if customer_data['กลุ่มลูกค้าหลัก'] == "กลุ่มพนักงานประจำ" %}selected{% endif %}>กลุ่มพนักงานประจำ</option>
+                <option value="กลุ่มธุรกิจขนาดเล็ก" {% if customer_data['กลุ่มลูกค้าหลัก'] == "กลุ่มธุรกิจขนาดเล็ก" %}selected{% endif %}>กลุ่มธุรกิจขนาดเล็ก</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="sub_profession_group">กลุ่มอาชีพย่อย:</label>
+            <select class="form-control" id="sub_profession_group" name="sub_profession_group" required onchange="toggleOtherSubProfession();">
+                <option value="" disabled>--- เลือก ---</option>
+                <option value="อื่นๆ" {% if customer_data['กลุ่มอาชีพย่อย'] == "อื่นๆ" %}selected{% endif %}>อื่นๆ</option>
+                <option value="ขายของออนไลน์" {% if customer_data['กลุ่มอาชีพย่อย'] == "ขายของออนไลน์" %}selected{% endif %}>ขายของออนไลน์</option>
+                <option value="ขายของหน้าร้าน" {% if customer_data['กลุ่มอาชีพย่อย'] == "ขายของหน้าร้าน" %}selected{% endif %}>ขายของหน้าร้าน</option>
+                <option value="พนักงานบริษัทเอกชน" {% if customer_data['กลุ่มอาชีพย่อย'] == "พนักงานบริษัทเอกชน" %}selected{% endif %}>พนักงานบริษัทเอกชน</option>
+                <option value="พนักงานข้าราชการ" {% if customer_data['กลุ่มอาชีพย่อย'] == "พนักงานข้าราชการ" %}selected{% endif %}>พนักงานข้าราชการ</option>
+            </select>
+        </div>
+
+    <div class="form-group" id="other_sub_profession_group" style="display: none;">
+        <label for="other_sub_profession">ระบุอาชีพย่อยอื่นๆ:</label>
+        <input type="text" class="form-control" id="other_sub_profession" name="other_sub_profession" value="{{ customer_data['ระบุอาชีพย่อยอื่นๆ'] }}">
+    </div>
+
             <div class="input-group">
                 <label for="registered">จดทะเบียน</label>
                 <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่" value="{{ customer_data.จดทะเบียน if customer_data.จดทะเบียน != '-' else '' }}">
@@ -687,6 +714,16 @@
                 }
             });
 
+                    function toggleOtherSubProfession() {
+                const subProfessionSelect = document.getElementById('sub_profession_group');
+                const otherInputGroup = document.getElementById('other_sub_profession_group');
+                if (subProfessionSelect.value === 'อื่นๆ') {
+                    otherInputGroup.style.display = 'block';
+                } else {
+                    otherInputGroup.style.display = 'none';
+                }
+            }
+
             // Form submission logic
             editCustomerForm.addEventListener('submit', function(event) {
                 event.preventDefault(); // Prevent default form submission
@@ -739,6 +776,9 @@
                 applicationDateInput.value = `${year}-${month}-${day}`;
             }
         });
+        document.addEventListener('DOMContentLoaded', function() {
+        toggleOtherSubProfession();
+    });
     </script>
 </body>
 </html>
