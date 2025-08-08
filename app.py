@@ -382,6 +382,36 @@ def dashboard():
     username = session['username']
     return render_template('main_menu.html', username=username)
 
+@app.route('/loan_management')
+def loan_management():
+    """
+    แสดงหน้า loan_management.html และดึงข้อมูลจาก worksheet 'approove'
+    """
+    if 'username' not in session:
+        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
+        return redirect(url_for('login'))
+
+    try:
+        # เปิดเวิร์คชีท approove
+        worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        data = worksheet.get_all_values()
+
+        approove_data = []
+        if data and len(data) > 1:
+            headers = data[0]
+            rows = data[1:]
+            approove_data = [dict(zip(headers, row)) for row in rows]
+
+        return render_template(
+            'loan_management.html',
+            username=session['username'],
+            approove_data=approove_data
+        )
+    except Exception as e:
+        flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")
+        return redirect(url_for('dashboard'))
+
+
 @app.route('/logout')
 def logout():
     """
