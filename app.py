@@ -639,7 +639,7 @@ def edit_customer_data(row_index):
         flash('ไม่สามารถเข้าถึง Google Sheet สำหรับแก้ไขข้อมูลลูกค้าได้', 'error')
         return redirect(url_for('search_customer_data'))
 
-    # Retrieve customer data to populate the form on GET request
+    # (ค่าที่รับมาจากลูกค้ารอดำเนินการ)
     if request.method == 'GET':
         try:
             row_values = worksheet.row_values(row_index)
@@ -647,6 +647,10 @@ def edit_customer_data(row_index):
                 # Add 'Customer ID' to headers for consistent dictionary creation
                 headers = ["Customer ID"] + CUSTOMER_DATA_WORKSHEET_HEADERS
                 customer_data = dict(zip(headers, row_values))
+                # NEW: Split the full name into 'ชื่อ' and 'นามสกุล'
+                full_name = customer_data.get('ชื่อ', '').split(' ', 1)
+                customer_data['ชื่อ'] = full_name[0] if len(full_name) > 0 else ''
+                customer_data['นามสกุล'] = full_name[1] if len(full_name) > 1 else ''
                 if 'Image URLs' in customer_data and customer_data['Image URLs'] != '-':
                     customer_data['existing_image_urls'] = customer_data['Image URLs'].split(', ')
                 else:
