@@ -462,182 +462,186 @@ body {
                     {% endif %}
                 {% endwith %}
                 <form id="editCustomerForm" method="post" enctype="multipart/form-data">
-                <input type="hidden" name="row_index" value="{{ row_index }}">
-                <input type="hidden" id="keptImageUrls" name="kept_image_urls" value="{{ customer_data.existing_image_urls | join(', ') }}">
-                    <div class="input-group">
-                        <label for="customer_name">ชื่อ</label>
-                        <input type="text" id="customer_name" name="customer_name" placeholder="กรอกชื่อลูกค้า" required>
-                    </div>
+    <input type="hidden" name="row_index" value="{{ row_index }}">
+    <input type="hidden" id="keptImageUrls" name="kept_image_urls" value="{{ customer_data.existing_image_urls | join(', ') }}">
+    
+    <div class="input-group">
+        <label for="customer_name">ชื่อ</label>
+        <input type="text" id="customer_name" name="customer_name" placeholder="กรอกชื่อลูกค้า" value="{{ customer_data.get('ชื่อ', '') }}" required>
+    </div>
 
-                    <div class="input-group">
-                        <label for="last_name">นามสกุล</label>
-                        <input type="text" id="last_name" name="last_name" placeholder="กรอกนามสกุลลูกค้า" required>
-                    </div>
+    <div class="input-group">
+        <label for="last_name">นามสกุล</label>
+        <input type="text" id="last_name" name="last_name" placeholder="กรอกนามสกุลลูกค้า" value="{{ customer_data.get('นามสกุล', '') }}" required>
+    </div>
 
-                    <div class="input-group">
-                        <label for="id_card_number">เลขบัตรประชาชน</label>
-                        <input type="text" id="id_card_number" name="id_card_number" placeholder="กรอกเลขบัตรประชาชน" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก">
-                    </div>
+    <div class="input-group">
+        <label for="id_card_number">เลขบัตรประชาชน</label>
+        <input type="text" id="id_card_number" name="id_card_number" placeholder="กรอกเลขบัตรประชาชน" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก" value="{{ customer_data.get('เลขบัตรประชาชน', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="mobile_phone_number">เบอร์มือถือ</label>
-                        <input type="tel" id="mobile_phone_number" name="mobile_phone_number" placeholder="กรอกเบอร์มือถือ" required pattern="\d{10}" title="กรุณากรอกเบอร์มือถือ 10 หลัก">
-                    </div>
-                    <div class="input-group">
-                        <label for="main_customer_group">กลุ่มลูกค้าหลัก</label>
-                        <select id="main_customer_group" name="main_customer_group" required>
-                            <option value="">--- เลือกกลุ่มลูกค้าหลัก ---</option>
-                            <option value="ค้าปลีก-ค้าส่ง / ร้านค้า">1. กลุ่มค้าปลีก-ค้าส่ง / ร้านค้า</option>
-                            <option value="ธุรกิจบริการ / ร้านอาหาร">2. กลุ่มธุรกิจบริการ / ร้านอาหาร</option>
-                            <option value="ผู้รับเหมาก่อสร้าง / งานโยธา">3. กลุ่มผู้รับเหมาก่อสร้าง / งานโยธา</option>
-                            <option value="โลจิสติกส์ / ขนส่ง / ยานยนต์">4. กลุ่มโลจิสติกส์ / ขนส่ง / ยานยนต์</option>
-                            <option value="เทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล">5. กลุ่มเทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล</option>
-                            <option value="โรงงาน / การผลิต">6. กลุ่มโรงงาน / การผลิต</option>
-                            <option value="อสังหาริมทรัพย์ / บริหารทรัพย์สิน">7. กลุ่มอสังหาริมทรัพย์ / บริหารทรัพย์สิน</option>
-                            <option value="นำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ">8. กลุ่มนำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ</option>
-                            <option value="อื่นๆ">9. อื่นๆ</option>
-                        </select>
-                    </div>
+    <div class="input-group">
+        <label for="mobile_phone_number">เบอร์มือถือ</label>
+        <input type="tel" id="mobile_phone_number" name="mobile_phone_number" placeholder="กรอกเบอร์มือถือ" value="{{ customer_data.get('เบอร์มือถือ', '') }}" required pattern="\d{10}" title="กรุณากรอกเบอร์มือถือ 10 หลัก">
+    </div>
 
-                    <div class="input-group">
-                        <label for="sub_profession_group">กลุ่มอาชีพย่อย</label>
-                        <select id="sub_profession_group" name="sub_profession_group" required disabled>
-                            <option value="">--- กรุณาเลือกกลุ่มลูกค้าหลักก่อน ---</option>
-                        </select>
-                    </div>
+    <div class="input-group">
+        <label for="main_customer_group">กลุ่มลูกค้าหลัก</label>
+        <select id="main_customer_group" name="main_customer_group" required>
+            <option value="">--- เลือกกลุ่มลูกค้าหลัก ---</option>
+            <option value="ค้าปลีก-ค้าส่ง / ร้านค้า" {% if customer_data.get('กลุ่มลูกค้าหลัก') == 'ค้าปลีก-ค้าส่ง / ร้านค้า' %}selected{% endif %}>1. กลุ่มค้าปลีก-ค้าส่ง / ร้านค้า</option>
+            <option value="ธุรกิจบริการ / ร้านอาหาร" {% if customer_data.get('กลุ่มลูกค้าหลัก') == 'ธุรกิจบริการ / ร้านอาหาร' %}selected{% endif %}>2. กลุ่มธุรกิจบริการ / ร้านอาหาร</option>
+            <option value="ผู้รับเหมาก่อสร้าง / งานโยธา" {% if customer_data.get('กลุ่มลูกค้าหลัก') == 'ผู้รับเหมาก่อสร้าง / งานโยธา' %}selected{% endif %}>3. กลุ่มผู้รับเหมาก่อสร้าง / งานโยธา</option>
+            <option value="โลจิสติกส์ / ขนส่ง / ยานยนต์" {% if customer_data.get('กลุ่มลูกค้าหลัก') == 'โลจิสติกส์ / ขนส่ง / ยานยนต์' %}selected{% endif %}>4. กลุ่มโลจิสติกส์ / ขนส่ง / ยานยนต์</option>
+            <option value="เทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล" {% if customer_data.get('กลุ่มลูกค้าหลัก') == 'เทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล' %}selected{% endif %}>5. กลุ่มเทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล</option>
+            <option value="โรงงาน / การผลิต" {% if customer_data.get('กลุ่มลูกค้าหลัก') == 'โรงงาน / การผลิต' %}selected{% endif %}>6. กลุ่มโรงงาน / การผลิต</option>
+            <option value="อสังหาริมทรัพย์ / บริหารทรัพย์สิน" {% if customer_data.get('กลุ่มลูกค้าหลัก') == 'อสังหาริมทรัพย์ / บริหารทรัพย์สิน' %}selected{% endif %}>7. กลุ่มอสังหาริมทรัพย์ / บริหารทรัพย์สิน</option>
+            <option value="นำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ" {% if customer_data.get('กลุ่มลูกค้าหลัก') == 'นำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ' %}selected{% endif %}>8. กลุ่มนำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ</option>
+            <option value="อื่นๆ" {% if customer_data.get('กลุ่มลูกค้าหลัก') == 'อื่นๆ' %}selected{% endif %}>9. อื่นๆ</option>
+        </select>
+    </div>
 
-                    <div class="input-group" id="otherSubProfessionInputGroup" style="display: none;">
-                        <label for="other_sub_profession">ระบุกลุ่มอาชีพย่อยอื่นๆ</label>
-                        <input type="text" id="other_sub_profession" name="other_sub_profession" placeholder="กรอกกลุ่มอาชีพย่อยอื่นๆ">
-                    </div>
+    <div class="input-group">
+        <label for="sub_profession_group">กลุ่มอาชีพย่อย</label>
+        <select id="sub_profession_group" name="sub_profession_group" required disabled>
+            <option value="{{ customer_data.get('กลุ่มอาชีพย่อย', '') }}" selected>{{ customer_data.get('กลุ่มอาชีพย่อย', '--- กรุณาเลือกกลุ่มลูกค้าหลักก่อน ---') }}</option>
+        </select>
+    </div>
 
-                    <div class="input-group">
-                        <label for="registered">จดทะเบียน</label>
-                        <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่">
-                    </div>
+    <div class="input-group" id="otherSubProfessionInputGroup" style="display: none;">
+        <label for="other_sub_profession">ระบุกลุ่มอาชีพย่อยอื่นๆ</label>
+        <input type="text" id="other_sub_profession" name="other_sub_profession" placeholder="กรอกกลุ่มอาชีพย่อยอื่นๆ" value="{{ customer_data.get('ระบุอาชีพย่อยอื่นๆ', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="business_name">ชื่อกิจการ</label>
-                        <input type="text" id="business_name" name="business_name" placeholder="กรอกชื่อกิจการ">
-                    </div>
+    <div class="input-group">
+        <label for="registered">จดทะเบียน</label>
+        <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่" value="{{ customer_data.get('จดทะเบียน', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="business_type">ประเภทธุรกิจ (เกี่ยวกับอะไร)</label>
-                        <input type="text" id="business_type" name="business_type" placeholder="เช่น ร้านอาหาร, บริการ">
-                    </div>
+    <div class="input-group">
+        <label for="business_name">ชื่อกิจการ</label>
+        <input type="text" id="business_name" name="business_name" placeholder="กรอกชื่อกิจการ" value="{{ customer_data.get('ชื่อกิจการ', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="registered_address">ที่อยู่จดทะเบียน</label>
-                        <textarea id="registered_address" name="registered_address" placeholder="กรอกที่อยู่จดทะเบียน" rows="3"></textarea>
-                    </div>
+    <div class="input-group">
+        <label for="business_type">ประเภทธุรกิจ (เกี่ยวกับอะไร)</label>
+        <input type="text" id="business_type" name="business_type" placeholder="เช่น ร้านอาหาร, บริการ" value="{{ customer_data.get('ประเภทธุรกิจ', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="status">สถานะ</label>
-                        <select id="status" name="status" required>
-                            <option value="" disabled selected>--- เลือกสถานะ ---</option>
-                            <option value="อนุมัติ">อนุมัติ</option>
-                            <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
-                            <option value="ยกเลิก">ยกเลิก</option>
-                        </select>
-                    </div>
+    <div class="input-group">
+        <label for="registered_address">ที่อยู่จดทะเบียน</label>
+        <textarea id="registered_address" name="registered_address" placeholder="กรอกที่อยู่จดทะเบียน" rows="3">{{ customer_data.get('ที่อยู่จดทะเบียน', '') }}</textarea>
+    </div>
 
-                    <div class="input-group">
-                        <label for="desired_credit_limit">วงเงินที่ต้องการ</label>
-                        <input type="number" id="desired_credit_limit" name="desired_credit_limit" placeholder="กรอกวงเงินที่ต้องการ" min="0">
-                    </div>
+    <div class="input-group">
+        <label for="status">สถานะ</label>
+        <select id="status" name="status" required>
+            <option value="" disabled>--- เลือกสถานะ ---</option>
+            <option value="อนุมัติ" {% if customer_data.get('สถานะ') == 'อนุมัติ' %}selected{% endif %}>อนุมัติ</option>
+            <option value="ไม่อนุมัติ" {% if customer_data.get('สถานะ') == 'ไม่อนุมัติ' %}selected{% endif %}>ไม่อนุมัติ</option>
+            <option value="ยกเลิก" {% if customer_data.get('สถานะ') == 'ยกเลิก' %}selected{% endif %}>ยกเลิก</option>
+            <option value="รออนุมัติยอด" {% if customer_data.get('สถานะ') == 'รออนุมัติยอด' %}selected{% endif %}>รออนุมัติยอด</option>
+            <option value="อยู่ระหว่างดำเนินการ" {% if customer_data.get('สถานะ') == 'อยู่ระหว่างดำเนินการ' %}selected{% endif %}>อยู่ระหว่างดำเนินการ</option>
+        </select>
+    </div>
 
-                    <div class="input-group">
-                        <label for="approved_credit_limit">วงเงินที่อนุมัติ</label>
-                        <input type="number" id="approved_credit_limit" name="approved_credit_limit" placeholder="กรอกวงเงินที่อนุมัติ" min="0">
-                    </div>
+    <div class="input-group">
+        <label for="desired_credit_limit">วงเงินที่ต้องการ</label>
+        <input type="number" id="desired_credit_limit" name="desired_credit_limit" placeholder="กรอกวงเงินที่ต้องการ" value="{{ customer_data.get('วงเงินที่ต้องการ', '') | int if customer_data.get('วงเงินที่ต้องการ', '') is number else '' }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="applied_before">เคยขอเข้ามาในเครือหรือยัง</label>
-                        <input type="text" id="applied_before" name="applied_before" placeholder="เช่น ใช่ / ไม่ใช่">
-                    </div>
+    <div class="input-group">
+        <label for="approved_credit_limit">วงเงินที่อนุมัติ</label>
+        <input type="number" id="approved_credit_limit" name="approved_credit_limit" placeholder="กรอกวงเงินที่อนุมัติ" value="{{ customer_data.get('วงเงินที่อนุมัติ', '') | int if customer_data.get('วงเงินที่อนุมัติ', '') is number else '' }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="check_field">เช็ค</label>
-                        <input type="text" id="check_field" name="check" placeholder="ข้อมูลเช็ค">
-                    </div>
+    <div class="input-group">
+        <label for="applied_before">เคยขอเข้ามาในเครือหรือยัง</label>
+        <input type="text" id="applied_before" name="applied_before" placeholder="เช่น ใช่ / ไม่ใช่" value="{{ customer_data.get('เคยขอเข้ามาในเครือหรือยัง', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="how_applied">ขอเข้ามาทางไหน</label>
-                        <input type="text" id="how_applied" name="how_applied" placeholder="เช่น เว็บไซต์, โทรศัพท์">
-                    </div>
+    <div class="input-group">
+        <label for="check_field">เช็ค</label>
+        <input type="text" id="check_field" name="check" placeholder="ข้อมูลเช็ค" value="{{ customer_data.get('เช็ค', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="line_id">LINE : ID</label>
-                        <input type="text" id="line_id" name="line_id" placeholder="กรอก LINE ID">
-                    </div>
+    <div class="input-group">
+        <label for="how_applied">ขอเข้ามาทางไหน</label>
+        <input type="text" id="how_applied" name="how_applied" placeholder="เช่น เว็บไซต์, โทรศัพท์" value="{{ customer_data.get('ขอเข้ามาทางไหน', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="upfront_interest">หักดอกหัวท้าย</label>
-                        <input type="number" id="upfront_interest" name="upfront_interest" placeholder="กรอกจำนวนเงิน" min="0">
-                    </div>
+    <div class="input-group">
+        <label for="line_id">LINE : ID</label>
+        <input type="text" id="line_id" name="line_id" placeholder="กรอก LINE ID" value="{{ customer_data.get('LINE ID', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="processing_fee">ค่าดำเนินการ</label>
-                        <input type="number" id="processing_fee" name="processing_fee" placeholder="กรอกจำนวนเงิน" min="0">
-                    </div>
+    <div class="input-group">
+        <label for="upfront_interest">หักดอกหัวท้าย</label>
+        <input type="number" id="upfront_interest" name="upfront_interest" placeholder="กรอกจำนวนเงิน" min="0" value="{{ customer_data.get('หักดอกหัวท้าย', '') | int if customer_data.get('หักดอกหัวท้าย', '') is number else '' }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="application_date">วันที่ขอเข้ามา</label>
-                        <input type="date" id="application_date" name="application_date" required>
-                    </div>
+    <div class="input-group">
+        <label for="processing_fee">ค่าดำเนินการ</label>
+        <input type="number" id="processing_fee" name="processing_fee" placeholder="กรอกจำนวนเงิน" min="0" value="{{ customer_data.get('ค่าดำเนินการ', '') | int if customer_data.get('ค่าดำเนินการ', '') is number else '' }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="home_location_link">ลิงค์โลเคชั่นบ้าน</label>
-                        <input type="text" id="home_location_link" name="home_location_link" placeholder="วางลิงค์ Google Maps บ้าน">
-                    </div>
+    <div class="input-group">
+        <label for="application_date">วันที่ขอเข้ามา</label>
+        <input type="date" id="application_date" name="application_date" value="{{ customer_data.get('วันที่ขอเข้ามา', '') }}" required>
+    </div>
 
-                    <div class="input-group">
-                        <label for="work_location_link">ลิงค์โลเคชั่นที่ทำงาน</label>
-                        <input type="text" id="work_location_link" name="work_location_link" placeholder="วางลิงค์ Google Maps ที่ทำงาน">
-                    </div>
+    <div class="input-group">
+        <label for="home_location_link">ลิงค์โลเคชั่นบ้าน</label>
+        <input type="text" id="home_location_link" name="home_location_link" placeholder="วางลิงค์ Google Maps บ้าน" value="{{ customer_data.get('ลิงค์โลเคชั่นบ้าน', '') }}">
+    </div>
 
-                    <div class="input-group">
-                        <label for="remarks">หมายเหตุ</label>
-                        <textarea id="remarks" name="remarks" placeholder="บันทึกหมายเหตุเพิ่มเติม" rows="3"></textarea>
-                    </div>
+    <div class="input-group">
+        <label for="work_location_link">ลิงค์โลเคชั่นที่ทำงาน</label>
+        <input type="text" id="work_location_link" name="work_location_link" placeholder="วางลิงค์ Google Maps ที่ทำงาน" value="{{ customer_data.get('ลิงค์โลเคชั่นที่ทำงาน', '') }}">
+    </div>
 
-            <div class="input-group">
-                <label for="logged_in_user">ลงทะเบียนโดย</label>
-                <input type="text" id="logged_in_user" name="logged_in_user" value="{{ customer_data['Logged In User'] if customer_data['Logged In User'] != '-' else '' }}" readonly>
+    <div class="input-group">
+        <label for="remarks">หมายเหตุ</label>
+        <textarea id="remarks" name="remarks" placeholder="บันทึกหมายเหตุเพิ่มเติม" rows="3">{{ customer_data.get('หมายเหตุ', '') }}</textarea>
+    </div>
+
+    <div class="input-group">
+        <label for="logged_in_user">ลงทะเบียนโดย</label>
+        <input type="text" id="logged_in_user" name="logged_in_user" value="{{ customer_data.get('Logged In User', '') if customer_data.get('Logged In User', '') != '-' else '' }}" readonly>
+    </div>
+
+    <div class="existing-images-section">
+        <h4>รูปภาพเดิม</h4>
+        <div class="existing-image-previews" id="existingImagePreviewsContainer">
+            {% if customer_data.existing_image_urls %}
+                {% for url in customer_data.existing_image_urls %}
+                    <div class="existing-image-item" data-url="{{ url }}">
+                        {# Use Flask proxy route for existing image src #}
+                        <img src="{{ url }}" alt="Existing Image" onerror="console.error('Existing image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/110x110/FF0000/FFFFFF?text=Error';">
+                        <span class="remove-image">X</span>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--light-text-color);">ไม่มีรูปภาพเดิม</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="new-images-section">
+        <h4>อัปโหลดรูปภาพเพิ่มเติม</h4>
+        <div class="input-group">
+            <label for="new_customer_images">เลือกรูปภาพใหม่ (เลือกหลายรูปได้)</label>
+            <input type="file" id="new_customer_images" name="new_customer_images" accept="image/*" multiple>
+            <div id="newImagePreviewsContainer">
             </div>
+        </div>
+    </div>
 
-            <div class="existing-images-section">
-                <h4>รูปภาพเดิม</h4>
-                <div class="existing-image-previews" id="existingImagePreviewsContainer">
-                    {% if customer_data.existing_image_urls %}
-                        {% for url in customer_data.existing_image_urls %}
-                            <div class="existing-image-item" data-url="{{ url }}">
-                                {# Use Flask proxy route for existing image src #}
-                                <img src="{{ url }}" alt="Existing Image" onerror="console.error('Existing image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/110x110/FF0000/FFFFFF?text=Error';">
-                                <span class="remove-image">X</span>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <p style="color: var(--light-text-color);">ไม่มีรูปภาพเดิม</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="new-images-section">
-                <h4>อัปโหลดรูปภาพเพิ่มเติม</h4>
-                <div class="input-group">
-                    <label for="new_customer_images">เลือกรูปภาพใหม่ (เลือกหลายรูปได้)</label>
-                    <input type="file" id="new_customer_images" name="new_customer_images" accept="image/*" multiple>
-                    <div id="newImagePreviewsContainer">
-                        </div>
-                </div>
-            </div>
-
-            <div class="button-group">
-                <button type="submit" class="action-button">บันทึกการแก้ไข</button>
-                <a href="{{ url_for('search_customer_data') }}" class="action-button cancel">ยกเลิก</a>
-            </div>
-        </form>
+    <div class="button-group">
+        <button type="submit" class="action-button">บันทึกการแก้ไข</button>
+        <a href="{{ url_for('search_customer_data') }}" class="action-button cancel">ยกเลิก</a>
+    </div>
+</form>
     </div>
 
     <script>
