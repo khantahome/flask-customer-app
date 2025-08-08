@@ -384,32 +384,30 @@ def dashboard():
 
 @app.route('/loan_management')
 def loan_management():
-    """
-    แสดงหน้า loan_management.html และดึงข้อมูลจาก worksheet 'approove'
-    """
     if 'username' not in session:
         flash('กรุณาเข้าสู่ระบบก่อน', 'error')
         return redirect(url_for('login'))
 
+    approove_data = []
+
     try:
-        # เปิดเวิร์คชีท approove
-        worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        worksheet = GSPREAD_CLIENT.open("data1").worksheet("approove")
         data = worksheet.get_all_values()
 
-        approove_data = []
         if data and len(data) > 1:
             headers = data[0]
             rows = data[1:]
             approove_data = [dict(zip(headers, row)) for row in rows]
 
-        return render_template(
-            'loan_management.html',
-            username=session['username'],
-            approove_data=approove_data
-        )
     except Exception as e:
         flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")
-        return redirect(url_for('dashboard'))
+
+    return render_template(
+        'loan_management.html',
+        username=session['username'],
+        approove_data=approove_data
+    )
+
 
 
 @app.route('/logout')
@@ -581,7 +579,7 @@ def search_customer_data():
     else:
         # Default behavior: Show records with status 'รอดำเนินการ'
         customer_records = get_customer_records_by_status("รอดำเนินการ")
-        display_title = "ข้อมูลลูกค้า: รอดำเนินการ (ค่าเริ่มต้น)"
+        display_title = "ข้อมูลลูกค้า: รอดำเนินการ"
         if not customer_records:
             flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ' ในระบบ", "info")
         else:
@@ -776,12 +774,6 @@ def edit_customer_data(row_index):
                            username=logged_in_user,
                            customer_data=customer_data,
                            row_index=row_index)
-
-
-
-
-
-
 
 # --- Main execution block ---
 if __name__ == '__main__':

@@ -8,435 +8,442 @@
     <style>
         /* Define CSS variables for easy theme customization */
         :root {
-            --primary-color: #8A2BE2; /* A vibrant purple for accent */
-            --secondary-color: #00BCD4; /* Cyan for secondary accent */
-            --background-color: #1A1A2E; /* Deep dark blue-purple for main background */
-            --card-background: #1F283E; /* Slightly lighter dark blue-purple for cards */
-            --text-color: #E0E0E0; /* Light grey for general text */
-            --light-text-color: #B0B0B0; /* Even lighter for secondary text */
-            --border-color: #3A3A5A; /* Darker border for elements */
-            --shadow-light: 0 6px 20px rgba(0, 0, 0, 0.4); /* Stronger shadow for dark mode */
-            --success-bg: #28A745; /* Green for success messages */
-            --success-text: #FFFFFF;
-            --error-bg: #DC3545; /* Red for error messages */
-            --error-text: #FFFFFF;
-        }
+    --primary-color: #8A2BE2; /* A vibrant purple for accent */
+    --secondary-color: #00BCD4; /* Cyan for secondary accent */
+    --background-color: #1A1A2E; /* Deep dark blue-purple for main background */
+    --card-background: #1F283E; /* Slightly lighter dark blue-purple for cards */
+    --text-color: #E0E0E0; /* Light grey for general text */
+    --light-text-color: #B0B0B0; /* Even lighter for secondary text */
+    --border-color: #3A3A5A; /* Darker border for elements */
+    --shadow-light: 0 6px 20px rgba(0, 0, 0, 0.4); /* Stronger shadow for dark mode */
+    --success-bg: #28A745; /* Green for success messages */
+    --success-text: #FFFFFF;
+    --error-bg: #DC3545; /* Red for error messages */
+    --error-text: #FFFFFF;
+}
 
-        /* Basic styles for the body to center content and set font */
-        body {
-            font-family: 'Kanit', sans-serif; /* Use Kanit font */
-            background-color: var(--background-color);
-            display: flex; /* Use Flexbox for centering */
-            justify-content: center; /* Center horizontally */
-            align-items: flex-start; /* Align content to the top (for mobile scroll) */
-            min-height: 100vh; /* Ensure body takes full viewport height */
-            margin: 0;
-            padding: 20px; /* Add padding around the content */
-            color: var(--text-color);
-            line-height: 1.6; /* Improve readability */
-            box-sizing: border-box; /* Include padding in element's total width and height */
-            background-image: url('/static/images/your_background_image.jpg'); /* Keep background image */
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
+/* Basic styles for the body to center content and set font */
+body {
+    font-family: 'Kanit', sans-serif; /* Use Kanit font */
+    background-color: var(--background-color);
+    display: flex; /* Use Flexbox for centering */
+    justify-content: center; /* Center horizontally */
+    align-items: flex-start; /* Align content to the top (for mobile scroll) */
+    min-height: 100vh; /* Ensure body takes full viewport height */
+    margin: 0;
+    padding: 20px; /* Add padding around the content */
+    color: var(--text-color);
+    line-height: 1.6; /* Improve readability */
+    box-sizing: border-box; /* Include padding in element's total width and height */
+    background-image: url('/static/images/your_background_image.jpg'); /* Keep background image */
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
 
-        /* Styles for the main form container (the "card") */
-        .form-container {
-            background-color: var(--card-background);
-            padding: 40px;
-            border-radius: 12px; /* Rounded corners */
-            box-shadow: var(--shadow-light); /* Subtle shadow */
-            text-align: center;
-            width: 100%;
-            max-width: 700px; /* Increased max-width for more fields */
-            box-sizing: border-box; /* Include padding and border in element's total width and height */
-            margin: 20px auto; /* Add margin for responsiveness on larger screens */
-        }
+/* Styles for the main form container (the "card") */
+.form-container {
+    background-color: var(--card-background);
+    padding: 40px;
+    border-radius: 12px; /* Rounded corners */
+    box-shadow: var(--shadow-light); /* Subtle shadow */
+    text-align: center;
+    width: 100%;
+    max-width: 700px; /* Increased max-width for more fields */
+    box-sizing: border-box; /* Include padding and border in element's total width and height */
+    margin: 20px auto; /* Add margin for responsiveness on larger screens */
+}
 
-        /* Styles for the heading */
-        .form-container h2 {
-            color: var(--primary-color);
-            margin-bottom: 10px; /* Adjusted margin */
-            font-weight: 600;
-            font-size: 2.2em;
-        }
+/* Styles for the heading */
+.form-container h2 {
+    color: var(--primary-color);
+    margin-bottom: 10px; /* Adjusted margin */
+    font-weight: 600;
+    font-size: 2.2em;
+}
 
-        /* Style for the logged-in user display */
-        .logged-in-user {
-            font-size: 1em; /* Slightly larger */
-            color: var(--light-text-color);
-            margin-bottom: 20px;
-        }
+/* Style for the logged-in user display */
+.logged-in-user {
+    font-size: 1em; /* Slightly larger */
+    color: var(--light-text-color);
+    margin-bottom: 20px;
+}
 
-        /* Styles for flash messages */
-        .flash-message {
-            padding: 15px 20px; /* Larger padding */
-            border-radius: 8px;
-            margin-bottom: 25px; /* More space below */
-            font-weight: 500;
-            text-align: center;
-            font-size: 1.05em;
-        }
-        .flash-message.success {
-            background-color: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid var(--success-bg);
-        }
-        .flash-message.error {
-            background-color: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid var(--error-bg);
-        }
+/* Styles for flash messages */
+.flash-message {
+    padding: 15px 20px; /* Larger padding */
+    border-radius: 8px;
+    margin-bottom: 25px; /* More space below */
+    font-weight: 500;
+    text-align: center;
+    font-size: 1.05em;
+}
+.flash-message.success {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+    border: 1px solid var(--success-bg);
+}
+.flash-message.error {
+    background-color: var(--error-bg);
+    color: var(--error-text);
+    border: 1px solid var(--error-bg);
+}
 
-        /* Styles for input groups (label + input) */
-        .input-group {
-            margin-bottom: 20px; /* More space between input groups */
-            text-align: left;
-        }
+/* Styles for input groups (label + input) */
+.input-group {
+    margin-bottom: 20px; /* More space between input groups */
+    text-align: left;
+}
 
-        .input-group label {
-            display: block; /* Make label appear on its own line */
-            margin-bottom: 8px; /* More space between label and input */
-            font-weight: 400;
-            color: var(--light-text-color); /* Lighter text for labels */
-            font-size: 1em; /* Slightly larger font */
-        }
+.input-group label {
+    display: block; /* Make label appear on its own line */
+    margin-bottom: 8px; /* More space between label and input */
+    font-weight: 400;
+    color: var(--light-text-color); /* Lighter text for labels */
+    font-size: 1em; /* Slightly larger font */
+}
 
-        .input-group input[type="text"],
-        .input-group input[type="tel"],
-        .input-group input[type="number"],
-        .input-group input[type="date"],
-        .input-group textarea,
-        .input-group select { /* Add select for consistency */
-            width: 100%; /* Make input fields take full width of their container */
-            padding: 14px 18px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px; /* Rounded corners for inputs */
-            font-size: 1.1em;
-            box-sizing: border-box;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; /* Smooth transition on focus */
-            background-color: var(--background-color); /* Darker background for input */
-            color: var(--text-color); /* Text color for input */
-        }
+/* Styles for all form controls to ensure consistency */
+.input-group input[type="text"],
+.input-group input[type="tel"],
+.input-group input[type="number"],
+.input-group input[type="date"],
+.input-group textarea,
+.input-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    background-color: #2D3A50; /* Darker input background */
+    color: var(--text-color);
+    border-radius: 8px;
+    font-size: 1em;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
 
-        /* Specific style for textarea */
-        .input-group textarea {
-            min-height: 100px; /* Slightly taller textarea */
-            resize: vertical; /* Allow vertical resizing */
-        }
+/* Specific style for textarea */
+.input-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
 
-        /* Style for file input, to make it look nicer */
-        .input-group input[type="file"] {
-            width: 100%;
-            padding: 10px 0; /* Adjust padding for file input */
-            border: none; /* Remove border */
-            border-radius: 0; /* Remove border-radius */
-            background-color: transparent; /* Transparent background */
-            color: var(--text-color); /* Ensure file input text color is visible */
-        }
-        /* Styles for input fields when focused */
-        .input-group input[type="text"]:focus,
-        .input-group input[type="tel"]:focus,
-        .input-group input[type="number"]:focus,
-        .input-group input[type="date"]:focus,
-        .input-group textarea:focus,
-        .input-group select:focus,
-        .input-group input[type="file"]:focus {
-            border-color: var(--primary-color); /* Change border color on focus */
-            box-shadow: 0 0 0 4px rgba(138, 43, 226, 0.3); /* Add subtle shadow on focus */
-            outline: none; /* Remove default browser outline */
-        }
+/* Style for file input, to make it look nicer */
+.input-group input[type="file"] {
+    width: 100%;
+    padding: 10px 0;
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+}
 
-        /* Styles for the buttons */
-        .button-group {
-            display: flex;
-            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
-            gap: 15px; /* Space between buttons */
-            margin-top: 30px;
-            justify-content: center; /* Center buttons horizontally */
-        }
+/* Styles for input fields when focused */
+.input-group input[type="text"]:focus,
+.input-group input[type="tel"]:focus,
+.input-group input[type="number"]:focus,
+.input-group input[type="date"]:focus,
+.input-group textarea:focus,
+.input-group select:focus,
+.input-group input[type="file"]:focus {
+    border-color: var(--primary-color); /* Change border color on focus */
+    box-shadow: 0 0 0 4px rgba(138, 43, 226, 0.3); /* Add subtle shadow on focus */
+    outline: none; /* Remove default browser outline */
+}
 
-        .action-button {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 16px 30px; /* Larger padding */
-            border: none;
-            border-radius: 8px;
-            font-size: 1.2em; /* Larger font size */
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            flex: 1; /* Allow buttons to grow */
-            min-width: 180px; /* Minimum width for buttons */
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-decoration: none; /* For link buttons */
-            display: inline-flex; /* For centering text in button */
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
+/* Styles for the buttons and select dropdown */
+.button-group {
+    display: flex;
+    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+    gap: 15px; /* Space between buttons */
+    margin-top: 30px;
+    justify-content: center; /* Center buttons horizontally */
+}
 
-        .action-button.cancel {
-            background-color: #6c757d; /* Grey for cancel button */
-        }
-        .action-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
-        .action-button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .action-button.cancel:hover {
-            background-color: #5a6268; /* Darker grey */
-        }
+/* Combine the styling for buttons and selects into a single class */
+.action-button, select.action-button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 16px 30px; /* Larger padding */
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2em; /* Larger font size */
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    flex: 1; /* Allow buttons to grow */
+    min-width: 180px; /* Minimum width for buttons */
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-decoration: none; /* For link buttons */
+    display: inline-flex; /* For centering text in button */
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
 
-        /* Existing Image Previews */
-        .existing-images-section {
-            margin-top: 30px; /* More space from previous elements */
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
-            text-align: left;
-        }
-        .existing-images-section h4 {
-            margin-bottom: 15px;
-            color: var(--primary-color);
-            font-weight: 600;
-            font-size: 1.2em;
-        }
-        .existing-image-previews {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px; /* More space between images */
-            margin-bottom: 15px;
-        }
-        .existing-image-item {
-            position: relative;
-            width: 110px; /* Slightly larger previews */
-            height: 110px;
-            border: 2px solid var(--border-color); /* Thicker border */
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: var(--background-color); /* Darker background */
-        }
-        .existing-image-item img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-        .existing-image-item .remove-image {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background-color: var(--error-bg); /* Red for remove button */
-            color: white;
-            border-radius: 50%;
-            width: 25px; /* Larger remove button */
-            height: 25px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.9em;
-            cursor: pointer;
-            line-height: 1;
-            font-weight: bold;
-            transition: background-color 0.2s ease;
-        }
-        .existing-image-item .remove-image:hover {
-            background-color: #B02A37; /* Darker red on hover */
-        }
+.action-button.cancel {
+    background-color: #6c757d; /* Grey for cancel button */
+}
 
-        /* New Image Upload Previews */
-        .new-images-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
-            text-align: left;
-        }
-        .new-images-section h4 {
-            margin-bottom: 15px;
-            color: var(--primary-color);
-            font-weight: 600;
-            font-size: 1.2em;
-        }
-        #newImagePreviewsContainer {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-        .new-image-preview-item {
-            position: relative;
-            width: 110px;
-            height: 110px;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: var(--background-color);
-        }
-        .new-image-preview-item img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-        .new-image-preview-item .remove-image {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background-color: var(--error-bg);
-            color: white;
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.9em;
-            cursor: pointer;
-            line-height: 1;
-            font-weight: bold;
-            transition: background-color 0.2s ease;
-        }
-        .new-image-preview-item .remove-image:hover {
-            background-color: #B02A37;
-        }
+.action-button:hover, select.action-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
 
-        /* Styles for the loading overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(30, 40, 62, 0.8); /* Darker semi-transparent background */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000; /* Ensure it's on top of other content */
-            visibility: hidden; /* Hidden by default */
-            opacity: 0; /* Fully transparent by default */
-            transition: visibility 0s, opacity 0.3s ease; /* Smooth transition */
-        }
+.action-button:active, select.action-button:active {
+    transform: translateY(0);
+    box-shadow: 2px 4px rgba(0, 0, 0, 0.2);
+}
 
-        .loading-overlay.visible {
-            visibility: visible;
-            opacity: 1;
-        }
+.action-button.cancel:hover {
+    background-color: #5a6268; /* Darker grey */
+}
 
-        /* Spinner animation */
-        .spinner {
-            border: 6px solid rgba(255, 255, 255, 0.2); /* Lighter grey for spinner */
-            border-top: 6px solid var(--primary-color); /* Primary color */
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite; /* Spinner animation */
-        }
+/* Existing Image Previews */
+.existing-images-section {
+    margin-top: 30px; /* More space from previous elements */
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    text-align: left;
+}
+.existing-images-section h4 {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 1.2em;
+}
+.existing-image-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px; /* More space between images */
+    margin-bottom: 15px;
+}
+.existing-image-item {
+    position: relative;
+    width: 110px; /* Slightly larger previews */
+    height: 110px;
+    border: 2px solid var(--border-color); /* Thicker border */
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--background-color); /* Darker background */
+}
+.existing-image-item img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.existing-image-item .remove-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: var(--error-bg); /* Red for remove button */
+    color: white;
+    border-radius: 50%;
+    width: 25px; /* Larger remove button */
+    height: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em;
+    cursor: pointer;
+    line-height: 1;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+.existing-image-item .remove-image:hover {
+    background-color: #B02A37; /* Darker red on hover */
+}
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+/* New Image Upload Previews */
+.new-images-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    text-align: left;
+}
+.new-images-section h4 {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 1.2em;
+}
+#newImagePreviewsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+.new-image-preview-item {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--background-color);
+}
+.new-image-preview-item img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.new-image-preview-item .remove-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: var(--error-bg);
+    color: white;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em;
+    cursor: pointer;
+    line-height: 1;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+.new-image-preview-item .remove-image:hover {
+    background-color: #B02A37;
+}
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) { /* Adjust for tablets and smaller desktops */
-            .form-container {
-                padding: 30px;
-                margin: 15px auto;
-            }
-            .form-container h2 {
-                font-size: 2em;
-            }
-            .action-button {
-                padding: 14px 25px;
-                font-size: 1.1em;
-                min-width: unset;
-            }
-            .button-group {
-                gap: 10px;
-            }
-            .input-group label {
-                font-size: 0.95em;
-            }
-            .input-group input[type="text"],
-            .input-group input[type="tel"],
-            .input-group input[type="number"],
-            .input-group input[type="date"],
-            .input-group textarea,
-            .input-group select {
-                padding: 12px 15px;
-                font-size: 1em;
-            }
-            .existing-image-item, .new-image-preview-item {
-                width: 90px;
-                height: 90px;
-            }
-        }
+/* Styles for the loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(30, 40, 62, 0.8); /* Darker semi-transparent background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure it's on top of other content */
+    visibility: hidden; /* Hidden by default */
+    opacity: 0; /* Fully transparent by default */
+    transition: visibility 0s, opacity 0.3s ease; /* Smooth transition */
+}
 
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            .form-container {
-                margin: 10px; /* Reduced margin for mobile */
-                padding: 25px;
-            }
-            .form-container h2 {
-                font-size: 1.8em;
-                margin-bottom: 15px;
-            }
-            .logged-in-user {
-                font-size: 0.9em;
-                margin-bottom: 15px;
-            }
-            .action-button {
-                padding: 12px 20px;
-                font-size: 1em;
-                width: 100%; /* Full width on small screens */
-            }
-            .button-group {
-                flex-direction: column;
-            }
-            .input-group {
-                margin-bottom: 15px;
-            }
-            .input-group label {
-                font-size: 0.9em;
-            }
-            .input-group input[type="text"],
-            .input-group input[type="tel"],
-            .input-group input[type="number"],
-            .input-group input[type="date"],
-            .input-group textarea,
-            .input-group select {
-                padding: 10px 12px;
-                font-size: 0.95em;
-            }
-            .existing-images-section, .new-images-section {
-                margin-top: 20px;
-                padding-top: 15px;
-            }
-            .existing-images-section h4, .new-images-section h4 {
-                font-size: 1.1em;
-                margin-bottom: 10px;
-            }
-            .existing-image-item, .new-image-preview-item {
-                width: 80px;
-                height: 80px;
-            }
-            .existing-image-item .remove-image, .new-image-preview-item .remove-image {
-                width: 20px;
-                height: 20px;
-                font-size: 0.7em;
-            }
-        }
+.loading-overlay.visible {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Spinner animation */
+.spinner {
+    border: 6px solid rgba(255, 255, 255, 0.2); /* Lighter grey for spinner */
+    border-top: 6px solid var(--primary-color); /* Primary color */
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite; /* Spinner animation */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) { /* Adjust for tablets and smaller desktops */
+    .form-container {
+        padding: 30px;
+        margin: 15px auto;
+    }
+    .form-container h2 {
+        font-size: 2em;
+    }
+    .action-button, select.action-button {
+        padding: 14px 25px;
+        font-size: 1.1em;
+        min-width: unset;
+    }
+    .button-group {
+        gap: 10px;
+    }
+    .input-group label {
+        font-size: 0.95em;
+    }
+    .input-group input[type="text"],
+    .input-group input[type="tel"],
+    .input-group input[type="number"],
+    .input-group input[type="date"],
+    .input-group textarea,
+    .input-group select {
+        padding: 12px 15px;
+        font-size: 1em;
+    }
+    .existing-image-item, .new-image-preview-item {
+        width: 90px;
+        height: 90px;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    .form-container {
+        margin: 10px; /* Reduced margin for mobile */
+        padding: 25px;
+    }
+    .form-container h2 {
+        font-size: 1.8em;
+        margin-bottom: 15px;
+    }
+    .logged-in-user {
+        font-size: 0.9em;
+        margin-bottom: 15px;
+    }
+    .action-button, select.action-button {
+        padding: 12px 20px;
+        font-size: 1em;
+        width: 100%; /* Full width on small screens */
+    }
+    .button-group {
+        flex-direction: column;
+    }
+    .input-group {
+        margin-bottom: 15px;
+    }
+    .input-group label {
+        font-size: 0.9em;
+    }
+    .input-group input[type="text"],
+    .input-group input[type="tel"],
+    .input-group input[type="number"],
+    .input-group input[type="date"],
+    .input-group textarea,
+    .input-group select {
+        padding: 10px 12px;
+        font-size: 0.95em;
+    }
+    .existing-images-section, .new-images-section {
+        margin-top: 20px;
+        padding-top: 15px;
+    }
+    .existing-images-section h4, .new-images-section h4 {
+        font-size: 1.1em;
+        margin-bottom: 10px;
+    }
+    .existing-image-item, .new-image-preview-item {
+        width: 80px;
+        height: 80px;
+    }
+    .existing-image-item .remove-image, .new-image-preview-item .remove-image {
+        width: 20px;
+        height: 20px;
+        font-size: 0.7em;
+    }
+}
+
+
     </style>
 </head>
 <body>
@@ -448,149 +455,151 @@
         <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form id="editCustomerForm" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="row_index" value="{{ row_index }}">
+                <input type="hidden" id="keptImageUrls" name="kept_image_urls" value="{{ customer_data.existing_image_urls | join(', ') }}">
+                    <div class="input-group">
+                        <label for="customer_name">ชื่อ</label>
+                        <input type="text" id="customer_name" name="customer_name" placeholder="กรอกชื่อลูกค้า" required>
+                    </div>
 
-        <form id="editCustomerForm" method="post" enctype="multipart/form-data">
-            <input type="hidden" name="row_index" value="{{ row_index }}">
-            
-            <input type="hidden" id="keptImageUrls" name="kept_image_urls" value="{{ customer_data.existing_image_urls | join(', ') }}">
+                    <div class="input-group">
+                        <label for="last_name">นามสกุล</label>
+                        <input type="text" id="last_name" name="last_name" placeholder="กรอกนามสกุลลูกค้า" required>
+                    </div>
 
-            <div class="input-group">
-                <label for="customer_name">ชื่อ</label>
-                <input type="text" id="customer_name" name="customer_name" placeholder="กรอกชื่อลูกค้า" value="{{ customer_data.ชื่อ if customer_data.ชื่อ != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="id_card_number">เลขบัตรประชาชน</label>
+                        <input type="text" id="id_card_number" name="id_card_number" placeholder="กรอกเลขบัตรประชาชน" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก">
+                    </div>
 
-            <div class="input-group">
-                <label for="last_name">นามสกุล</label>
-                <input type="text" id="last_name" name="last_name" placeholder="กรอกนามสกุลลูกค้า" value="{{ customer_data.นามสกุล if customer_data.นามสกุล != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="mobile_phone_number">เบอร์มือถือ</label>
+                        <input type="tel" id="mobile_phone_number" name="mobile_phone_number" placeholder="กรอกเบอร์มือถือ" required pattern="\d{10}" title="กรุณากรอกเบอร์มือถือ 10 หลัก">
+                    </div>
+                    <div class="input-group">
+                        <label for="main_customer_group">กลุ่มลูกค้าหลัก</label>
+                        <select id="main_customer_group" name="main_customer_group" required>
+                            <option value="">--- เลือกกลุ่มลูกค้าหลัก ---</option>
+                            <option value="ค้าปลีก-ค้าส่ง / ร้านค้า">1. กลุ่มค้าปลีก-ค้าส่ง / ร้านค้า</option>
+                            <option value="ธุรกิจบริการ / ร้านอาหาร">2. กลุ่มธุรกิจบริการ / ร้านอาหาร</option>
+                            <option value="ผู้รับเหมาก่อสร้าง / งานโยธา">3. กลุ่มผู้รับเหมาก่อสร้าง / งานโยธา</option>
+                            <option value="โลจิสติกส์ / ขนส่ง / ยานยนต์">4. กลุ่มโลจิสติกส์ / ขนส่ง / ยานยนต์</option>
+                            <option value="เทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล">5. กลุ่มเทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล</option>
+                            <option value="โรงงาน / การผลิต">6. กลุ่มโรงงาน / การผลิต</option>
+                            <option value="อสังหาริมทรัพย์ / บริหารทรัพย์สิน">7. กลุ่มอสังหาริมทรัพย์ / บริหารทรัพย์สิน</option>
+                            <option value="นำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ">8. กลุ่มนำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ</option>
+                            <option value="อื่นๆ">9. อื่นๆ</option>
+                        </select>
+                    </div>
 
-            <div class="input-group">
-                <label for="id_card_number">เลขบัตรประชาชน</label>
-                <input type="text" id="id_card_number" name="id_card_number" placeholder="กรอกเลขบัตรประชาชน" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก" value="{{ customer_data.เลขบัตรประชาชน if customer_data.เลขบัตรประชาชน != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="sub_profession_group">กลุ่มอาชีพย่อย</label>
+                        <select id="sub_profession_group" name="sub_profession_group" required disabled>
+                            <option value="">--- กรุณาเลือกกลุ่มลูกค้าหลักก่อน ---</option>
+                        </select>
+                    </div>
 
-            <div class="input-group">
-                <label for="mobile_phone_number">เบอร์มือถือ</label>
-                <input type="tel" id="mobile_phone_number" name="mobile_phone_number" placeholder="กรอกเบอร์มือถือ" pattern="\d{10}" title="กรุณากรอกเบอร์มือถือ 10 หลัก" value="{{ customer_data.เบอร์มือถือ if customer_data.เบอร์มือถือ != '-' else '' }}">
-            </div>
+                    <div class="input-group" id="otherSubProfessionInputGroup" style="display: none;">
+                        <label for="other_sub_profession">ระบุกลุ่มอาชีพย่อยอื่นๆ</label>
+                        <input type="text" id="other_sub_profession" name="other_sub_profession" placeholder="กรอกกลุ่มอาชีพย่อยอื่นๆ">
+                    </div>
 
-            <div class="form-group">
-            <label for="main_customer_group">กลุ่มลูกค้าหลัก:</label>
-            <select class="form-control" id="main_customer_group" name="main_customer_group" required>
-                <option value="" disabled>--- เลือก ---</option>
-                <option value="กลุ่มพ่อค้าแม่ค้า" {% if customer_data['กลุ่มลูกค้าหลัก'] == "กลุ่มพ่อค้าแม่ค้า" %}selected{% endif %}>กลุ่มพ่อค้าแม่ค้า</option>
-                <option value="กลุ่มพนักงานประจำ" {% if customer_data['กลุ่มลูกค้าหลัก'] == "กลุ่มพนักงานประจำ" %}selected{% endif %}>กลุ่มพนักงานประจำ</option>
-                <option value="กลุ่มธุรกิจขนาดเล็ก" {% if customer_data['กลุ่มลูกค้าหลัก'] == "กลุ่มธุรกิจขนาดเล็ก" %}selected{% endif %}>กลุ่มธุรกิจขนาดเล็ก</option>
-            </select>
-        </div>
+                    <div class="input-group">
+                        <label for="registered">จดทะเบียน</label>
+                        <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่">
+                    </div>
 
-        <div class="form-group">
-            <label for="sub_profession_group">กลุ่มอาชีพย่อย:</label>
-            <select class="form-control" id="sub_profession_group" name="sub_profession_group" required onchange="toggleOtherSubProfession();">
-                <option value="" disabled>--- เลือก ---</option>
-                <option value="อื่นๆ" {% if customer_data['กลุ่มอาชีพย่อย'] == "อื่นๆ" %}selected{% endif %}>อื่นๆ</option>
-                <option value="ขายของออนไลน์" {% if customer_data['กลุ่มอาชีพย่อย'] == "ขายของออนไลน์" %}selected{% endif %}>ขายของออนไลน์</option>
-                <option value="ขายของหน้าร้าน" {% if customer_data['กลุ่มอาชีพย่อย'] == "ขายของหน้าร้าน" %}selected{% endif %}>ขายของหน้าร้าน</option>
-                <option value="พนักงานบริษัทเอกชน" {% if customer_data['กลุ่มอาชีพย่อย'] == "พนักงานบริษัทเอกชน" %}selected{% endif %}>พนักงานบริษัทเอกชน</option>
-                <option value="พนักงานข้าราชการ" {% if customer_data['กลุ่มอาชีพย่อย'] == "พนักงานข้าราชการ" %}selected{% endif %}>พนักงานข้าราชการ</option>
-            </select>
-        </div>
+                    <div class="input-group">
+                        <label for="business_name">ชื่อกิจการ</label>
+                        <input type="text" id="business_name" name="business_name" placeholder="กรอกชื่อกิจการ">
+                    </div>
 
-    <div class="form-group" id="other_sub_profession_group" style="display: none;">
-        <label for="other_sub_profession">ระบุอาชีพย่อยอื่นๆ:</label>
-        <input type="text" class="form-control" id="other_sub_profession" name="other_sub_profession" value="{{ customer_data['ระบุอาชีพย่อยอื่นๆ'] }}">
-    </div>
+                    <div class="input-group">
+                        <label for="business_type">ประเภทธุรกิจ (เกี่ยวกับอะไร)</label>
+                        <input type="text" id="business_type" name="business_type" placeholder="เช่น ร้านอาหาร, บริการ">
+                    </div>
 
-            <div class="input-group">
-                <label for="registered">จดทะเบียน</label>
-                <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่" value="{{ customer_data.จดทะเบียน if customer_data.จดทะเบียน != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="registered_address">ที่อยู่จดทะเบียน</label>
+                        <textarea id="registered_address" name="registered_address" placeholder="กรอกที่อยู่จดทะเบียน" rows="3"></textarea>
+                    </div>
 
-            <div class="input-group">
-                <label for="business_name">ชื่อกิจการ</label>
-                <input type="text" id="business_name" name="business_name" placeholder="กรอกชื่อกิจการ" value="{{ customer_data.ชื่อกิจการ if customer_data.ชื่อกิจการ != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="status">สถานะ</label>
+                        <select id="status" name="status" required>
+                            <option value="" disabled selected>--- เลือกสถานะ ---</option>
+                            <option value="อนุมัติ">อนุมัติ</option>
+                            <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
+                            <option value="ยกเลิก">ยกเลิก</option>
+                        </select>
+                    </div>
 
-            <div class="input-group">
-                <label for="business_type">ประเภทธุรกิจ (เกี่ยวกับอะไร)</label>
-                <input type="text" id="business_type" name="business_type" placeholder="เช่น ร้านอาหาร, บริการ" value="{{ customer_data.ประเภทธุรกิจ if customer_data.ประเภทธุรกิจ != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="desired_credit_limit">วงเงินที่ต้องการ</label>
+                        <input type="number" id="desired_credit_limit" name="desired_credit_limit" placeholder="กรอกวงเงินที่ต้องการ" min="0">
+                    </div>
 
-            <div class="input-group">
-                <label for="registered_address">ที่อยู่จดทะเบียน</label>
-                <textarea id="registered_address" name="registered_address" placeholder="กรอกที่อยู่จดทะเบียน" rows="3">{{ customer_data.ที่อยู่จดทะเบียน if customer_data.ที่อยู่จดทะเบียน != '-' else '' }}</textarea>
-            </div>
+                    <div class="input-group">
+                        <label for="approved_credit_limit">วงเงินที่อนุมัติ</label>
+                        <input type="number" id="approved_credit_limit" name="approved_credit_limit" placeholder="กรอกวงเงินที่อนุมัติ" min="0">
+                    </div>
 
-            <div class="input-group">
-                <label for="status">สถานะ</label>
-                <input type="text" id="status" name="status" placeholder="กรอกสถานะ" value="{{ customer_data.สถานะ if customer_data.สถานะ != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="applied_before">เคยขอเข้ามาในเครือหรือยัง</label>
+                        <input type="text" id="applied_before" name="applied_before" placeholder="เช่น ใช่ / ไม่ใช่">
+                    </div>
 
-            <div class="input-group">
-                <label for="desired_credit_limit">วงเงินที่ต้องการ</label>
-                <input type="number" id="desired_credit_limit" name="desired_credit_limit" placeholder="กรอกวงเงินที่ต้องการ" min="0" value="{{ customer_data['วงเงินที่ต้องการ'] if customer_data['วงเงินที่ต้องการ'] != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="check_field">เช็ค</label>
+                        <input type="text" id="check_field" name="check" placeholder="ข้อมูลเช็ค">
+                    </div>
 
-            <div class="input-group">
-                <label for="approved_credit_limit">วงเงินที่อนุมัติ</label>
-                <input type="number" id="approved_credit_limit" name="approved_credit_limit" placeholder="กรอกวงเงินที่อนุมัติ" min="0" value="{{ customer_data['วงเงินที่อนุมัติ'] if customer_data['วงเงินที่อนุมัติ'] != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="how_applied">ขอเข้ามาทางไหน</label>
+                        <input type="text" id="how_applied" name="how_applied" placeholder="เช่น เว็บไซต์, โทรศัพท์">
+                    </div>
 
-            <div class="input-group">
-                <label for="applied_before">เคยขอเข้ามาในเครือหรือยัง</label>
-                <input type="text" id="applied_before" name="applied_before" placeholder="เช่น ใช่ / ไม่ใช่" value="{{ customer_data['เคยขอเข้ามาในเครือหรือยัง'] if customer_data['เคยขอเข้ามาในเครือหรือยัง'] != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="line_id">LINE : ID</label>
+                        <input type="text" id="line_id" name="line_id" placeholder="กรอก LINE ID">
+                    </div>
 
-            <div class="input-group">
-                <label for="check_field">เช็ค</label>
-                <input type="text" id="check_field" name="check" placeholder="ข้อมูลเช็ค" value="{{ customer_data.เช็ค if customer_data.เช็ค != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="upfront_interest">หักดอกหัวท้าย</label>
+                        <input type="number" id="upfront_interest" name="upfront_interest" placeholder="กรอกจำนวนเงิน" min="0">
+                    </div>
 
-            <div class="input-group">
-                <label for="how_applied">ขอเข้ามาทางไหน</label>
-                <input type="text" id="how_applied" name="how_applied" placeholder="เช่น เว็บไซต์, โทรศัพท์" value="{{ customer_data['ขอเข้ามาทางไหน'] if customer_data['ขอเข้ามาทางไหน'] != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="processing_fee">ค่าดำเนินการ</label>
+                        <input type="number" id="processing_fee" name="processing_fee" placeholder="กรอกจำนวนเงิน" min="0">
+                    </div>
 
-            <div class="input-group">
-                <label for="line_id">LINE : ID</label>
-                <input type="text" id="line_id" name="line_id" placeholder="กรอก LINE ID" value="{{ customer_data['LINE ID'] if customer_data['LINE ID'] != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="application_date">วันที่ขอเข้ามา</label>
+                        <input type="date" id="application_date" name="application_date" required>
+                    </div>
 
-            <div class="input-group">
-                <label for="upfront_interest">หักดอกหัวท้าย</label>
-                <input type="number" id="upfront_interest" name="upfront_interest" placeholder="กรอกจำนวนเงิน" min="0" value="{{ customer_data['หักดอกหัวท้าย'] if customer_data['หักดอกหัวท้าย'] != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="home_location_link">ลิงค์โลเคชั่นบ้าน</label>
+                        <input type="text" id="home_location_link" name="home_location_link" placeholder="วางลิงค์ Google Maps บ้าน">
+                    </div>
 
-            <div class="input-group">
-                <label for="processing_fee">ค่าดำเนินการ</label>
-                <input type="number" id="processing_fee" name="processing_fee" placeholder="กรอกจำนวนเงิน" min="0" value="{{ customer_data.ค่าดำเนินการ if customer_data.ค่าดำเนินการ != '-' else '' }}">
-            </div>
+                    <div class="input-group">
+                        <label for="work_location_link">ลิงค์โลเคชั่นที่ทำงาน</label>
+                        <input type="text" id="work_location_link" name="work_location_link" placeholder="วางลิงค์ Google Maps ที่ทำงาน">
+                    </div>
 
-            <div class="input-group">
-                <label for="application_date">วันที่ขอเข้ามา</label>
-                <input type="date" id="application_date" name="application_date" value="{{ customer_data['วันที่ขอเข้ามา'] if customer_data['วันที่ขอเข้ามา'] != '-' else '' }}">
-            </div>
-
-            <div class="input-group">
-                <label for="home_location_link">ลิงค์โลเคชั่นบ้าน</label>
-                <input type="text" id="home_location_link" name="home_location_link" placeholder="วางลิงค์ Google Maps บ้าน" value="{{ customer_data['ลิงค์โลเคชั่นบ้าน'] if customer_data['ลิงค์โลเคชั่นบ้าน'] != '-' else '' }}">
-            </div>
-
-            <div class="input-group">
-                <label for="work_location_link">ลิงค์โลเคชั่นที่ทำงาน</label>
-                <input type="text" id="work_location_link" name="work_location_link" placeholder="วางลิงค์ Google Maps ที่ทำงาน" value="{{ customer_data['ลิงค์โลเคชั่นที่ทำงาน'] if customer_data['ลิงค์โลเคชั่นที่ทำงาน'] != '-' else '' }}">
-            </div>
-
-            <div class="input-group">
-                <label for="remarks">หมายเหตุ</label>
-                <textarea id="remarks" name="remarks" placeholder="บันทึกหมายเหตุเพิ่มเติม" rows="3">{{ customer_data.หมายเหตุ if customer_data.หมายเหตุ != '-' else '' }}</textarea>
-            </div>
+                    <div class="input-group">
+                        <label for="remarks">หมายเหตุ</label>
+                        <textarea id="remarks" name="remarks" placeholder="บันทึกหมายเหตุเพิ่มเติม" rows="3"></textarea>
+                    </div>
 
             <div class="input-group">
                 <label for="logged_in_user">ลงทะเบียนโดย</label>
@@ -779,6 +788,126 @@
         document.addEventListener('DOMContentLoaded', function() {
         toggleOtherSubProfession();
     });
+    // --- โค้ด JavaScript ใหม่สำหรับ Dynamic Dropdowns (ย้ายเข้ามาใน DOMContentLoaded) ---
+        const mainCustomerGroupSelect = document.getElementById('main_customer_group');
+        const subProfessionGroupSelect = document.getElementById('sub_profession_group');
+        const otherSubProfessionInputGroup = document.getElementById('otherSubProfessionInputGroup');
+        const otherSubProfessionInput = document.getElementById('other_sub_profession');
+
+        const subProfessionData = {
+            "ค้าปลีก-ค้าส่ง / ร้านค้า": [
+                "ร้านขายของชำ, มินิมาร์ท",
+                "ร้านวัสดุก่อสร้าง",
+                "ร้านขายอุปกรณ์ไฟฟ้า",
+                "ร้านขายมือถือ, อุปกรณ์ไอที",
+                "ร้านขายเสื้อผ้า, เครื่องสำอาง",
+                "ร้านขายส่งสินค้าเบ็ดเตล็ด",
+                "ร้านขายอาหารสัตว์, ปุ๋ย, เคมีเกษตร"
+            ],
+            "ธุรกิจบริการ / ร้านอาหาร": [
+                "ร้านอาหาร, ร้านกาแฟ",
+                "ร้านนวดแผนไทย",
+                "ร้านเสริมสวย, ทำเล็บ",
+                "ฟิตเนส, สตูดิโอโยคะ",
+                "ร้านซักอบรีด, ร้านคาร์แคร์",
+                "ร้านซ่อมเครื่องใช้ไฟฟ้า, คอมพิวเตอร์"
+            ],
+            "ผู้รับเหมาก่อสร้าง / งานโยธา": [
+                "บริษัทรับเหมาก่อสร้าง (บ้าน, อาคาร, ถนน)",
+                "หจก.งานระบบไฟฟ้า ประปา แอร์",
+                "ผู้รับเหมาตกแต่งภายใน",
+                "บริษัทจำหน่ายวัสดุก่อสร้างพร้อมติดตั้ง"
+            ],
+            "โลจิสติกส์ / ขนส่ง / ยานยนต์": [
+                "บริษัทขนส่งสินค้า / พัสดุ",
+                "บริษัทเช่ารถ / รถตู้",
+                "อู่ซ่อมรถยนต์, มอเตอร์ไซค์",
+                "บริษัทติดตั้ง GPS รถ, ระบบ Fleet"
+            ],
+            "เทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล": [
+                "บริษัทรับทำเว็บไซต์, ซอฟต์แวร์",
+                "บริษัทโฆษณา / กราฟิกดีไซน์",
+                "บริษัทรับทำเพจ / การตลาดออนไลน์",
+                "ผู้ให้บริการคลาวด์, ซัพพอร์ตไอที"
+            ],
+            "โรงงาน / การผลิต": [
+                "โรงงานผลิตอาหาร, เครื่องดื่ม",
+                "โรงงานผลิตสินค้าอุปโภคบริโภค",
+                "บริษัท OEM สินค้า",
+                "โรงงานบรรจุภัณฑ์",
+                "โรงงานแปรรูปไม้ / โลหะ / พลาสติก"
+            ],
+            "อสังหาริมทรัพย์ / บริหารทรัพย์สิน": [
+                "บริษัทพัฒนาโครงการบ้านจัดสรร / คอนโด",
+                "บริษัทบริหารหอพัก / อพาร์ตเมนต์",
+                "บริษัทรับบริหารทรัพย์สิน / นายหน้าอสังหา",
+                "บริษัทให้เช่าโกดัง / พื้นที่เชิงพาณิชย์"
+            ],
+            "นำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ": [
+                "บริษัทนำเข้าสินค้าอุตสาหกรรม",
+                "บริษัทส่งออกสินค้าเกษตร, อาหารแปรรูป",
+                "ตัวแทนจำหน่ายสินค้าต่างประเทศ",
+                "Logistics สำหรับธุรกิจ Cross-border eCommerce"
+            ],
+            "อื่นๆ": []
+        };
+
+        function updateSubProfessionOptions() {
+            const selectedMainGroup = mainCustomerGroupSelect.value;
+            const subProfessions = subProfessionData[selectedMainGroup] || [];
+
+            subProfessionGroupSelect.innerHTML = '<option value="">--- เลือกกลุ่มอาชีพย่อย ---</option>';
+            subProfessionGroupSelect.disabled = true;
+
+            if (selectedMainGroup) {
+                subProfessions.forEach(prof => {
+                    const option = document.createElement('option');
+                    option.value = prof;
+                    option.textContent = prof;
+                    subProfessionGroupSelect.appendChild(option);
+                });
+                const otherOption = document.createElement('option');
+                otherOption.value = "อื่นๆ";
+                otherOption.textContent = "อื่นๆ";
+                subProfessionGroupSelect.appendChild(otherOption);
+                subProfessionGroupSelect.disabled = false;
+            } else {
+                otherSubProfessionInputGroup.style.display = 'none';
+                otherSubProfessionInput.value = '';
+            }
+        }
+
+        function toggleOtherSubProfessionInput() {
+            if (subProfessionGroupSelect.value === "อื่นๆ") {
+                otherSubProfessionInputGroup.style.display = 'block';
+                otherSubProfessionInput.setAttribute('required', 'required');
+            } else {
+                otherSubProfessionInputGroup.style.display = 'none';
+                otherSubProfessionInput.value = '';
+                otherSubProfessionInput.removeAttribute('required');
+            }
+        }
+
+        mainCustomerGroupSelect.addEventListener('change', () => {
+            updateSubProfessionOptions();
+            toggleOtherSubProfessionInput();
+        });
+        subProfessionGroupSelect.addEventListener('change', toggleOtherSubProfessionInput);
+
+        updateSubProfessionOptions(); // Initial call
+        otherSubProfessionInputGroup.style.display = 'none';
+        otherSubProfessionInput.value = '';
+
+        // Modify clearFormButton functionality
+        clearFormButton.addEventListener('click', function() {
+            customerForm.reset();
+            selectedFiles = [];
+            renderImagePreviews();
+
+            mainCustomerGroupSelect.value = '';
+            updateSubProfessionOptions();
+            toggleOtherSubProfessionInput();
+        });
     </script>
 </body>
 </html>

@@ -663,6 +663,9 @@
             <div class="customer-record-card">
                 <p><strong>ชื่อ-นามสกุล:</strong> {{ record.ชื่อ }} {{ record.นามสกุล }}</p>
                 <p><strong>เบอร์มือถือ:</strong> {{ record.เบอร์มือถือ }}</p>
+                <p><strong>กลุ่มลูกค้าหลัก:</strong> {{ record.get('กลุ่มลูกค้าหลัก', '-') }}</p>
+                <p><strong>กลุ่มอาชีพย่อย:</strong> {{ record.get('กลุ่มอาชีพย่อย', '-') }}</p>
+                <p><strong>อาชีพย่อยอื่นๆ:</strong> {{ record.get('ระบุอาชีพย่อยอื่นๆ', '-') }}</p>
                 <p><strong>เลขบัตรประชาชน:</strong> {{ record.เลขบัตรประชาชน }}</p>
                 <p><strong>จดทะเบียน:</strong> {{ record['จดทะเบียน'] }}</p>
                 <p><strong>ชื่อกิจการ:</strong> {{ record.ชื่อกิจการ }}</p>
@@ -682,10 +685,6 @@
                 <p><strong>ลิงค์โลเคชั่นที่ทำงาน:</strong> <a href="{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}</a></p>
                 <p><strong>หมายเหตุ:</strong> {{ record.หมายเหตุ }}</p>
                 <p><strong>บันทึกโดย:</strong> {{ record['Logged In User'] }}</p>
-                
-                <p><strong>กลุ่มลูกค้าหลัก:</strong> {{ record.get('กลุ่มลูกค้าหลัก', '-') }}</p>
-                <p><strong>กลุ่มอาชีพย่อย:</strong> {{ record.get('กลุ่มอาชีพย่อย', '-') }}</p>
-                <p><strong>อาชีพย่อยอื่นๆ:</strong> {{ record.get('ระบุอาชีพย่อยอื่นๆ', '-') }}</p>
                 <p><strong>รูปภาพ:</strong>
                     <div class="image-thumbnails" data-image-urls="{{ record['Image URLs'] if record['Image URLs'] != '-' else '' }}">
                         {% if record['Image URLs'] and record['Image URLs'] != '-' %}

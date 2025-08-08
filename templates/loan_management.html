@@ -523,17 +523,18 @@
     </div>
 
     <div class="dashboard-layout">
-        <div class="sidebar">
-            <h3 class="sidebar-title">เมนู</h3>
-            <div class="action-button-group">
-                <a href="#" class="action-button">หน้าหลัก</a>
-                <a href="#" class="action-button">กรอกข้อมูลลูกค้าใหม่</a>
-                <a href="#" class="action-button">ค้นหา/แก้ไขข้อมูลลูกค้า</a>
-                <a class="active action-button" href="#">จัดการสินเชื่อ</a>
-            </div>
-            <a href="#" class="action-button logout">ออกจากระบบ</a>
-            <p class="logged-in-user">สวัสดี, [ชื่อผู้ใช้]</p>
+    <div class="sidebar">
+        <h3 class="sidebar-title">เมนู</h3>
+        <div class="action-button-group">
+            <a href="{{ url_for('dashboard') }}" class="action-button {% if request.endpoint == 'dashboard' %}active{% endif %}">หน้าหลัก</a>
+            <a href="{{ url_for('enter_customer_data') }}" class="action-button {% if request.endpoint == 'enter_customer_data' %}active{% endif %}">กรอกข้อมูลลูกค้าใหม่</a>
+            <a href="{{ url_for('search_customer_data') }}" class="action-button {% if request.endpoint == 'search_customer_data' %}active{% endif %}">ค้นหา/แก้ไขข้อมูลลูกค้า</a>
+            <a href="{{ url_for('loan_management') }}" class="action-button {% if request.endpoint == 'loan_management' %}active{% endif %}">จัดการสินเชื่อ</a>
         </div>
+        <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
+        <p class="logged-in-user">สวัสดี, {{ username }}</p>
+    </div>
+
         <div class="main-content-area">
             <div class="container">
                 <h2>จัดการสินเชื่อ</h2>
@@ -595,17 +596,16 @@
                         </ul>
                     </div>
                 </div>
-                <div class="approove-table-section">
+                {% if approove_data %}
+<div class="approove-table-section">
     <h3>ตารางอนุมัติลูกค้า</h3>
     <table class="approove-table">
         <thead>
             <tr>
-                {% if approove_data and approove_data[0] %}
-                    {% for header in approove_data[0].keys() %}
-                        <th>{{ header }}</th>
-                    {% endfor %}
-                    <th>การกระทำ</th>
-                {% endif %}
+                {% for header in approove_data[0].keys() %}
+                    <th>{{ header }}</th>
+                {% endfor %}
+                <th>การกระทำ</th>
             </tr>
         </thead>
         <tbody>
@@ -620,6 +620,7 @@
         </tbody>
     </table>
 </div>
+{% endif %}
 
                 <p class="text-center mt-4" style="color: var(--light-text-color);">เนื้อหาหลักจะถูกแสดงที่นี่</p>
 
