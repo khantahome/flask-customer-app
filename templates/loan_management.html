@@ -854,25 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  // Event delegation สำหรับปุ่มปิดจ๊อบ
-document.addEventListener('click', async (e) => {
-  if (e.target.classList.contains('closejob-action-btn')) {
-    const customerId = e.target.dataset.id;
-
-    if (!confirm(`ต้องการปิดจ๊อบลูกค้า ${customerId} ใช่หรือไม่?`)) return;
-
-    try {
-      const res = await fetch(`/close-job/${customerId}`, { method: 'POST' });
-      if (!res.ok) throw new Error('ปิดจ๊อบไม่สำเร็จ');
-
-      alert('ปิดจ๊อบเรียบร้อยแล้ว');
-      location.reload();
-    } catch (err) {
-      alert('เกิดข้อผิดพลาด: ' + err.message);
-    }
-  }
-});
-
+  
 
   // แสดงตารางตาม dropdown menu
   document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
