@@ -477,8 +477,9 @@ body {
 
     <div class="input-group">
         <label for="id_card_number">เลขบัตรประชาชน</label>
-        <input type="text" id="id_card_number" name="id_card_number" placeholder="กรอกเลขบัตรประชาชน" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก" value="{{ customer_data.get('เลขบัตรประชาชน', '') }}">
+        <input type="text" id="id_card_number" name="id_card_number" placeholder="กรอกเลขบัตรประชาชน" value="{{ customer_data.get('เลขบัตรประชาชน', '') }}">
     </div>
+
 
     <div class="input-group">
         <label for="mobile_phone_number">เบอร์มือถือ</label>
@@ -503,7 +504,7 @@ body {
 
     <div class="input-group">
         <label for="sub_profession_group">กลุ่มอาชีพย่อย</label>
-        <select id="sub_profession_group" name="sub_profession_group" required disabled>
+        <select id="sub_profession_group" name="sub_profession_group">
             <option value="{{ customer_data.get('กลุ่มอาชีพย่อย', '') }}" selected>{{ customer_data.get('กลุ่มอาชีพย่อย', '--- กรุณาเลือกกลุ่มลูกค้าหลักก่อน ---') }}</option>
         </select>
     </div>
@@ -789,16 +790,15 @@ body {
                 applicationDateInput.value = `${year}-${month}-${day}`;
             }
         });
-        document.addEventListener('DOMContentLoaded', function() {
-        toggleOtherSubProfession();
-    });
-    // --- โค้ด JavaScript ใหม่สำหรับ Dynamic Dropdowns (ย้ายเข้ามาใน DOMContentLoaded) ---
-        const mainCustomerGroupSelect = document.getElementById('main_customer_group');
-        const subProfessionGroupSelect = document.getElementById('sub_profession_group');
-        const otherSubProfessionInputGroup = document.getElementById('otherSubProfessionInputGroup');
-        const otherSubProfessionInput = document.getElementById('other_sub_profession');
+    
 
-        const subProfessionData = {
+    document.addEventListener('DOMContentLoaded', function() {
+    const mainCustomerGroupSelect = document.getElementById('main_customer_group');
+    const subProfessionGroupSelect = document.getElementById('sub_profession_group');
+    const otherSubProfessionInputGroup = document.getElementById('otherSubProfessionInputGroup');
+    const otherSubProfessionInput = document.getElementById('other_sub_profession');
+
+    const subProfessionData = {
             "ค้าปลีก-ค้าส่ง / ร้านค้า": [
                 "ร้านขายของชำ, มินิมาร์ท",
                 "ร้านวัสดุก่อสร้าง",
@@ -856,62 +856,76 @@ body {
             "อื่นๆ": []
         };
 
-        function updateSubProfessionOptions() {
-            const selectedMainGroup = mainCustomerGroupSelect.value;
-            const subProfessions = subProfessionData[selectedMainGroup] || [];
+         function updateSubProfessionOptions() {
+        const selectedMainGroup = mainCustomerGroupSelect.value;
+        const subProfessions = subProfessionData[selectedMainGroup] || [];
 
-            subProfessionGroupSelect.innerHTML = '<option value="">--- เลือกกลุ่มอาชีพย่อย ---</option>';
-            subProfessionGroupSelect.disabled = true;
+        subProfessionGroupSelect.innerHTML = '<option value="">--- เลือกกลุ่มอาชีพย่อย ---</option>';
+        subProfessionGroupSelect.disabled = true;
 
-            if (selectedMainGroup) {
-                subProfessions.forEach(prof => {
-                    const option = document.createElement('option');
-                    option.value = prof;
-                    option.textContent = prof;
-                    subProfessionGroupSelect.appendChild(option);
-                });
-                const otherOption = document.createElement('option');
-                otherOption.value = "อื่นๆ";
-                otherOption.textContent = "อื่นๆ";
-                subProfessionGroupSelect.appendChild(otherOption);
-                subProfessionGroupSelect.disabled = false;
-            } else {
-                otherSubProfessionInputGroup.style.display = 'none';
-                otherSubProfessionInput.value = '';
-            }
+        if (selectedMainGroup) {
+            subProfessions.forEach(prof => {
+                const option = document.createElement('option');
+                option.value = prof;
+                option.textContent = prof;
+                subProfessionGroupSelect.appendChild(option);
+            });
+            const otherOption = document.createElement('option');
+            otherOption.value = "อื่นๆ";
+            otherOption.textContent = "อื่นๆ";
+            subProfessionGroupSelect.appendChild(otherOption);
+            subProfessionGroupSelect.disabled = false;
+        } else {
+            otherSubProfessionInputGroup.style.display = 'none';
+            otherSubProfessionInput.value = '';
         }
+    }
 
-        function toggleOtherSubProfessionInput() {
-            if (subProfessionGroupSelect.value === "อื่นๆ") {
-                otherSubProfessionInputGroup.style.display = 'block';
-                otherSubProfessionInput.setAttribute('required', 'required');
-            } else {
-                otherSubProfessionInputGroup.style.display = 'none';
-                otherSubProfessionInput.value = '';
-                otherSubProfessionInput.removeAttribute('required');
-            }
+    function toggleOtherSubProfessionInput() {
+        if (subProfessionGroupSelect.value === "อื่นๆ") {
+            otherSubProfessionInputGroup.style.display = 'block';
+            otherSubProfessionInput.setAttribute('required', 'required');
+        } else {
+            otherSubProfessionInputGroup.style.display = 'none';
+            otherSubProfessionInput.value = '';
+            otherSubProfessionInput.removeAttribute('required');
         }
+    }
 
-        mainCustomerGroupSelect.addEventListener('change', () => {
-            updateSubProfessionOptions();
-            toggleOtherSubProfessionInput();
-        });
-        subProfessionGroupSelect.addEventListener('change', toggleOtherSubProfessionInput);
+    mainCustomerGroupSelect.addEventListener('change', () => {
+        updateSubProfessionOptions();
+        toggleOtherSubProfessionInput();
+    });
 
-        updateSubProfessionOptions(); // Initial call
-        otherSubProfessionInputGroup.style.display = 'none';
-        otherSubProfessionInput.value = '';
+    subProfessionGroupSelect.addEventListener('change', toggleOtherSubProfessionInput);
 
-        // Modify clearFormButton functionality
-        clearFormButton.addEventListener('click', function() {
-            customerForm.reset();
-            selectedFiles = [];
-            renderImagePreviews();
+    // ตั้งค่าเริ่มต้นจากฐานข้อมูล (ต้องแก้ตามตัวแปร template ของคุณ)
+    const currentMainGroup = "{{ customer_data.get('กลุ่มลูกค้าหลัก', '') }}";
+    const currentSubProfession = "{{ customer_data.get('กลุ่มอาชีพย่อย', '') }}";
 
-            mainCustomerGroupSelect.value = '';
-            updateSubProfessionOptions();
-            toggleOtherSubProfessionInput();
-        });
+    if (currentMainGroup) {
+        mainCustomerGroupSelect.value = currentMainGroup;
+        updateSubProfessionOptions();
+        if (currentSubProfession) {
+            subProfessionGroupSelect.value = currentSubProfession;
+        }
+        toggleOtherSubProfessionInput();
+    } else {
+        updateSubProfessionOptions();
+        toggleOtherSubProfessionInput();
+    }
+
+    // ถ้ามีปุ่มล้างฟอร์ม (clearFormButton) ให้ตรวจสอบว่ามีการประกาศตัวแปรไว้หรือยัง
+    clearFormButton.addEventListener('click', function() {
+        customerForm.reset();
+        selectedFiles = [];
+        renderImagePreviews();
+
+        mainCustomerGroupSelect.value = '';
+        updateSubProfessionOptions();
+        toggleOtherSubProfessionInput();
+    });
+});
     </script>
 </body>
 </html>

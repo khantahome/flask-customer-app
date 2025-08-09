@@ -13,6 +13,8 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 from flask_caching import Cache
+from flask import request, jsonify, session
+from datetime import datetime
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -30,6 +32,23 @@ SERVICE_ACCOUNT_KEY_FILE = 'firebase-service-account.json'
 
 # --- Google Sheets Configuration ---
 SPREADSHEET_NAME = 'data1' # Main spreadsheet containing all data
+
+PIDJOB_WORKSHEET_NAME = 'pidjob'
+PIDJOB_WORKSHEET_HEADERS = [
+    'status',
+    'customer_id',
+    'fullname',
+    'phone',
+    'approve_date',
+    'approved_amount',
+    'open_amount',
+    'company',
+    'other_company',
+    'table1',
+    'table2',
+    'registrar',
+    'timestamp'
+]
 
 # User Login Sheet
 USER_LOGIN_SPREADSHEET_NAME = 'UserLoginData'
@@ -144,7 +163,64 @@ def get_customer_data_worksheet():
 
 
 
+@app.route('/get-customer-info/<customer_id>')
+def get_customer_info(customer_id):
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        data = worksheet.get_all_values()
+        if not data or len(data) < 2:
+            return jsonify({'error': 'No data found'}), 404
 
+        headers = data[0]
+        rows = data[1:]
+        records = [dict(zip(headers, row)) for row in rows]
+
+        # ค้นหาข้อมูลลูกค้าตาม Customer ID (ปรับชื่อ key ให้ตรงกับ Google Sheet)
+        customer = next((r for r in records if r.get('Customer ID') == customer_id), None)
+        if not customer:
+            return jsonify({'error': 'Customer not found'}), 404
+
+        return jsonify(customer)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/save-approved-data', methods=['POST'])
+def save_approved_data():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data received'}), 400
+
+        # เปิด worksheet pidjob
+        worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet('pidjob')
+
+        # ตัวอย่างลำดับคอลัมน์ที่บันทึกลง pidjob
+        # ปรับลำดับและชื่อฟิลด์ให้ตรงกับ Google Sheet คุณ
+        row_to_insert = [
+            data.get('customer_id', ''),
+            data.get('status', ''),
+            data.get('fullname', ''),
+            data.get('phone', ''),
+            data.get('approve_date', ''),
+            data.get('approved_amount', ''),
+            data.get('open_amount', ''),
+            data.get('company', ''),
+            data.get('other_company', ''),
+            data.get('table1', ''),
+            data.get('table2', ''),
+            data.get('registrar', ''),
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        ]
+
+        worksheet.append_row(row_to_insert)
+
+        return jsonify({'message': 'บันทึกข้อมูลเรียบร้อย'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500   
 
 @cache.cached(timeout=20, key_prefix='all_customer_records')
 def get_all_customer_records():
@@ -736,7 +812,7 @@ def edit_customer_data(row_index):
 
                 # Create the row data for the 'approove' worksheet
                 approved_data_row = [
-                    "รออนุมัติยอด", # Status ที่บันทึก
+                    "รอปิดจ๊อบ", # Status ที่บันทึก
                     customer_id,
                     f"{updated_data.get('ชื่อ', '')} {updated_data.get('นามสกุล', '')}".strip(),
                     updated_data.get('เบอร์มือถือ', ''),
