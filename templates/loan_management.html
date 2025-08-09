@@ -597,46 +597,49 @@
                         </ul>
                     </div>
                 </div>
-                {% if approove_data %}
-<div class="approove-table-section approve-table-section" style="display:none;">
+               {% if approve_data %}
+<div class="approve-table-section" style="display:none;">
     <h3>ตารางอนุมัติลูกค้า</h3>
-    <table class="approove-table">
+    <table class="approve-table">
         <thead>
             <tr>
-                {% for header in approove_data[0].keys() %}
+                {% for header in approve_data[0].keys() %}
                     <th>{{ header }}</th>
                 {% endfor %}
                 <th>การกระทำ</th>
             </tr>
         </thead>
         <tbody>
-            {% for record in approove_data %}
+            {% for record in approve_data %}
                 <tr>
                     {% for value in record.values() %}
                         <td>{{ value }}</td>
                     {% endfor %}
-                    <!-- ปุ่มอัพโหลดเอกสาร -->
-                    <td><button class="open-loan-btn" data-id="{{ record['รหัสลูกค้า'] }}">เพิ่มเอกสาร</button></td>
-                    <td><button class="open-loan-btn" data-id="{{ record['รหัสลูกค้า'] }}">ดูข้อมูล</button></td>
+                    <td>
+                        <button class="add-doc-btn" data-id="{{ record['รหัสลูกค้า'] }}">เพิ่มเอกสาร</button>
+                        <button class="view-info-btn" data-id="{{ record['รหัสลูกค้า'] }}">ดูข้อมูล</button>
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 {% endif %}
-<div class="approove-table-section closejob-table-section" style="display:none;">
+
+{% if closejob_data %}
+<div class="closejob-table-section" style="display:none;">
     <h3>ตารางลูกค้าปิดจ๊อบ</h3>
-    <table class="approove-table">
+    <table class="closejob-table">
         <thead>
             <tr>
-                {% for header in approove_data[0].keys() %}
+                {% for header in closejob_data[0].keys() %}
                     <th>{{ header }}</th>
                 {% endfor %}
                 <th>การกระทำ</th>
             </tr>
         </thead>
         <tbody>
-            {% for record in approove_data %}
+            {% for record in closejob_data %}
                 <tr>
                     {% for value in record.values() %}
                         <td>{{ value }}</td>
@@ -648,10 +651,10 @@
             {% endfor %}
         </tbody>
     </table>
-    {% if not approove_data %}
-        <p>ยังไม่มีข้อมูล</p>
-    {% endif %}
 </div>
+{% endif %}
+</div>
+
 <!-- Modal Popup -->
 <div id="approve-popup" class="modal" style="display:none;">
   <div class="modal-content">
@@ -851,6 +854,25 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  // Event delegation สำหรับปุ่มปิดจ๊อบ
+document.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('closejob-action-btn')) {
+    const customerId = e.target.dataset.id;
+
+    if (!confirm(`ต้องการปิดจ๊อบลูกค้า ${customerId} ใช่หรือไม่?`)) return;
+
+    try {
+      const res = await fetch(`/close-job/${customerId}`, { method: 'POST' });
+      if (!res.ok) throw new Error('ปิดจ๊อบไม่สำเร็จ');
+
+      alert('ปิดจ๊อบเรียบร้อยแล้ว');
+      location.reload();
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+    }
+  }
+});
+
 
   // แสดงตารางตาม dropdown menu
   document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {

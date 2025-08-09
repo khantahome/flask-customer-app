@@ -681,9 +681,6 @@ def search_customer_data():
 # . . .เรียกตารางอนุมัติยอด(appove)มาโชว์
 @app.route('/get_approove_data')
 def get_approove_data():
-    """
-    ดึงข้อมูลจาก worksheet 'approove' เพื่อใช้แสดงใน loan_management.html
-    """
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -696,10 +693,19 @@ def get_approove_data():
             headers = data[0]
             rows = data[1:]
             records = [dict(zip(headers, row)) for row in rows]
-        return render_template('loan_management.html', approove_data=records, username=session['username'])
+
+        # แยกข้อมูลตามสถานะ สมมติใช้ key 'status' (ปรับชื่อ key ตามจริง)
+        approve_data = [r for r in records if r.get('status') == 'อนุมัติ']
+        closejob_data = [r for r in records if r.get('status') == 'ปิดจ๊อบ']
+
+        return render_template('loan_management.html',
+                               approve_data=approve_data,
+                               closejob_data=closejob_data,
+                               username=session['username'])
     except Exception as e:
         flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")
         return redirect(url_for('dashboard'))
+
 
 # ... (โค้ดส่วนล่างของ app.py) ...
 
