@@ -548,7 +548,7 @@
                         </button>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#">เพิ่มยอด</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('loan_management') }}">ตารางอนุมัติลูกค้า</a></li>
+                            <li><a class="dropdown-item" href="#" data-table="closejob-table-section">ตารางอนุมัติลูกค้า</a></li>
                         </ul>
                     </div>
 
@@ -598,7 +598,7 @@
                     </div>
                 </div>
                 {% if approove_data %}
-<div class="approove-table-section" style="display:none;">
+<div class="approove-table-section approve-table-section" style="display:none;">
     <h3>ตารางอนุมัติลูกค้า</h3>
     <table class="approove-table">
         <thead>
@@ -624,7 +624,7 @@
     </table>
 </div>
 {% endif %}
-<div class="approove-table-section closejob-section" style="display:none;">
+<div class="approove-table-section closejob-table-section" style="display:none;">
     <h3>ตารางลูกค้าปิดจ๊อบ</h3>
     <table class="approove-table">
         <thead>
@@ -727,83 +727,74 @@
     }, 3000);
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // กำหนดชื่อตัวแปรสำหรับปุ่มและ Modal
-    const approveLoanBtn = document.getElementById('approveLoanBtn');
-    const repaymentBtn = document.getElementById('repaymentBtn');
-    const approveModal = document.getElementById('approveModal');
-    const repaymentModal = document.getElementById('repaymentModal');
-    const closeApproveModal = document.getElementById('closeApproveModal');
-    const closeRepaymentModal = document.getElementById('closeRepaymentModal');
-    const approveLoanForm = document.getElementById('approveLoanForm');
-    const repaymentForm = document.getElementById('repaymentForm');
-
-    // ฟังก์ชันสำหรับเปิด Modal
-    function openModal(modal) {
-        modal.classList.add('visible');
-    }
-
-    // ฟังก์ชันสำหรับปิด Modal
-    function closeModal(modal) {
-        modal.classList.remove('visible');
-    }
-    
-    // Event listeners สำหรับปุ่มเปิด Modal
-    approveLoanBtn.addEventListener('click', () => openModal(approveModal));
-    repaymentBtn.addEventListener('click', () => openModal(repaymentModal));
-    
-    // Event listeners สำหรับปุ่มปิด Modal
-    closeApproveModal.addEventListener('click', () => closeModal(approveModal));
-    closeRepaymentModal.addEventListener('click', () => closeModal(repaymentModal));
-
-    // ปิด Modal เมื่อคลิกนอก Modal
-    window.addEventListener('click', (event) => {
-        if (event.target === approveModal) {
-            closeModal(approveModal);
-        }
-        if (event.target === repaymentModal) {
-            closeModal(repaymentModal);
-        }
-    });
-
-    // ... (ส่วนโค้ดฟังก์ชันการจัดการฟอร์มจะอยู่ด้านล่างนี้)
-});
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- Loading Indicator Logic ---
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            const body = document.body;
-
-            window.addEventListener('load', function() {
-                if (loadingOverlay) {
-                    loadingOverlay.classList.add('hidden');
-                    loadingOverlay.addEventListener('transitionend', function() {
-                        loadingOverlay.style.display = 'none';
-                    }, { once: true });
-                }
-                body.classList.add('loaded');
-            });
 document.addEventListener('DOMContentLoaded', () => {
-  // แสดงช่องกรอกบริษัทอื่นๆ เมื่อเลือก "อื่นๆ"
+  // Modal variables
+  const approveLoanBtn = document.getElementById('approveLoanBtn');
+  const repaymentBtn = document.getElementById('repaymentBtn');
+  const approveModal = document.getElementById('approveModal');
+  const repaymentModal = document.getElementById('repaymentModal');
+  const closeApproveModal = document.getElementById('closeApproveModal');
+  const closeRepaymentModal = document.getElementById('closeRepaymentModal');
+
+  function openModal(modal) {
+    if (modal) modal.classList.add('visible');
+  }
+  function closeModal(modal) {
+    if (modal) modal.classList.remove('visible');
+  }
+
+  if (approveLoanBtn && approveModal) {
+    approveLoanBtn.addEventListener('click', () => openModal(approveModal));
+  }
+  if (repaymentBtn && repaymentModal) {
+    repaymentBtn.addEventListener('click', () => openModal(repaymentModal));
+  }
+  if (closeApproveModal && approveModal) {
+    closeApproveModal.addEventListener('click', () => closeModal(approveModal));
+  }
+  if (closeRepaymentModal && repaymentModal) {
+    closeRepaymentModal.addEventListener('click', () => closeModal(repaymentModal));
+  }
+
+  window.addEventListener('click', (event) => {
+    if (event.target === approveModal) closeModal(approveModal);
+    if (event.target === repaymentModal) closeModal(repaymentModal);
+  });
+
+  // Loading indicator
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const body = document.body;
+  window.addEventListener('load', () => {
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('hidden');
+      loadingOverlay.addEventListener('transitionend', () => {
+        loadingOverlay.style.display = 'none';
+      }, { once: true });
+    }
+    if (body) body.classList.add('loaded');
+  });
+
+  // แสดงช่องกรอกบริษัทอื่นๆ
   const companySelect = document.getElementById('company');
   const otherCompanyContainer = document.getElementById('other-company-container');
 
-  companySelect.addEventListener('change', () => {
-    if (companySelect.value === 'อื่นๆ') {
-      otherCompanyContainer.style.display = 'block';
-      document.getElementById('other_company').required = true;
-    } else {
-      otherCompanyContainer.style.display = 'none';
-      document.getElementById('other_company').required = false;
-      document.getElementById('other_company').value = '';
-    }
-  });
+  if (companySelect && otherCompanyContainer) {
+    companySelect.addEventListener('change', () => {
+      if (companySelect.value === 'อื่นๆ') {
+        otherCompanyContainer.style.display = 'block';
+        document.getElementById('other_company').required = true;
+      } else {
+        otherCompanyContainer.style.display = 'none';
+        document.getElementById('other_company').required = false;
+        document.getElementById('other_company').value = '';
+      }
+    });
+  }
 
-  // เปิด Popup เมื่อกดปุ่ม "อนุมัติยอด"
+  // เปิด Popup "อนุมัติยอด"
   document.querySelectorAll('.open-loan-btn').forEach(button => {
     button.addEventListener('click', async () => {
       const customerId = button.getAttribute('data-id');
-
-      // ขอข้อมูลลูกค้าไป backend
       const res = await fetch(`/get-customer-info/${customerId}`);
       if (!res.ok) {
         alert('ไม่พบข้อมูลลูกค้า');
@@ -811,7 +802,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const data = await res.json();
 
-      // เติมข้อมูลในฟอร์ม
       document.getElementById('status').value = data.status;
       document.getElementById('customer_id').value = data.customer_id;
       document.getElementById('fullname').value = data.fullname;
@@ -819,51 +809,63 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('approve_date').value = data.approve_date;
       document.getElementById('approved_amount').value = data.approved_amount;
 
-      // เคลียร์ฟิลด์กรอกใหม่
+      // เคลียร์ฟิลด์ใหม่
       document.getElementById('open_amount').value = '';
-      companySelect.value = '';
-      otherCompanyContainer.style.display = 'none';
+      if (companySelect) companySelect.value = '';
+      if (otherCompanyContainer) otherCompanyContainer.style.display = 'none';
       document.getElementById('other_company').value = '';
       document.getElementById('table1').value = '';
       document.getElementById('table2').value = '';
       document.getElementById('registrar').value = '';
 
-      // แสดง popup
       document.getElementById('approve-popup').style.display = 'block';
     });
   });
 
-  // ปุ่มยกเลิกปิด Popup
-  document.getElementById('cancel-btn').addEventListener('click', () => {
-    document.getElementById('approve-popup').style.display = 'none';
-  });
-
-  // ส่งข้อมูลฟอร์มไป backend
-  document.getElementById('approve-form').addEventListener('submit', async e => {
-    e.preventDefault();
-
-    const formData = new FormData(e.target);
-    const jsonData = Object.fromEntries(formData.entries());
-
-    const res = await fetch('/save-approved-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(jsonData)
-    });
-
-    if (res.ok) {
-      alert('บันทึกข้อมูลเรียบร้อย');
+  // ปุ่มยกเลิก Popup
+  const cancelBtn = document.getElementById('cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
       document.getElementById('approve-popup').style.display = 'none';
-      // อัพเดต UI หรือโหลดตารางใหม่ถ้าต้องการ
-    } else {
-      alert('เกิดข้อผิดพลาดในการบันทึก');
-    }
+    });
+  }
+
+  // ส่งข้อมูลฟอร์ม
+  const approveForm = document.getElementById('approve-form');
+  if (approveForm) {
+    approveForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const jsonData = Object.fromEntries(formData.entries());
+      const res = await fetch('/save-approved-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(jsonData)
+      });
+      if (res.ok) {
+        alert('บันทึกข้อมูลเรียบร้อย');
+        document.getElementById('approve-popup').style.display = 'none';
+        // อัปเดต UI ถ้าต้องการ
+      } else {
+        alert('เกิดข้อผิดพลาดในการบันทึก');
+      }
+    });
+  }
+
+  // แสดงตารางตาม dropdown menu
+  document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
+    item.addEventListener('click', e => {
+      e.preventDefault();
+      const tableClass = item.getAttribute('data-table');
+      document.querySelectorAll('.approove-table-section').forEach(section => {
+        section.style.display = 'none';
+      });
+      const targetTable = document.querySelector('.' + tableClass);
+      if (targetTable) targetTable.style.display = 'block';
+    });
   });
 });
 
-        });
-        
-        
     </script>
 </body>
 </html>
