@@ -694,9 +694,9 @@ def get_approove_data():
             rows = data[1:]
             records = [dict(zip(headers, row)) for row in rows]
 
-        # แยกข้อมูลตามสถานะ สมมติใช้ key 'status' (ปรับชื่อ key ตามจริง)
-        approve_data = [r for r in records if r.get('status') == 'อนุมัติ']
-        closejob_data = [r for r in records if r.get('status') == 'ปิดจ๊อบ']
+        # ใช้ key 'สถานะ' (ภาษาไทย) ให้ตรงกับ Google Sheet
+        approve_data = [r for r in records if r.get('สถานะ') == 'อนุมัติ']
+        closejob_data = [r for r in records if r.get('สถานะ') == 'ปิดจ๊อบ']
 
         return render_template('loan_management.html',
                                approve_data=approve_data,

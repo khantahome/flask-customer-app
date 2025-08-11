@@ -472,29 +472,33 @@
             font-size: 1.2em;
             font-weight: 500;
         }
-        .approove-table {
+        .approove-table,
+        .closejob-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85em;
 }
 
-.approove-table th, .approove-table td {
+.approove-table th, .approove-table td ,
+.closejob-table th, .closejob-table td{
     border: 1px solid var(--border-color);
     padding: 6px 10px;
     text-align: left;
     color: var(--text-color);
 }
 
-.approove-table th {
+.approove-table th, .closejob-table th {
     background-color: var(--table-header-bg);
     font-weight: 600;
 }
 
-.approove-table tr:nth-child(odd) {
+.approove-table tr:nth-child(odd),
+.closejob-table tr:nth-child(odd) {
     background-color: var(--table-row-odd);
 }
 
-.approove-table tr:nth-child(even) {
+.approove-table tr:nth-child(even),
+.closejob-table tr:nth-child(even) {
     background-color: var(--table-row-even);
 }
 
@@ -512,7 +516,26 @@
 .open-loan-btn:hover {
     background-color: #6A1B9A;
 }
-
+.action-table-btn {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.9em;
+    margin-right: 6px;
+    margin-bottom: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.13);
+}
+.action-table-btn:last-child {
+    margin-right: 0;
+}
+.action-table-btn:hover {
+    background-color: #6A1B9A;
+    color: #fff;
+}
     </style>
 </head>
 <body class="initial-hidden"> {# Add initial-hidden class to body #}
@@ -617,8 +640,8 @@
           <td>{{ value }}</td>
         {% endfor %}
         <td>
-          <button class="add-doc-btn" data-id="{{ record['รหัสลูกค้า'] }}">เพิ่มเอกสาร</button>
-          <button class="view-info-btn" data-id="{{ record['รหัสลูกค้า'] }}">ดูข้อมูล</button>
+            <button class="action-table-btn add-doc-btn" data-id="{{ record['รหัสลูกค้า'] }}">เพิ่มเอกสาร</button>
+            <button class="action-table-btn view-info-btn" data-id="{{ record['รหัสลูกค้า'] }}">ดูข้อมูล</button>
         </td>
       </tr>
       {% endfor %}
@@ -645,7 +668,7 @@
           <td>{{ value }}</td>
         {% endfor %}
         <td>
-          <button class="closejob-action-btn" data-id="{{ record['รหัสลูกค้า'] }}">ปิดจ๊อบ</button>
+            <button class="action-table-btn closejob-action-btn" data-id="{{ record['รหัสลูกค้า'] }}">ปิดจ๊อบ</button>
         </td>
       </tr>
       {% endfor %}
