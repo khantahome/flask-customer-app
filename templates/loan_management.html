@@ -536,6 +536,60 @@
     background-color: #6A1B9A;
     color: #fff;
 }
+.closejob-modal-content {
+    background: var(--card-background);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    max-width: 700px;
+    margin: 60px auto;
+    padding: 32px 28px 24px 28px;
+    color: var(--text-color);
+    position: relative;
+}
+.closejob-modal-content h3 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 28px;
+}
+.form-columns {
+    display: flex;
+    gap: 32px;
+    justify-content: space-between;
+}
+.form-columns > div {
+    flex: 1 1 0;
+}
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    justify-content: center;
+}
+@media (max-width: 700px) {
+    .form-columns {
+        flex-direction: column;
+        gap: 0;
+    }
+    .closejob-modal-content {
+        max-width: 98vw;
+        padding: 18px 6vw 18px 6vw;
+    }
+}
+.btn-secondary {
+    background-color: var(--border-color);
+    color: var(--text-color);
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: background-color 0.3s, color 0.3s;
+}
+.btn-secondary:hover {
+    background-color: #444869;
+    color: #fff;
+}
+.form-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+}
     </style>
 </head>
 <body class="initial-hidden"> {# Add initial-hidden class to body #}
@@ -679,78 +733,76 @@
 
 
 
-<div id="approve-popup" class="modal" style="display:none;">
-  <div class="modal-content" style="
-      background: var(--card-background);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      max-width: 420px;
-      margin: 60px auto;
-      padding: 32px 28px 24px 28px;
-      color: var(--text-color);
-      position: relative;
-      ">
-    <h3 style="color: var(--primary-color); text-align:center; margin-bottom: 28px;">ปิดจ๊อบ</h3>
+<div id="approve-popup" class="modal">
+  <div class="modal-content closejob-modal-content">
+    <h3>ปิดจ๊อบ</h3>
     <form id="approve-form" autocomplete="off">
-      <!-- ฟิลด์อ่านอย่างเดียว -->
-      <div class="form-group">
-        <label class="form-label">สถานะ:</label>
-        <input type="text" id="status" name="status" class="form-input" readonly>
+      <div class="form-columns">
+        <!-- คอลัมน์ซ้าย -->
+        <div>
+          <div class="form-group">
+            <label class="form-label">สถานะ:</label>
+            <input type="text" id="status" name="status" class="form-input" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">รหัสลูกค้า:</label>
+            <input type="text" id="customer_id" name="customer_id" class="form-input" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ชื่อ-นามสกุล:</label>
+            <input type="text" id="fullname" name="fullname" class="form-input" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">หมายเลขโทรศัพท์:</label>
+            <input type="text" id="phone" name="phone" class="form-input" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">วันที่อนุมัติ:</label>
+            <input type="text" id="approve_date" name="approve_date" class="form-input" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">วงเงินที่อนุมัติ:</label>
+            <input type="text" id="approved_amount" name="approved_amount" class="form-input" readonly>
+          </div>
+        </div>
+        <!-- คอลัมน์ขวา -->
+        <div>
+          <div class="form-group">
+            <label class="form-label">วงเงินที่เปิด:</label>
+            <input type="number" id="open_amount" name="open_amount" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">บริษัท:</label>
+            <select id="company" name="company" class="form-input" required>
+              <option value="">--เลือกบริษัท--</option>
+              <option value="STARLOAN">STARLOAN</option>
+              <option value="GLORYCASH">GLORYCASH</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+          <div class="form-group" id="other-company-container" style="display:none;">
+            <label class="form-label">บริษัทอื่นๆ กรุณาระบุ:</label>
+            <input type="text" id="other_company" name="other_company" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">โต๊ะ1:</label>
+            <input type="number" id="table1" name="table1" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">โต๊ะ2:</label>
+            <input type="number" id="table2" name="table2" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ชื่อผู้ลงทะเบียน:</label>
+            <input type="text" id="registrar" name="registrar" class="form-input" value="{{ username }}" readonly>
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">รหัสลูกค้า:</label>
-        <input type="text" id="customer_id" name="customer_id" class="form-input" readonly>
-      </div>
-      <div class="form-group">
-        <label class="form-label">ชื่อ-นามสกุล:</label>
-        <input type="text" id="fullname" name="fullname" class="form-input" readonly>
-      </div>
-      <div class="form-group">
-        <label class="form-label">หมายเลขโทรศัพท์:</label>
-        <input type="text" id="phone" name="phone" class="form-input" readonly>
-      </div>
-      <div class="form-group">
-        <label class="form-label">วันที่อนุมัติ:</label>
-        <input type="text" id="approve_date" name="approve_date" class="form-input" readonly>
-      </div>
-      <div class="form-group">
-        <label class="form-label">วงเงินที่อนุมัติ:</label>
-        <input type="text" id="approved_amount" name="approved_amount" class="form-input" readonly>
-      </div>
-      <!-- ฟิลด์กรอกใหม่ -->
-      <div class="form-group">
-        <label class="form-label">วงเงินที่เปิด:</label>
-        <input type="number" id="open_amount" name="open_amount" class="form-input" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label">บริษัท:</label>
-        <select id="company" name="company" class="form-input" required>
-          <option value="">--เลือกบริษัท--</option>
-          <option value="STARLOAN">STARLOAN</option>
-          <option value="GLORYCASH">GLORYCASH</option>
-          <option value="อื่นๆ">อื่นๆ</option>
-        </select>
-      </div>
-      <div class="form-group" id="other-company-container" style="display:none;">
-        <label class="form-label">บริษัทอื่นๆ กรุณาระบุ:</label>
-        <input type="text" id="other_company" name="other_company" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">โต๊ะ1:</label>
-        <input type="number" id="table1" name="table1" class="form-input" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label">โต๊ะ2:</label>
-        <input type="number" id="table2" name="table2" class="form-input" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label">ชื่อผู้ลงทะเบียน:</label>
-        <input type="text" id="registrar" name="registrar" class="form-input" required>
-      </div>
-      <div style="display: flex; gap: 12px; margin-top: 18px;">
-        <button type="submit" class="btn btn-primary" style="flex:1;">บันทึก</button>
-        <button type="button" id="cancel-btn" class="btn btn-secondary" style="flex:1; background: var(--border-color); color: var(--text-color);">ยกเลิก</button>
-      </div>
+      <div class="form-actions">
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" style="width: 100%;">บันทึก</button>
+            <button type="button" id="cancel-btn" class="btn btn-secondary" style="width: 100%;">ยกเลิก</button>
+        </div>
     </form>
   </div>
 </div>
@@ -839,36 +891,39 @@
     }
 
     // เปิด Popup "อนุมัติยอด"
-    document.querySelectorAll('.open-loan-btn').forEach(button => {
-      button.addEventListener('click', async () => {
-        const customerId = button.getAttribute('data-id');
-        console.log('customerId:', customerId);
-        const res = await fetch(`/get-customer-info/${customerId}`);
-        if (!res.ok) {
-          alert('ไม่พบข้อมูลลูกค้า');
-          return;
-        }
-        const data = await res.json();
+    document.querySelectorAll('.closejob-action-btn').forEach(button => {
+  button.addEventListener('click', async () => {
+    const customerId = button.getAttribute('data-id');
+    const res = await fetch(`/get-customer-info/${customerId}`);
+    if (!res.ok) {
+      alert('ไม่พบข้อมูลลูกค้า');
+      return;
+    }
+    const data = await res.json();
 
-        document.getElementById('status').value = data.status;
-        document.getElementById('customer_id').value = data.customer_id;
-        document.getElementById('fullname').value = data.fullname;
-        document.getElementById('phone').value = data.phone;
-        document.getElementById('approve_date').value = data.approve_date;
-        document.getElementById('approved_amount').value = data.approved_amount;
+    // ถ้าไม่มีข้อมูล ให้ขึ้นเป็นขีด -
+    function safe(val) { return (val === undefined || val === null || val === "") ? '-' : val; }
 
-        // เคลียร์ฟิลด์ใหม่
-        document.getElementById('open_amount').value = '';
-        if (companySelect) companySelect.value = '';
-        if (otherCompanyContainer) otherCompanyContainer.style.display = 'none';
-        document.getElementById('other_company').value = '';
-        document.getElementById('table1').value = '';
-        document.getElementById('table2').value = '';
-        document.getElementById('registrar').value = '';
+    document.getElementById('status').value = safe(data.status);
+    document.getElementById('customer_id').value = safe(data.customer_id);
+    document.getElementById('fullname').value = safe(data.fullname);
+    document.getElementById('phone').value = safe(data.phone);
+    document.getElementById('approve_date').value = safe(data.approve_date);
+    document.getElementById('approved_amount').value = safe(data.approved_amount);
 
-        document.getElementById('approve-popup').style.display = 'block';
-      });
-    });
+         // ช่องกรอกใหม่
+    document.getElementById('open_amount').value = '';
+    if (companySelect) companySelect.value = '';
+    if (otherCompanyContainer) otherCompanyContainer.style.display = 'none';
+    document.getElementById('other_company').value = '';
+    document.getElementById('table1').value = '';
+    document.getElementById('table2').value = '';
+    // ชื่อผู้ลงทะเบียน
+    document.getElementById('registrar').value = "{{ username }}";
+
+    document.getElementById('approve-popup').style.display = 'block';
+  });
+});
 
     // เปิด Popup "ปิดจ๊อบ"
     document.querySelectorAll('.closejob-action-btn').forEach(button => {
