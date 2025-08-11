@@ -541,121 +541,119 @@
                 
                 <!-- NEW: ปุ่มฟังก์ชันเสริมต่างๆ -->
                 <div class="function-buttons-group">
-                    <!-- ปุ่ม "อนุมัติยอด" -->
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-approve dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-check-circle"></i> อนุมัติยอด
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">เพิ่มยอด</a></li>
-                            <li><a class="dropdown-item" href="#" data-table="closejob-table-section">ตารางอนุมัติลูกค้า</a></li>
-                        </ul>
-                    </div>
-
-                    <!-- ปุ่ม "ปิดจ๊อบ" -->
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-close-job dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-clipboard-check"></i> ปิดจ๊อบ
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">ตารางปิดจ๊อบ</a></li>
-                            <li><a class="dropdown-item" href="#" data-table="closejob-table-section">ตารางลูกค้าปิดจ๊อบ</a></li>
-                        </ul>
-                    </div> 
-
-                    <!-- ปุ่ม "ตัวเสีย" -->
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-bad-debt dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-times-circle"></i> ตัวเสีย
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">ตารางตัวเสีย</a></li>
-                            <li><a class="dropdown-item" href="#" data-table="baddebt-table-section">ตารางตัวเสีย</a></li>
-                        </ul>
-                    </div>
-
-                    <!-- ปุ่ม "ชั๊กปลั๊ก" -->
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-pull-plug dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-plug"></i> ชั๊กปลั๊ก
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">ตารางชั๊กปลั๊ก</a></li>
-                            <li><a class="dropdown-item" href="#" data-table="pullplug-table-section">ตารางชั๊กปลั๊ก</a></li>
-
-                        </ul>
-                    </div>
-
-                    <!-- ปุ่ม "ทำคืนต้น" -->
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-return-principal dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-redo"></i> ทำคืนต้น
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-table="returnprincipal-table-section">ตารางลูกค้าคืนต้น</a></li>
-                            <li><a class="dropdown-item" href="#">ทำคืนต้น</a></li>
-                        </ul>
-                    </div>
+                <!-- ปุ่ม "อนุมัติยอด" -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-approve dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-check-circle"></i> อนุมัติยอด
+                    </button>
+                    <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">เพิ่มยอด</a></li>
+                    <li><a class="dropdown-item" href="#" data-table="approove-table-section">ตารางอนุมัติลูกค้า</a></li>
+                    </ul>
                 </div>
-               {% if approve_data %}
-<div class="approve-table-section" style="display:none;">
-    <h3>ตารางอนุมัติลูกค้า</h3>
-    <table class="approve-table">
-        <thead>
-            <tr>
-                {% for header in approve_data[0].keys() %}
-                    <th>{{ header }}</th>
-                {% endfor %}
-                <th>การกระทำ</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for record in approve_data %}
-                <tr>
-                    {% for value in record.values() %}
-                        <td>{{ value }}</td>
-                    {% endfor %}
-                    <td>
-                        <button class="add-doc-btn" data-id="{{ record['รหัสลูกค้า'] }}">เพิ่มเอกสาร</button>
-                        <button class="view-info-btn" data-id="{{ record['รหัสลูกค้า'] }}">ดูข้อมูล</button>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+                <!-- ปุ่ม "ปิดจ๊อบ" -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-close-job dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-clipboard-check"></i> ปิดจ๊อบ
+                    </button>
+                    <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">ตารางปิดจ๊อบ</a></li>
+                    <li><a class="dropdown-item" href="#" data-table="closejob-table-section">ตารางลูกค้าปิดจ๊อบ</a></li>
+                    </ul>
+                </div>
+
+                <!-- ปุ่ม "ตัวเสีย" -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-bad-debt dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-times-circle"></i> ตัวเสีย
+                    </button>
+                    <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">ตารางตัวเสีย</a></li>
+                    <li><a class="dropdown-item" href="#" data-table="baddebt-table-section">ตารางตัวเสีย</a></li>
+                    </ul>
+                </div>
+
+                <!-- ปุ่ม "ชั๊กปลั๊ก" -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-pull-plug dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-plug"></i> ชั๊กปลั๊ก
+                    </button>
+                    <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">ตารางชั๊กปลั๊ก</a></li>
+                    <li><a class="dropdown-item" href="#" data-table="pullplug-table-section">ตารางชั๊กปลั๊ก</a></li>
+                    </ul>
+                </div>
+
+                <!-- ปุ่ม "ทำคืนต้น" -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-return-principal dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-redo"></i> ทำคืนต้น
+                    </button>
+                    <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" data-table="returnprincipal-table-section">ตารางลูกค้าคืนต้น</a></li>
+                    <li><a class="dropdown-item" href="#">ทำคืนต้น</a></li>
+                    </ul>
+                </div>
+                </div>
+
+            {% if approve_data %}
+<!-- ตารางอนุมัติยอด -->
+<div class="approve-table-section">
+  <h3>ตารางอนุมัติลูกค้า</h3>
+  <table class="approve-table">
+    <thead>
+      <tr>
+        {% for header in approve_data[0].keys() %}
+          <th>{{ header }}</th>
+        {% endfor %}
+        <th>การกระทำ</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in approve_data %}
+      <tr>
+        {% for value in record.values() %}
+          <td>{{ value }}</td>
+        {% endfor %}
+        <td>
+          <button class="add-doc-btn" data-id="{{ record['รหัสลูกค้า'] }}">เพิ่มเอกสาร</button>
+          <button class="view-info-btn" data-id="{{ record['รหัสลูกค้า'] }}">ดูข้อมูล</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ตารางปิดจ๊อบ -->
+<div class="closejob-table-section">
+  <h3>ตารางลูกค้าปิดจ๊อบ</h3>
+  <table class="closejob-table">
+    <thead>
+      <tr>
+        {% for header in approve_data[0].keys() %}
+          <th>{{ header }}</th>
+        {% endfor %}
+        <th>การกระทำ</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in approve_data %}
+      <tr>
+        {% for value in record.values() %}
+          <td>{{ value }}</td>
+        {% endfor %}
+        <td>
+          <button class="closejob-action-btn" data-id="{{ record['รหัสลูกค้า'] }}">ปิดจ๊อบ</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endif %}
 
-{% if closejob_data %}
-<div class="closejob-table-section" style="display:none;">
-    <h3>ตารางลูกค้าปิดจ๊อบ</h3>
-    <table class="closejob-table">
-        <thead>
-            <tr>
-                {% for header in closejob_data[0].keys() %}
-                    <th>{{ header }}</th>
-                {% endfor %}
-                <th>การกระทำ</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for record in closejob_data %}
-                <tr>
-                    {% for value in record.values() %}
-                        <td>{{ value }}</td>
-                    {% endfor %}
-                    <td>
-                        <button class="closejob-action-btn" data-id="{{ record['รหัสลูกค้า'] }}">ปิดจ๊อบ</button>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
-</div>
-
-<!-- Modal Popup -->
 <div id="approve-popup" class="modal" style="display:none;">
   <div class="modal-content">
     <h3>ปิดจ๊อบ</h3>
@@ -718,158 +716,193 @@
     
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script>
-        function showMessage(message, type) {
+<script>
+  function showMessage(message, type) {
     const messageBox = document.getElementById('message-box');
     messageBox.textContent = message;
     messageBox.className = ''; // ลบคลาสเดิมทั้งหมด
     messageBox.classList.add(type, 'visible'); // เพิ่มคลาสใหม่
 
     setTimeout(() => {
-        messageBox.classList.remove('visible');
+      messageBox.classList.remove('visible');
     }, 3000);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Modal variables
-  const approveLoanBtn = document.getElementById('approveLoanBtn');
-  const repaymentBtn = document.getElementById('repaymentBtn');
-  const approveModal = document.getElementById('approveModal');
-  const repaymentModal = document.getElementById('repaymentModal');
-  const closeApproveModal = document.getElementById('closeApproveModal');
-  const closeRepaymentModal = document.getElementById('closeRepaymentModal');
-
-  function openModal(modal) {
-    if (modal) modal.classList.add('visible');
-  }
-  function closeModal(modal) {
-    if (modal) modal.classList.remove('visible');
   }
 
-  if (approveLoanBtn && approveModal) {
-    approveLoanBtn.addEventListener('click', () => openModal(approveModal));
-  }
-  if (repaymentBtn && repaymentModal) {
-    repaymentBtn.addEventListener('click', () => openModal(repaymentModal));
-  }
-  if (closeApproveModal && approveModal) {
-    closeApproveModal.addEventListener('click', () => closeModal(approveModal));
-  }
-  if (closeRepaymentModal && repaymentModal) {
-    closeRepaymentModal.addEventListener('click', () => closeModal(repaymentModal));
-  }
+  document.addEventListener('DOMContentLoaded', () => {
+    // Modal variables
+    const approveLoanBtn = document.getElementById('approveLoanBtn');
+    const repaymentBtn = document.getElementById('repaymentBtn');
+    const approveModal = document.getElementById('approveModal');
+    const repaymentModal = document.getElementById('repaymentModal');
+    const closeApproveModal = document.getElementById('closeApproveModal');
+    const closeRepaymentModal = document.getElementById('closeRepaymentModal');
 
-  window.addEventListener('click', (event) => {
-    if (event.target === approveModal) closeModal(approveModal);
-    if (event.target === repaymentModal) closeModal(repaymentModal);
-  });
-
-  // Loading indicator
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  const body = document.body;
-  window.addEventListener('load', () => {
-    if (loadingOverlay) {
-      loadingOverlay.classList.add('hidden');
-      loadingOverlay.addEventListener('transitionend', () => {
-        loadingOverlay.style.display = 'none';
-      }, { once: true });
+    function openModal(modal) {
+      if (modal) modal.classList.add('visible');
     }
-    if (body) body.classList.add('loaded');
-  });
+    function closeModal(modal) {
+      if (modal) modal.classList.remove('visible');
+    }
 
-  // แสดงช่องกรอกบริษัทอื่นๆ
-  const companySelect = document.getElementById('company');
-  const otherCompanyContainer = document.getElementById('other-company-container');
+    if (approveLoanBtn && approveModal) {
+      approveLoanBtn.addEventListener('click', () => openModal(approveModal));
+    }
+    if (repaymentBtn && repaymentModal) {
+      repaymentBtn.addEventListener('click', () => openModal(repaymentModal));
+    }
+    if (closeApproveModal && approveModal) {
+      closeApproveModal.addEventListener('click', () => closeModal(approveModal));
+    }
+    if (closeRepaymentModal && repaymentModal) {
+      closeRepaymentModal.addEventListener('click', () => closeModal(repaymentModal));
+    }
 
-  if (companySelect && otherCompanyContainer) {
-    companySelect.addEventListener('change', () => {
-      if (companySelect.value === 'อื่นๆ') {
-        otherCompanyContainer.style.display = 'block';
-        document.getElementById('other_company').required = true;
-      } else {
-        otherCompanyContainer.style.display = 'none';
-        document.getElementById('other_company').required = false;
+    window.addEventListener('click', (event) => {
+      if (event.target === approveModal) closeModal(approveModal);
+      if (event.target === repaymentModal) closeModal(repaymentModal);
+    });
+
+    // Loading indicator
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const body = document.body;
+    window.addEventListener('load', () => {
+      if (loadingOverlay) {
+        loadingOverlay.classList.add('hidden');
+        loadingOverlay.addEventListener('transitionend', () => {
+          loadingOverlay.style.display = 'none';
+        }, { once: true });
+      }
+      if (body) body.classList.add('loaded');
+    });
+
+    // แสดงช่องกรอกบริษัทอื่นๆ
+    const companySelect = document.getElementById('company');
+    const otherCompanyContainer = document.getElementById('other-company-container');
+
+    if (companySelect && otherCompanyContainer) {
+      companySelect.addEventListener('change', () => {
+        if (companySelect.value === 'อื่นๆ') {
+          otherCompanyContainer.style.display = 'block';
+          document.getElementById('other_company').required = true;
+        } else {
+          otherCompanyContainer.style.display = 'none';
+          document.getElementById('other_company').required = false;
+          document.getElementById('other_company').value = '';
+        }
+      });
+    }
+
+    // เปิด Popup "อนุมัติยอด"
+    document.querySelectorAll('.open-loan-btn').forEach(button => {
+      button.addEventListener('click', async () => {
+        const customerId = button.getAttribute('data-id');
+        const res = await fetch(`/get-customer-info/${customerId}`);
+        if (!res.ok) {
+          alert('ไม่พบข้อมูลลูกค้า');
+          return;
+        }
+        const data = await res.json();
+
+        document.getElementById('status').value = data.status;
+        document.getElementById('customer_id').value = data.customer_id;
+        document.getElementById('fullname').value = data.fullname;
+        document.getElementById('phone').value = data.phone;
+        document.getElementById('approve_date').value = data.approve_date;
+        document.getElementById('approved_amount').value = data.approved_amount;
+
+        // เคลียร์ฟิลด์ใหม่
+        document.getElementById('open_amount').value = '';
+        if (companySelect) companySelect.value = '';
+        if (otherCompanyContainer) otherCompanyContainer.style.display = 'none';
         document.getElementById('other_company').value = '';
-      }
-    });
-  }
+        document.getElementById('table1').value = '';
+        document.getElementById('table2').value = '';
+        document.getElementById('registrar').value = '';
 
-  // เปิด Popup "อนุมัติยอด"
-  document.querySelectorAll('.open-loan-btn').forEach(button => {
-    button.addEventListener('click', async () => {
-      const customerId = button.getAttribute('data-id');
-      const res = await fetch(`/get-customer-info/${customerId}`);
-      if (!res.ok) {
-        alert('ไม่พบข้อมูลลูกค้า');
-        return;
-      }
-      const data = await res.json();
-
-      document.getElementById('status').value = data.status;
-      document.getElementById('customer_id').value = data.customer_id;
-      document.getElementById('fullname').value = data.fullname;
-      document.getElementById('phone').value = data.phone;
-      document.getElementById('approve_date').value = data.approve_date;
-      document.getElementById('approved_amount').value = data.approved_amount;
-
-      // เคลียร์ฟิลด์ใหม่
-      document.getElementById('open_amount').value = '';
-      if (companySelect) companySelect.value = '';
-      if (otherCompanyContainer) otherCompanyContainer.style.display = 'none';
-      document.getElementById('other_company').value = '';
-      document.getElementById('table1').value = '';
-      document.getElementById('table2').value = '';
-      document.getElementById('registrar').value = '';
-
-      document.getElementById('approve-popup').style.display = 'block';
-    });
-  });
-
-  // ปุ่มยกเลิก Popup
-  const cancelBtn = document.getElementById('cancel-btn');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      document.getElementById('approve-popup').style.display = 'none';
-    });
-  }
-
-  // ส่งข้อมูลฟอร์ม
-  const approveForm = document.getElementById('approve-form');
-  if (approveForm) {
-    approveForm.addEventListener('submit', async e => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const jsonData = Object.fromEntries(formData.entries());
-      const res = await fetch('/save-approved-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(jsonData)
+        document.getElementById('approve-popup').style.display = 'block';
       });
-      if (res.ok) {
-        alert('บันทึกข้อมูลเรียบร้อย');
+    });
+
+    // เปิด Popup "ปิดจ๊อบ"
+    document.querySelectorAll('.closejob-action-btn').forEach(button => {
+      button.addEventListener('click', async () => {
+        const customerId = button.getAttribute('data-id');
+        const res = await fetch(`/get-customer-info/${customerId}`);
+        if (!res.ok) {
+          alert('ไม่พบข้อมูลลูกค้า');
+          return;
+        }
+        const data = await res.json();
+
+        document.getElementById('status').value = data.status;
+        document.getElementById('customer_id').value = data.customer_id;
+        document.getElementById('fullname').value = data.fullname;
+        document.getElementById('phone').value = data.phone;
+        document.getElementById('approve_date').value = data.approve_date;
+        document.getElementById('approved_amount').value = data.approved_amount;
+
+        // เคลียร์ฟิลด์ใหม่
+        document.getElementById('open_amount').value = '';
+        if (companySelect) companySelect.value = '';
+        if (otherCompanyContainer) otherCompanyContainer.style.display = 'none';
+        document.getElementById('other_company').value = '';
+        document.getElementById('table1').value = '';
+        document.getElementById('table2').value = '';
+        document.getElementById('registrar').value = '';
+
+        document.getElementById('approve-popup').style.display = 'block';
+      });
+    });
+
+    // ปุ่มยกเลิก Popup
+    const cancelBtn = document.getElementById('cancel-btn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
         document.getElementById('approve-popup').style.display = 'none';
-        // อัปเดต UI ถ้าต้องการ
-      } else {
-        alert('เกิดข้อผิดพลาดในการบันทึก');
-      }
-    });
-  }
-  
-
-  // แสดงตารางตาม dropdown menu
-  document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
-    item.addEventListener('click', e => {
-      e.preventDefault();
-      const tableClass = item.getAttribute('data-table');
-      document.querySelectorAll('.approove-table-section').forEach(section => {
-        section.style.display = 'none';
       });
-      const targetTable = document.querySelector('.' + tableClass);
-      if (targetTable) targetTable.style.display = 'block';
+    }
+
+    // ส่งข้อมูลฟอร์ม
+    const approveForm = document.getElementById('approve-form');
+    if (approveForm) {
+      approveForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const jsonData = Object.fromEntries(formData.entries());
+        const res = await fetch('/save-approved-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(jsonData)
+        });
+        if (res.ok) {
+          alert('บันทึกข้อมูลเรียบร้อย');
+          document.getElementById('approve-popup').style.display = 'none';
+          // อัปเดต UI ถ้าต้องการ
+        } else {
+          alert('เกิดข้อผิดพลาดในการบันทึก');
+        }
+      });
+    }
+
+    // สลับตารางเมื่อคลิก dropdown-menu item ที่มี data-table
+    document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
+      item.addEventListener('click', e => {
+        e.preventDefault();
+        const tableClass = item.getAttribute('data-table');
+
+        // ซ่อนทุกตารางก่อน
+        document.querySelectorAll(
+          '.approove-table-section, .closejob-table-section, .baddebt-table-section, .pullplug-table-section, .returnprincipal-table-section'
+        ).forEach(section => {
+          section.style.display = 'none';
+        });
+
+        // แสดงเฉพาะตารางที่เลือก
+        const targetTable = document.querySelector('.' + tableClass);
+        if (targetTable) targetTable.style.display = 'block';
+      });
     });
   });
-});
-
-    </script>
+</script>
 </body>
 </html>
