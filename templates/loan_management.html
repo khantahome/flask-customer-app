@@ -640,8 +640,8 @@
           <td>{{ value }}</td>
         {% endfor %}
         <td>
-            <button class="action-table-btn add-doc-btn" data-id="{{ record['รหัสลูกค้า'] }}">เพิ่มเอกสาร</button>
-            <button class="action-table-btn view-info-btn" data-id="{{ record['รหัสลูกค้า'] }}">ดูข้อมูล</button>
+            <button class="action-table-btn add-doc-btn" data-id="{{ record['Customer ID'] }}">เพิ่มเอกสาร</button>
+            <button class="action-table-btn view-info-btn" data-id="{{ record['Customer ID'] }}">ดูข้อมูล</button>
         </td>
       </tr>
       {% endfor %}
@@ -668,7 +668,7 @@
           <td>{{ value }}</td>
         {% endfor %}
         <td>
-            <button class="action-table-btn closejob-action-btn" data-id="{{ record['รหัสลูกค้า'] }}">ปิดจ๊อบ</button>
+            <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
         </td>
       </tr>
       {% endfor %}
@@ -821,6 +821,7 @@
     document.querySelectorAll('.open-loan-btn').forEach(button => {
       button.addEventListener('click', async () => {
         const customerId = button.getAttribute('data-id');
+        console.log('customerId:', customerId);
         const res = await fetch(`/get-customer-info/${customerId}`);
         if (!res.ok) {
           alert('ไม่พบข้อมูลลูกค้า');
@@ -852,6 +853,7 @@
     document.querySelectorAll('.closejob-action-btn').forEach(button => {
       button.addEventListener('click', async () => {
         const customerId = button.getAttribute('data-id');
+        console.log('customerId:', customerId);
         const res = await fetch(`/get-customer-info/${customerId}`);
         if (!res.ok) {
           alert('ไม่พบข้อมูลลูกค้า');

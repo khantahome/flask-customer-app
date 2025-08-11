@@ -178,7 +178,7 @@ def get_customer_info(customer_id):
         records = [dict(zip(headers, row)) for row in rows]
 
         # ค้นหาข้อมูลลูกค้าตาม Customer ID (ปรับชื่อ key ให้ตรงกับ Google Sheet)
-        customer = next((r for r in records if r.get('Customer ID') == customer_id), None)
+        customer = next((r for r in records if (r.get('Customer ID') or '').strip() == customer_id.strip()), None)
         if not customer:
             return jsonify({'error': 'Customer not found'}), 404
 
