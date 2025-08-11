@@ -548,7 +548,8 @@ body {
 
     <div class="input-group">
         <label for="desired_credit_limit">วงเงินที่ต้องการ</label>
-        <input type="number" id="desired_credit_limit" name="desired_credit_limit" placeholder="กรอกวงเงินที่ต้องการ" value="{{ customer_data.get('วงเงินที่ต้องการ', '') | int if customer_data.get('วงเงินที่ต้องการ', '') is number else '' }}">
+        <input type="number" id="desired_credit_limit" name="desired_credit_limit" placeholder="กรอกวงเงินที่ต้องการ"
+        value="{{ customer_data.get('วงเงินที่ต้องการ', '') }}">
     </div>
 
     <div class="input-group">
