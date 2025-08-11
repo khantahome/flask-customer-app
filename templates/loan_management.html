@@ -901,17 +901,18 @@
     }
     const data = await res.json();
 
-    // ถ้าไม่มีข้อมูล ให้ขึ้นเป็นขีด -
+    // ฟังก์ชัน safe สำหรับป้องกัน undefined/null/ค่าว่าง
     function safe(val) { return (val === undefined || val === null || val === "") ? '-' : val; }
 
-    document.getElementById('status').value = safe(data.status);
-    document.getElementById('customer_id').value = safe(data.customer_id);
-    document.getElementById('fullname').value = safe(data.fullname);
-    document.getElementById('phone').value = safe(data.phone);
-    document.getElementById('approve_date').value = safe(data.approve_date);
-    document.getElementById('approved_amount').value = safe(data.approved_amount);
+document.getElementById('status').value = safe(data['Status']);
+document.getElementById('customer_id').value = safe(data['Customer ID']);
+document.getElementById('fullname').value = safe(data['ชื่อ-นามสกุล']);
+document.getElementById('phone').value = safe(data['หมายเลขโทรศัพท์']);
+document.getElementById('approve_date').value = safe(data['วันที่อนุมัติ']);
+document.getElementById('approved_amount').value = safe(data['วงเงินที่อนุมัติ']);
+document.getElementById('registrar').value = safe(data['ชื่อผู้ลงทะเบียน']);
 
-         // ช่องกรอกใหม่
+    // ช่องกรอกใหม่
     document.getElementById('open_amount').value = '';
     if (companySelect) companySelect.value = '';
     if (otherCompanyContainer) otherCompanyContainer.style.display = 'none';
