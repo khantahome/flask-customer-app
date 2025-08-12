@@ -500,24 +500,24 @@
                 let datasets = [];
 
                 // ใช้สีจาก CSS variables หรือกำหนดสีคงที่
-                const groupColors = {
-                    'โลจิสติกส์': '#00BCD4',
-                    'ธุรกิจร้านอาหาร': '#FF9800',
-                    'ค้าขาย': '#8A2BE2',
-                    'เกษตรกร': '#28A745',
-                    'รับจ้าง': '#FFC107',
-                    'พนักงานประจำ': '#E91E63',
-                    'อื่นๆ': '#9E9E9E'
-                };
-                const groupBorderColors = {
-                    'โลจิสติกส์': '#0097A7',
-                    'ธุรกิจร้านอาหาร': '#F57C00',
-                    'ค้าขาย': '#6A1B9A',
-                    'เกษตรกร': '#1B5E20',
-                    'รับจ้าง': '#FFA000',
-                    'พนักงานประจำ': '#AD1457',
-                    'อื่นๆ': '#616161'
-                };
+                const colors = [
+                    primaryColor,  // Primary Blue from CSS variable
+                    'rgba(80, 227, 194, 0.7)',  // Secondary Mint
+                    'rgba(255, 99, 132, 0.7)',  // Red
+                    'rgba(255, 206, 86, 0.7)',  // Yellow
+                    'rgba(75, 192, 192, 0.7)',  // Teal
+                    'rgba(153, 102, 255, 0.7)', // Purple
+                    'rgba(255, 159, 64, 0.7)'   // Orange
+                ];
+                const borderColors = [
+                    rootStyles.getPropertyValue('--primary-color').trim(), // Primary Blue solid
+                    'rgba(80, 227, 194, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ];
 
                 if (selectedYear) {
                     if (selectedMonth) {
@@ -531,65 +531,86 @@
                             datasets.push({
                                 label: selectedGroup,
                                 data: [count],
-                                backgroundColor: groupColors[selectedGroup] || primaryColor,
-                                borderColor: groupBorderColors[selectedGroup] || primaryColor,
+                                backgroundColor: colors[0],
+                                borderColor: borderColors[0],
                                 borderWidth: 1
                             });
                         } else {
                             // ทุกกลุ่มสำหรับเดือนที่เฉพาะเจาะจง
-                            uniqueCustomerGroups.forEach((group) => {
+                            uniqueCustomerGroups.forEach((group, index) => {
                                 const count = dataForMonth[group] || 0;
                                 datasets.push({
                                     label: group,
                                     data: [count],
-                                    backgroundColor: groupColors[group] || primaryColor,
-                                    borderColor: groupBorderColors[group] || primaryColor,
+                                    backgroundColor: colors[index % colors.length],
+                                    borderColor: borderColors[index % borderColors.length],
                                     borderWidth: 1
                                 });
                             });
                         }
                     } else {
                         // แสดงตามเดือนสำหรับปีที่เฉพาะเจาะจง (ทุกเดือน)
+                        labels = allMonths.map(month => new Date(parseInt(selectedYear), parseInt(month) - 1, 1).toLocaleString('th-TH', { month: 'short' }));
+                        
                         if (selectedGroup) {
-                            // ...
+                            // กลุ่มเดียวสำหรับทุกเดือนของปีที่เฉพาะเจาะจง
+                            const dataCounts = allMonths.map(month => data[selectedYear]?.[month]?.[selectedGroup] || 0); // ใช้ 'data' parameter
+                            datasets.push({
+                                label: selectedGroup,
+                                data: dataCounts,
+                                backgroundColor: colors[0],
+                                borderColor: borderColors[0],
+                                borderWidth: 1
+                            });
                         } else {
-                            uniqueCustomerGroups.forEach((group) => {
-                                const dataCounts = allMonths.map(month => data[selectedYear]?.[month]?.[group] || 0);
+                            // ทุกกลุ่มสำหรับทุกเดือนของปีที่เฉพาะเจาะจง (stacked bar chart)
+                            uniqueCustomerGroups.forEach((group, groupIndex) => {
+                                const dataCounts = allMonths.map(month => data[selectedYear]?.[month]?.[group] || 0); // ใช้ 'data' parameter
                                 datasets.push({
                                     label: group,
                                     data: dataCounts,
-                                    backgroundColor: groupColors[group] || primaryColor,
-                                    borderColor: groupBorderColors[group] || primaryColor,
+                                    backgroundColor: colors[groupIndex % colors.length],
+                                    borderColor: borderColors[groupIndex % borderColors.length],
                                     borderWidth: 1
                                 });
                             });
                         }
                     }
                 } else {
-                    // ...
+                    // แสดงตามปี (ทุกปี) - ผลรวม aggregated สำหรับแต่ละกลุ่มต่อปี
+                    labels = uniqueYears; // ปีเป็น label
+                    
                     if (selectedGroup) {
-                        // ...
+                        // กลุ่มเดียวสำหรับทุกปี
+                        const dataCounts = uniqueYears.map(year => {
+                            let sum = 0;
+                            for (const month in data[year]) { // ใช้ 'data' parameter
+                                sum += data[year][month][selectedGroup] || 0; // ใช้ 'data' parameter
+                            }
+                            return sum;
+                        });
                         datasets.push({
                             label: selectedGroup,
                             data: dataCounts,
-                            backgroundColor: groupColors[selectedGroup] || primaryColor,
-                            borderColor: groupBorderColors[selectedGroup] || primaryColor,
+                            backgroundColor: colors[0],
+                            borderColor: borderColors[0],
                             borderWidth: 1
                         });
                     } else {
-                        uniqueCustomerGroups.forEach((group) => {
+                        // ทุกกลุ่มสำหรับทุกปี (stacked bar chart)
+                        uniqueCustomerGroups.forEach((group, groupIndex) => {
                             const dataCounts = uniqueYears.map(year => {
                                 let sum = 0;
-                                for (const month in data[year]) {
-                                    sum += data[year][month][group] || 0;
+                                for (const month in data[year]) { // ใช้ 'data' parameter
+                                    sum += data[year][month][group] || 0; // ใช้ 'data' parameter
                                 }
                                 return sum;
                             });
                             datasets.push({
                                 label: group,
                                 data: dataCounts,
-                                backgroundColor: groupColors[group] || primaryColor,
-                                borderColor: groupBorderColors[group] || primaryColor,
+                                backgroundColor: colors[groupIndex % colors.length],
+                                borderColor: borderColors[groupIndex % borderColors.length],
                                 borderWidth: 1
                             });
                         });
