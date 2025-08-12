@@ -540,55 +540,87 @@
     background: var(--card-background);
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-    max-width: 700px;
-    margin: 60px auto;
+    max-width: 800px;
+    width: 90vw;
+    margin: 40px auto;
     padding: 32px 28px 24px 28px;
     color: var(--text-color);
     position: relative;
 }
+
 .closejob-modal-content h3 {
     color: var(--primary-color);
     text-align: center;
     margin-bottom: 28px;
 }
+
+/* รูปแบบฟอร์มแบ่งคอลัมน์ */
 .form-columns {
     display: flex;
     gap: 32px;
     justify-content: space-between;
+    flex-wrap: wrap;
 }
+
 .form-columns > div {
     flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
+
+/* ปุ่ม action ด้านล่าง */
 .form-actions {
     display: flex;
     gap: 12px;
     margin-top: 18px;
     justify-content: center;
 }
-@media (max-width: 700px) {
-    .form-columns {
-        flex-direction: column;
-        gap: 0;
-    }
-    .closejob-modal-content {
-        max-width: 98vw;
-        padding: 18px 6vw 18px 6vw;
-    }
+
+.form-actions .btn-primary {
+    flex: 1 1 0;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 0;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
-.btn-secondary {
+
+.form-actions .btn-primary:hover {
+    background-color: #531dab;
+}
+
+.form-actions .btn-secondary {
+    flex: 1 1 0;
     background-color: var(--border-color);
     color: var(--text-color);
     border: none;
     box-shadow: 0 4px 10px rgba(215, 58, 58, 0.2);
     transition: background-color 0.3s, color 0.3s;
+    border-radius: 6px;
+    cursor: pointer;
 }
-.btn-secondary:hover {
+
+.form-actions .btn-secondary:hover {
     background-color: #df1010;
     color: #fff;
 }
-.form-actions .btn {
-    flex: 1 1 0;
-    min-width: 0;
+
+/* Responsive สำหรับหน้าจอเล็ก */
+@media (max-width: 700px) {
+    .form-columns {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .closejob-modal-content {
+        max-width: 98vw;
+        padding: 18px 6vw 18px 6vw;
+    }
 }
     </style>
 </head>
