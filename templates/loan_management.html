@@ -548,26 +548,89 @@
     position: relative;
 }
 
+/* หัวข้อ */
 .closejob-modal-content h3 {
     color: var(--primary-color);
     text-align: center;
     margin-bottom: 28px;
 }
 
-/* รูปแบบฟอร์มแบ่งคอลัมน์ */
+/* ฟอร์มหลักแบ่ง 2 คอลัมน์ */
 .form-columns {
     display: flex;
     gap: 32px;
     justify-content: space-between;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
-.form-columns > div {
-    flex: 1 1 0;
-    min-width: 0;
+/* คอลัมน์ซ้าย: ข้อมูล 6 ฟิลด์ แบ่ง 2 คอลัมน์ในคอลัมน์ซ้าย */
+.form-columns > div:first-child {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 40px;
+}
+
+/* ให้ฟิลด์ในคอลัมน์ซ้ายแต่ละช่องเรียงแนวตั้ง */
+.form-columns > div:first-child .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+/* คอลัมน์ขวา: ฟอร์มส่วนแบ่ง */
+.form-columns > div:last-child {
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+/* ปรับ .share-row ให้เรียง 4 คอลัมน์ */
+.share-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: nowrap;
+}
+
+.share-row > div {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ปุ่ม Delete ขนาดพอดี */
+.share-row > div:last-child {
+    flex: 0 0 auto;
+    margin-bottom: 6px;
+}
+
+/* ปุ่มเพิ่มส่วนแบ่งเต็มความกว้าง */
+#add-share-btn {
+    margin-top: 12px !important;
+    width: 100% !important;
+    border-radius: 6px;
+}
+
+/* ชื่อผู้ลงทะเบียนอยู่ข้างล่างปุ่มเพิ่มส่วนแบ่ง */
+.form-columns > div:last-child > .form-group:last-child {
+    margin-top: 18px !important;
+}
+
+/* ป้าย label เน้นตัวหนาและสีจาง */
+.form-label {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--light-text-color);
+}
+
+/* ปรับ input/select ให้เข้ากับธีม */
+.form-input {
+    background-color: var(--card-background);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 1em;
+    box-sizing: border-box;
 }
 
 /* ปุ่ม action ด้านล่าง */
@@ -609,6 +672,42 @@
     background-color: #df1010;
     color: #fff;
 }
+
+/* Responsive: แปลงเป็นคอลัมน์เดียวในมือถือ */
+@media (max-width: 700px) {
+    .form-columns {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    /* ด้านซ้ายข้อมูล 2 คอลัมน์ => 1 คอลัมน์ */
+    .form-columns > div:first-child {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* share-row 4 คอลัมน์ => เรียงคอลัมน์เดียว */
+    .share-row {
+        flex-wrap: wrap;
+        gap: 12px 0;
+    }
+
+    .share-row > div {
+        flex: 1 1 100%;
+    }
+
+    .share-row > div:last-child {
+        flex: 1 1 100%;
+        margin-bottom: 12px;
+    }
+
+    /* ปุ่มเพิ่มส่วนแบ่งเต็มความกว้าง */
+    #add-share-btn {
+        width: 100% !important;
+    }
+}
+
 
 /* Responsive สำหรับหน้าจอเล็ก */
 @media (max-width: 700px) {
