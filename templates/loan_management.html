@@ -539,58 +539,158 @@
 .closejob-modal-content {
     background: var(--card-background);
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-    max-width: 700px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); /* เพิ่มเงาให้ดูมีมิติมากขึ้น */
+    max-width: 800px; /* เพิ่มขนาดความกว้างเพื่อให้มีพื้นที่มากขึ้น */
     margin: 60px auto;
-    padding: 32px 28px 24px 28px;
+    padding: 32px 40px; /* เพิ่ม padding ให้มีช่องว่าง */
     color: var(--text-color);
     position: relative;
+    border: 1px solid var(--border-color); /* เพิ่มเส้นขอบเล็กน้อย */
 }
+
 .closejob-modal-content h3 {
     color: var(--primary-color);
     text-align: center;
-    margin-bottom: 28px;
+    margin-bottom: 32px; /* เพิ่มระยะห่างด้านล่าง */
+    font-size: 2rem; /* เพิ่มขนาดตัวอักษรหัวข้อ */
+    font-weight: 600; /* ทำให้ตัวหนาขึ้น */
 }
+
+/* Form Group & Input Styling */
+.form-group {
+    margin-bottom: 18px; /* เพิ่มระยะห่างระหว่างแต่ละกลุ่ม */
+}
+
+.form-label {
+    display: block; /* ทำให้ label ขึ้นบรรทัดใหม่ */
+    margin-bottom: 8px; /* ระยะห่างระหว่าง label กับ input */
+    font-size: 0.95rem;
+    color: var(--light-text-color);
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: #2A3850; /* สีพื้นหลัง input ให้เข้มขึ้น */
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary-color); /* เปลี่ยนสีเส้นขอบเมื่อ focus */
+    box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.3); /* เพิ่มเงาอ่อนๆ */
+}
+
+.form-input[readonly] {
+    background-color: #1F283E; /* สีพื้นหลังสำหรับ input ที่อ่านได้อย่างเดียว */
+    cursor: default;
+    opacity: 0.8;
+}
+
+/* Flexbox Columns */
 .form-columns {
     display: flex;
-    gap: 32px;
+    gap: 40px; /* เพิ่มระยะห่างระหว่างคอลัมน์ */
     justify-content: space-between;
 }
+
 .form-columns > div {
-    flex: 1 1 0;
+    flex: 1; /* ใช้ flex: 1 เพื่อให้แต่ละคอลัมน์มีขนาดเท่ากัน */
 }
+
+/* Share Row Styling */
+.share-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+}
+
+.share-row .form-input {
+    min-width: 0;
+}
+
+/* Action Buttons */
 .form-actions {
     display: flex;
-    gap: 12px;
-    margin-top: 18px;
+    gap: 16px; /* เพิ่มระยะห่างระหว่างปุ่ม */
+    margin-top: 32px;
     justify-content: center;
 }
-@media (max-width: 700px) {
+
+.btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+}
+
+.btn-primary:hover {
+    background-color: #9346E2;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(138, 43, 226, 0.4);
+}
+
+.btn-secondary {
+    background-color: var(--border-color);
+    color: var(--light-text-color);
+    box-shadow: none;
+}
+
+.btn-secondary:hover {
+    background-color: #555577;
+    color: var(--text-color);
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background-color: var(--error-bg);
+    color: var(--error-text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.btn-danger:hover {
+    background-color: #E24855;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
     .form-columns {
         flex-direction: column;
         gap: 0;
     }
     .closejob-modal-content {
-        max-width: 98vw;
-        padding: 18px 6vw 18px 6vw;
+        max-width: 95vw;
+        padding: 24px 20px;
+    }
+    .share-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .form-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .form-actions .btn {
+        width: 100%;
     }
 }
-.btn-secondary {
-    background-color: var(--border-color);
-    color: var(--text-color);
-    border: none;
-    box-shadow: 0 4px 10px rgba(215, 58, 58, 0.2);
-    transition: background-color 0.3s, color 0.3s;
-}
-.btn-secondary:hover {
-    background-color: #df1010;
-    color: #fff;
-}
-.form-actions .btn {
-    flex: 1 1 0;
-    min-width: 0;
-}
-    </style>
+</style>
 </head>
 <body class="initial-hidden"> {# Add initial-hidden class to body #}
     {# NEW: Loading Overlay #}
@@ -738,7 +838,6 @@
     <h3>ปิดจ๊อบ</h3>
     <form id="approve-form" autocomplete="off">
       <div class="form-columns">
-        <!-- คอลัมน์ซ้าย -->
         <div>
           <div class="form-group">
             <label class="form-label">สถานะ:</label>
@@ -765,10 +864,10 @@
             <input type="text" id="approved_amount" name="approved_amount" class="form-input" readonly>
           </div>
         </div>
-        <!-- คอลัมน์ขวา -->
+        
         <div>
           <div id="share-container">
-            <div class="share-row form-columns" style="gap: 12px; align-items: flex-end;">
+            <div class="share-row">
               <div style="flex:1;">
                 <label class="form-label">บริษัท:</label>
                 <select name="company[]" class="form-input" required>
@@ -806,19 +905,22 @@
             </div>
           </div>
           <button type="button" id="add-share-btn" class="btn btn-secondary" style="margin-top:12px; width:100%;">เพิ่มส่วนแบ่ง</button>
+          
           <div class="form-group" id="other-company-container" style="display:none; margin-top:10px;">
             <label class="form-label">บริษัทอื่นๆ กรุณาระบุ:</label>
             <input type="text" id="other_company" name="other_company" class="form-input">
           </div>
-          <div class="form-group" style="margin-top:18px;">
+          
+          <div class="form-group" style="margin-top:24px;">
             <label class="form-label">ชื่อผู้ลงทะเบียน:</label>
             <input type="text" id="registrar" name="registrar" class="form-input" value="{{ username }}" readonly>
           </div>
         </div>
       </div>
+      
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary" style="width: 100%;">บันทึก</button>
-        <button type="button" id="cancel-btn" class="btn btn-primary" style="width: 100%;">ยกเลิก</button>
+        <button type="submit" class="btn btn-primary" style="flex: 1;">บันทึก</button>
+        <button type="button" id="cancel-btn" class="btn btn-secondary" style="flex: 1;">ยกเลิก</button>
       </div>
     </form>
   </div>
