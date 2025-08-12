@@ -579,11 +579,11 @@
     background-color: var(--border-color);
     color: var(--text-color);
     border: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 10px rgba(215, 58, 58, 0.2);
     transition: background-color 0.3s, color 0.3s;
 }
 .btn-secondary:hover {
-    background-color: #444869;
+    background-color: #df1010;
     color: #fff;
 }
 .form-actions .btn {
@@ -801,7 +801,7 @@
       <div class="form-actions">
         <div class="form-actions">
             <button type="submit" class="btn btn-primary" style="width: 100%;">บันทึก</button>
-            <button type="button" id="cancel-btn" class="btn btn-secondary" style="width: 100%;">ยกเลิก</button>
+            <button type="button" id="cancel-btn" class="btn btn-secondary">ยกเลิก</button>
         </div>
     </form>
   </div>
@@ -891,7 +891,7 @@
     }
 
     // เปิด Popup "อนุมัติยอด"
-    document.querySelectorAll('.closejob-action-btn').forEach(button => {
+document.querySelectorAll('.closejob-action-btn').forEach(button => {
   button.addEventListener('click', async () => {
     const customerId = button.getAttribute('data-id');
     const res = await fetch(`/get-customer-info/${customerId}`);
@@ -904,13 +904,13 @@
     // ฟังก์ชัน safe สำหรับป้องกัน undefined/null/ค่าว่าง
     function safe(val) { return (val === undefined || val === null || val === "") ? '-' : val; }
 
-document.getElementById('status').value = safe(data['Status']);
-document.getElementById('customer_id').value = safe(data['Customer ID']);
-document.getElementById('fullname').value = safe(data['ชื่อ-นามสกุล']);
-document.getElementById('phone').value = safe(data['หมายเลขโทรศัพท์']);
-document.getElementById('approve_date').value = safe(data['วันที่อนุมัติ']);
-document.getElementById('approved_amount').value = safe(data['วงเงินที่อนุมัติ']);
-document.getElementById('registrar').value = safe(data['ชื่อผู้ลงทะเบียน']);
+    document.getElementById('status').value = safe(data['Status']);
+    document.getElementById('customer_id').value = safe(data['Customer ID']);
+    document.getElementById('fullname').value = safe(data['ชื่อ-นามสกุล']);
+    document.getElementById('phone').value = safe(data['หมายเลขโทรศัพท์']);
+    document.getElementById('approve_date').value = safe(data['วันที่อนุมัติ']);
+    document.getElementById('approved_amount').value = safe(data['วงเงินที่อนุมัติ']);
+    document.getElementById('registrar').value = safe(data['ชื่อผู้ลงทะเบียน']);
 
     // ช่องกรอกใหม่
     document.getElementById('open_amount').value = '';
@@ -925,39 +925,6 @@ document.getElementById('registrar').value = safe(data['ชื่อผู้ล
     document.getElementById('approve-popup').style.display = 'block';
   });
 });
-
-    // เปิด Popup "ปิดจ๊อบ"
-    document.querySelectorAll('.closejob-action-btn').forEach(button => {
-      button.addEventListener('click', async () => {
-        const customerId = button.getAttribute('data-id');
-        console.log('customerId:', customerId);
-        const res = await fetch(`/get-customer-info/${customerId}`);
-        if (!res.ok) {
-          alert('ไม่พบข้อมูลลูกค้า');
-          return;
-        }
-        const data = await res.json();
-
-        document.getElementById('status').value = data.status;
-        document.getElementById('customer_id').value = data.customer_id;
-        document.getElementById('fullname').value = data.fullname;
-        document.getElementById('phone').value = data.phone;
-        document.getElementById('approve_date').value = data.approve_date;
-        document.getElementById('approved_amount').value = data.approved_amount;
-
-        // เคลียร์ฟิลด์ใหม่
-        document.getElementById('open_amount').value = '';
-        if (companySelect) companySelect.value = '';
-        if (otherCompanyContainer) otherCompanyContainer.style.display = 'none';
-        document.getElementById('other_company').value = '';
-        document.getElementById('table1').value = '';
-        document.getElementById('table2').value = '';
-        document.getElementById('registrar').value = '';
-
-        document.getElementById('approve-popup').style.display = 'block';
-      });
-    });
-
     // ปุ่มยกเลิก Popup
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
