@@ -539,31 +539,59 @@
 .closejob-modal-content {
     background: var(--card-background);
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); /* เพิ่มเงาให้ดูมีมิติมากขึ้น */
-    max-width: 800px; /* เพิ่มขนาดความกว้างเพื่อให้มีพื้นที่มากขึ้น */
-    margin: 60px auto;
-    padding: 32px 40px; /* เพิ่ม padding ให้มีช่องว่าง */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    max-width: 800px;
+    width: 100%;
+    padding: 32px 40px;
     color: var(--text-color);
     position: relative;
-    border: 1px solid var(--border-color); /* เพิ่มเส้นขอบเล็กน้อย */
+    border: 1px solid var(--border-color);
+    animation: fadeInScale 0.4s ease-out forwards;
+}
+
+@keyframes fadeInScale {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .closejob-modal-content h3 {
     color: var(--primary-color);
     text-align: center;
-    margin-bottom: 32px; /* เพิ่มระยะห่างด้านล่าง */
-    font-size: 2rem; /* เพิ่มขนาดตัวอักษรหัวข้อ */
-    font-weight: 600; /* ทำให้ตัวหนาขึ้น */
+    margin-bottom: 32px;
+    font-size: 2rem;
+    font-weight: 600;
 }
 
-/* Form Group & Input Styling */
+/* --- Form & Input Styles --- */
+.form-single-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
 .form-group {
-    margin-bottom: 18px; /* เพิ่มระยะห่างระหว่างแต่ละกลุ่ม */
+    margin-bottom: 18px;
 }
 
 .form-label {
-    display: block; /* ทำให้ label ขึ้นบรรทัดใหม่ */
-    margin-bottom: 8px; /* ระยะห่างระหว่าง label กับ input */
+    display: block;
+    margin-bottom: 8px;
     font-size: 0.95rem;
     color: var(--light-text-color);
 }
@@ -573,51 +601,47 @@
     padding: 12px 16px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    background-color: #2A3850; /* สีพื้นหลัง input ให้เข้มขึ้น */
+    background-color: #2A3850;
     color: var(--text-color);
     font-size: 1rem;
     transition: all 0.3s ease;
+    box-sizing: border-box;
 }
 
 .form-input:focus {
     outline: none;
-    border-color: var(--primary-color); /* เปลี่ยนสีเส้นขอบเมื่อ focus */
-    box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.3); /* เพิ่มเงาอ่อนๆ */
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.3);
 }
 
 .form-input[readonly] {
-    background-color: #1F283E; /* สีพื้นหลังสำหรับ input ที่อ่านได้อย่างเดียว */
+    background-color: #1F283E;
     cursor: default;
     opacity: 0.8;
 }
 
-/* Flexbox Columns */
-.form-columns {
-    display: flex;
-    gap: 40px; /* เพิ่มระยะห่างระหว่างคอลัมน์ */
-    justify-content: space-between;
-}
-
-.form-columns > div {
-    flex: 1; /* ใช้ flex: 1 เพื่อให้แต่ละคอลัมน์มีขนาดเท่ากัน */
-}
-
-/* Share Row Styling */
+/* --- Share Row Styles --- */
 .share-row {
     display: flex;
-    gap: 16px;
     align-items: flex-end;
-    margin-bottom: 16px;
+}
+
+.share-row.compact {
+    gap: 4px;
+}
+
+.share-row.compact > div {
+    flex: 1;
 }
 
 .share-row .form-input {
     min-width: 0;
 }
 
-/* Action Buttons */
+/* --- Button Styles --- */
 .form-actions {
     display: flex;
-    gap: 16px; /* เพิ่มระยะห่างระหว่างปุ่ม */
+    gap: 16px;
     margin-top: 32px;
     justify-content: center;
 }
@@ -668,19 +692,15 @@
     background-color: #E24855;
 }
 
-/* Mobile adjustments */
+/* --- Responsive Design --- */
 @media (max-width: 768px) {
-    .form-columns {
-        flex-direction: column;
-        gap: 0;
-    }
     .closejob-modal-content {
         max-width: 95vw;
         padding: 24px 20px;
     }
-    .share-row {
+    .form-row, .share-row.compact {
         flex-direction: column;
-        gap: 8px;
+        gap: 12px;
     }
     .form-actions {
         flex-direction: column;
@@ -837,90 +857,92 @@
   <div class="modal-content closejob-modal-content">
     <h3>ปิดจ๊อบ</h3>
     <form id="approve-form" autocomplete="off">
-      <div class="form-columns">
-        <div>
-          <div class="form-group">
+      <div class="form-single-column">
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
             <label class="form-label">สถานะ:</label>
             <input type="text" id="status" name="status" class="form-input" readonly>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="flex: 1;">
             <label class="form-label">รหัสลูกค้า:</label>
             <input type="text" id="customer_id" name="customer_id" class="form-input" readonly>
           </div>
-          <div class="form-group">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
             <label class="form-label">ชื่อ-นามสกุล:</label>
             <input type="text" id="fullname" name="fullname" class="form-input" readonly>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="flex: 1;">
             <label class="form-label">หมายเลขโทรศัพท์:</label>
             <input type="text" id="phone" name="phone" class="form-input" readonly>
           </div>
-          <div class="form-group">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
             <label class="form-label">วันที่อนุมัติ:</label>
             <input type="text" id="approve_date" name="approve_date" class="form-input" readonly>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="flex: 1;">
             <label class="form-label">วงเงินที่อนุมัติ:</label>
             <input type="text" id="approved_amount" name="approved_amount" class="form-input" readonly>
           </div>
         </div>
-        
-        <div>
-          <div id="share-container">
-            <div class="share-row">
-              <div style="flex:1;">
-                <label class="form-label">บริษัท:</label>
-                <select name="company[]" class="form-input" required>
-                  <option value="">--เลือกบริษัท--</option>
-                  <option value="STARLOAN">STARLOAN</option>
-                  <option value="GLORYCASH">GLORYCASH</option>
-                  <option value="อื่นๆ">อื่นๆ</option>
-                </select>
-              </div>
-              <div style="flex:1;">
-                <label class="form-label">ดำเนินการ:</label>
-                <select name="action_type[]" class="form-input" required>
-                  <option value="">--เลือกดำเนินการ--</option>
-                  <option value="เปิดยอด">เปิดยอด</option>
-                  <option value="เปิดสุทธิ">เปิดสุทธิ</option>
-                  <option value="คืนต้น">คืนต้น</option>
-                </select>
-              </div>
-              <div style="flex:1;">
-                <label class="form-label">เลือกโต๊ะ:</label>
-                <select name="table_select[]" class="form-input" required>
-                  <option value="">--เลือกโต๊ะ--</option>
-                  <option value="โต๊ะ1">โต๊ะ1</option>
-                  <option value="โต๊ะ2">โต๊ะ2</option>
-                  <option value="โต๊ะ3">โต๊ะ3</option>
-                </select>
-              </div>
-              <div style="flex:1;">
-                <label class="form-label">จำนวนเงิน:</label>
-                <input type="number" name="amount[]" class="form-input" required min="0">
-              </div>
-              <div>
-                <button type="button" class="btn btn-danger delete-share-btn" style="padding:6px 12px; margin-bottom:6px; display:none;">Delete</button>
-              </div>
+
+        <div class="form-group">
+            <label class="form-label">เปิดยอด:</label>
+            <input type="text" id="open_amount" name="open_amount" class="form-input">
+        </div>
+
+        <div id="share-container">
+          <label class="form-label">ส่วนแบ่ง:</label>
+          <div class="share-row compact">
+            <div style="flex:1;">
+              <select name="company[]" class="form-input" required>
+                <option value="">--บริษัท--</option>
+                <option value="STARLOAN">STARLOAN</option>
+                <option value="GLORYCASH">GLORYCASH</option>
+                <option value="อื่นๆ">อื่นๆ</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <select name="action_type[]" class="form-input" required>
+                <option value="">--ดำเนินการ--</option>
+                <option value="เปิดยอด">เปิดยอด</option>
+                <option value="เปิดสุทธิ">เปิดสุทธิ</option>
+                <option value="คืนต้น">คืนต้น</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <select name="table_select[]" class="form-input" required>
+                <option value="">--เลือกโต๊ะ--</option>
+                <option value="โต๊ะ1">โต๊ะ1</option>
+                <option value="โต๊ะ2">โต๊ะ2</option>
+                <option value="โต๊ะ3">โต๊ะ3</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <input type="number" name="amount[]" class="form-input" placeholder="จำนวนเงิน" required min="0">
+            </div>
+            <div>
+              <button type="button" class="btn btn-danger delete-share-btn" style="padding:6px 12px; margin-bottom:6px; display:none;">Delete</button>
             </div>
           </div>
-          <button type="button" id="add-share-btn" class="btn btn-secondary" style="margin-top:12px; width:100%;">เพิ่มส่วนแบ่ง</button>
-          
-          <div class="form-group" id="other-company-container" style="display:none; margin-top:10px;">
-            <label class="form-label">บริษัทอื่นๆ กรุณาระบุ:</label>
-            <input type="text" id="other_company" name="other_company" class="form-input">
-          </div>
-          
-          <div class="form-group" style="margin-top:24px;">
-            <label class="form-label">ชื่อผู้ลงทะเบียน:</label>
-            <input type="text" id="registrar" name="registrar" class="form-input" value="{{ username }}" readonly>
-          </div>
         </div>
-      </div>
-      
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary" style="flex: 1;">บันทึก</button>
-        <button type="button" id="cancel-btn" class="btn btn-secondary" style="flex: 1;">ยกเลิก</button>
+
+        <button type="button" id="add-share-btn" class="btn btn-secondary" style="margin-top: 8px; width: 100%;">เพิ่มส่วนแบ่ง</button>
+        
+        <div class="form-group" style="margin-top: 16px;">
+          <label class="form-label">ชื่อผู้ลงทะเบียน:</label>
+          <input type="text" id="registrar" name="registrar" class="form-input" value="{{ username }}" readonly>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" style="flex: 1;">บันทึก</button>
+          <button type="button" id="cancel-btn" class="btn btn-primary" style="flex: 1;">ยกเลิก</button>
+        </div>
       </div>
     </form>
   </div>
