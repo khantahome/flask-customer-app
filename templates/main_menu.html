@@ -492,112 +492,115 @@
                     return { labels: [], datasets: [] };
                 }
 
+                const selectedYear = chartYearSelect.value;
+                const selectedMonth = chartMonthSelect.value;
+                const selectedGroup = customerGroupSelect.value;
+
+                let labels = [];
+                let datasets = [];
+
+                // ใช้สีจาก CSS variables หรือกำหนดสีคงที่
                 const groupColors = {
-        'โลจิสติกส์': '#00BCD4',      // ฟ้า
-        'ธุรกิจร้านอาหาร': '#FF9800', // ส้ม
-        'ค้าขาย': '#8A2BE2',          // ม่วง
-        'เกษตรกร': '#28A745',         // เขียว
-        'รับจ้าง': '#FFC107',          // เหลือง
-        'พนักงานประจำ': '#E91E63',    // ชมพู
-        'อื่นๆ': '#9E9E9E'             // เทา
-        // เพิ่มกลุ่มอื่นๆ ตามต้องการ
-    };
-    const groupBorderColors = {
-        'โลจิสติกส์': '#0097A7',
-        'ธุรกิจร้านอาหาร': '#F57C00',
-        'ค้าขาย': '#6A1B9A',
-        'เกษตรกร': '#1B5E20',
-        'รับจ้าง': '#FFA000',
-        'พนักงานประจำ': '#AD1457',
-        'อื่นๆ': '#616161'
-    };
+                    'โลจิสติกส์': '#00BCD4',
+                    'ธุรกิจร้านอาหาร': '#FF9800',
+                    'ค้าขาย': '#8A2BE2',
+                    'เกษตรกร': '#28A745',
+                    'รับจ้าง': '#FFC107',
+                    'พนักงานประจำ': '#E91E63',
+                    'อื่นๆ': '#9E9E9E'
+                };
+                const groupBorderColors = {
+                    'โลจิสติกส์': '#0097A7',
+                    'ธุรกิจร้านอาหาร': '#F57C00',
+                    'ค้าขาย': '#6A1B9A',
+                    'เกษตรกร': '#1B5E20',
+                    'รับจ้าง': '#FFA000',
+                    'พนักงานประจำ': '#AD1457',
+                    'อื่นๆ': '#616161'
+                };
 
-    // ...existing code...
-
-    if (selectedYear) {
-        if (selectedMonth) {
-            // ...existing code...
-            if (selectedGroup) {
-                // ...existing code...
-                datasets.push({
-                    label: selectedGroup,
-                    data: [count],
-                    backgroundColor: groupColors[selectedGroup] || primaryColor,
-                    borderColor: groupBorderColors[selectedGroup] || primaryColor,
-                    borderWidth: 1
-                });
-            } else {
-                uniqueCustomerGroups.forEach((group) => {
-                    const count = dataForMonth[group] || 0;
-                    datasets.push({
-                        label: group,
-                        data: [count],
-                        backgroundColor: groupColors[group] || primaryColor,
-                        borderColor: groupBorderColors[group] || primaryColor,
-                        borderWidth: 1
-                    });
-                });
-            }
-        } else {
-            // ...existing code...
-            if (selectedGroup) {
-                // ...existing code...
-                datasets.push({
-                    label: selectedGroup,
-                    data: dataCounts,
-                    backgroundColor: groupColors[selectedGroup] || primaryColor,
-                    borderColor: groupBorderColors[selectedGroup] || primaryColor,
-                    borderWidth: 1
-                });
-            } else {
-                uniqueCustomerGroups.forEach((group) => {
-                    const dataCounts = allMonths.map(month => data[selectedYear]?.[month]?.[group] || 0);
-                    datasets.push({
-                        label: group,
-                        data: dataCounts,
-                        backgroundColor: groupColors[group] || primaryColor,
-                        borderColor: groupBorderColors[group] || primaryColor,
-                        borderWidth: 1
-                    });
-                });
-            }
-        }
-    } else {
-        // ...existing code...
-        if (selectedGroup) {
-            // ...existing code...
-            datasets.push({
-                label: selectedGroup,
-                data: dataCounts,
-                backgroundColor: groupColors[selectedGroup] || primaryColor,
-                borderColor: groupBorderColors[selectedGroup] || primaryColor,
-                borderWidth: 1
-            });
-        } else {
-            uniqueCustomerGroups.forEach((group) => {
-                const dataCounts = uniqueYears.map(year => {
-                    let sum = 0;
-                    for (const month in data[year]) {
-                        sum += data[year][month][group] || 0;
+                if (selectedYear) {
+                    if (selectedMonth) {
+                        // แสดงตามกลุ่มสำหรับเดือนที่เฉพาะเจาะจงของปีที่เฉพาะเจาะจง
+                        labels = [new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1).toLocaleString('th-TH', { month: 'long', year: 'numeric' })];
+                        let dataForMonth = data[selectedYear]?.[selectedMonth] || {}; // ใช้ 'data' parameter
+                        
+                        if (selectedGroup) {
+                            // กลุ่มเดียวสำหรับเดือนที่เฉพาะเจาะจง
+                            const count = dataForMonth[selectedGroup] || 0;
+                            datasets.push({
+                                label: selectedGroup,
+                                data: [count],
+                                backgroundColor: groupColors[selectedGroup] || primaryColor,
+                                borderColor: groupBorderColors[selectedGroup] || primaryColor,
+                                borderWidth: 1
+                            });
+                        } else {
+                            // ทุกกลุ่มสำหรับเดือนที่เฉพาะเจาะจง
+                            uniqueCustomerGroups.forEach((group) => {
+                                const count = dataForMonth[group] || 0;
+                                datasets.push({
+                                    label: group,
+                                    data: [count],
+                                    backgroundColor: groupColors[group] || primaryColor,
+                                    borderColor: groupBorderColors[group] || primaryColor,
+                                    borderWidth: 1
+                                });
+                            });
+                        }
+                    } else {
+                        // แสดงตามเดือนสำหรับปีที่เฉพาะเจาะจง (ทุกเดือน)
+                        if (selectedGroup) {
+                            // ...
+                        } else {
+                            uniqueCustomerGroups.forEach((group) => {
+                                const dataCounts = allMonths.map(month => data[selectedYear]?.[month]?.[group] || 0);
+                                datasets.push({
+                                    label: group,
+                                    data: dataCounts,
+                                    backgroundColor: groupColors[group] || primaryColor,
+                                    borderColor: groupBorderColors[group] || primaryColor,
+                                    borderWidth: 1
+                                });
+                            });
+                        }
                     }
-                    return sum;
-                });
-                datasets.push({
-                    label: group,
-                    data: dataCounts,
-                    backgroundColor: groupColors[group] || primaryColor,
-                    borderColor: groupBorderColors[group] || primaryColor,
-                    borderWidth: 1
-                });
-            });
-        }
-    }
+                } else {
+                    // ...
+                    if (selectedGroup) {
+                        // ...
+                        datasets.push({
+                            label: selectedGroup,
+                            data: dataCounts,
+                            backgroundColor: groupColors[selectedGroup] || primaryColor,
+                            borderColor: groupBorderColors[selectedGroup] || primaryColor,
+                            borderWidth: 1
+                        });
+                    } else {
+                        uniqueCustomerGroups.forEach((group) => {
+                            const dataCounts = uniqueYears.map(year => {
+                                let sum = 0;
+                                for (const month in data[year]) {
+                                    sum += data[year][month][group] || 0;
+                                }
+                                return sum;
+                            });
+                            datasets.push({
+                                label: group,
+                                data: dataCounts,
+                                backgroundColor: groupColors[group] || primaryColor,
+                                borderColor: groupBorderColors[group] || primaryColor,
+                                borderWidth: 1
+                            });
+                        });
+                    }
+                }
 
-    return {
-        labels: labels,
-        datasets: datasets
-    };
-}
+                return {
+                    labels: labels,
+                    datasets: datasets
+                };
+            }
 
             // ฟังก์ชันสำหรับอัปเดตกราฟ (แก้ไขบรรทัดนี้)
             function updateChart() { // *** ไม่รับ parameter ตรงนี้แล้ว ***
