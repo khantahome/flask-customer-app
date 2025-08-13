@@ -188,41 +188,6 @@ def get_customer_info(customer_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/save-approved-data', methods=['POST'])
-def save_approved_data():
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data received'}), 400
-
-        # เปิด worksheet pidjob
-        worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet('pidjob')
-
-        # ตัวอย่างลำดับคอลัมน์ที่บันทึกลง pidjob
-        # ปรับลำดับและชื่อฟิลด์ให้ตรงกับ Google Sheet คุณ
-        row_to_insert = [
-            data.get('customer_id', ''),
-            data.get('status', ''),
-            data.get('fullname', ''),
-            data.get('phone', ''),
-            data.get('approve_date', ''),
-            data.get('approved_amount', ''),
-            data.get('open_amount', ''),
-            data.get('company', ''),
-            data.get('other_company', ''),
-            data.get('table1', ''),
-            data.get('table2', ''),
-            data.get('registrar', ''),
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        ]
-
-        worksheet.append_row(row_to_insert)
-
-        return jsonify({'message': 'บันทึกข้อมูลเรียบร้อย'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500   
 
 @cache.cached(timeout=20, key_prefix='all_customer_records')
 def get_all_customer_records():
