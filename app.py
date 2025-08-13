@@ -79,6 +79,8 @@ CUSTOMER_DATA_WORKSHEET_HEADERS = [
     'Image URLs',
     'Logged In User'
 ]
+DATA1_SHEET_NAME = "data1"
+ALLPIDJOB_WORKSHEET = "allpidjob"
 
 # --- Cloudinary Configuration ---
 cloudinary.config(
@@ -705,6 +707,76 @@ def get_approove_data():
     except Exception as e:
         flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")
         return redirect(url_for('dashboard'))
+
+@app.route('/save-approved-data', methods=['POST'])
+def save_approved_data():
+    if 'username' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    try:
+        data = request.get_json()
+
+        # ดึงค่าจาก JSON
+        status = data.get('status')
+        customer_id = data.get('customer_id')
+        fullname = data.get('fullname')
+        phone = data.get('phone')
+        approve_date = data.get('approve_date')
+        approved_amount = data.get('approved_amount')
+        open_balance = data.get('open_balance')
+        registrar = data.get('registrar')
+
+        companies = data.get('company[]', [])
+        actions = data.get('action_type[]', [])
+        tables = data.get('table_select[]', [])
+        amounts = data.get('amount[]', [])
+
+        time_str = datetime.now().strftime("%H:%M:%S")
+
+        table_columns = {
+            'โต๊ะ1': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
+            'โต๊ะ2': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
+            'โต๊ะ3': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
+        }
+
+        for c, a, t, am in zip(companies, actions, tables, amounts):
+            if t in table_columns:
+                if a == 'เปิดยอด':
+                    table_columns[t]['OpeningBalance'] = am
+                elif a == 'เปิดสุทธิ':
+                    table_columns[t]['NetOpening'] = am
+                elif a == 'คืนต้น':
+                    table_columns[t]['PrincipalReturned'] = am
+                elif a == 'สูญเสีย':
+                    table_columns[t]['LostAmount'] = am
+
+        row_data = [
+            approve_date,
+            companies[0] if companies else '',
+            customer_id,
+            time_str,
+            fullname,
+            table_columns['โต๊ะ1']['OpeningBalance'],
+            table_columns['โต๊ะ1']['NetOpening'],
+            table_columns['โต๊ะ1']['PrincipalReturned'],
+            table_columns['โต๊ะ1']['LostAmount'],
+            table_columns['โต๊ะ2']['OpeningBalance'],
+            table_columns['โต๊ะ2']['NetOpening'],
+            table_columns['โต๊ะ2']['PrincipalReturned'],
+            table_columns['โต๊ะ2']['LostAmount'],
+            table_columns['โต๊ะ3']['OpeningBalance'],
+            table_columns['โต๊ะ3']['NetOpening'],
+            table_columns['โต๊ะ3']['PrincipalReturned'],
+            table_columns['โต๊ะ3']['LostAmount'],
+        ]
+
+        worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
+        worksheet.append_row(row_data)
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 # ... (โค้ดส่วนล่างของ app.py) ...
