@@ -1121,20 +1121,36 @@
     approveForm.addEventListener('submit', async e => {
       e.preventDefault();
       const formData = new FormData(e.target);
-      const jsonData = Object.fromEntries(formData.entries());
+
+      const jsonData = {
+        status: formData.get('status'),
+        customer_id: formData.get('customer_id'),
+        fullname: formData.get('fullname'),
+        phone: formData.get('phone'),
+        approve_date: formData.get('approve_date'),
+        approved_amount: formData.get('approved_amount'),
+        open_balance: formData.get('open_balance'),
+        registrar: formData.get('registrar'),
+        'company[]': formData.getAll('company[]'),
+        'action_type[]': formData.getAll('action_type[]'),
+        'table_select[]': formData.getAll('table_select[]'),
+        'amount[]': formData.getAll('amount[]')
+      };
+
       const res = await fetch('/save-approved-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(jsonData)
       });
+
       if (res.ok) {
         alert('บันทึกข้อมูลเรียบร้อย');
         document.getElementById('approve-popup').style.display = 'none';
-        // อัปเดต UI ถ้าต้องการ
       } else {
         alert('เกิดข้อผิดพลาดในการบันทึก');
       }
     });
+
   }
 
   // สลับตารางเมื่อคลิก dropdown-menu item ที่มี data-table

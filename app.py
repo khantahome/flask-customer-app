@@ -736,6 +736,8 @@ def save_approved_data():
         ]
         print("DATA RECEIVED:", data)
         print("ROW DATA BEFORE SAVE:", row_data)
+        current_app.logger.info(f"DATA RECEIVED: {data}")
+        current_app.logger.info(f"ROW DATA BEFORE SAVE: {row_data}")
 
 
         worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
