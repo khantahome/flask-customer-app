@@ -176,17 +176,30 @@
         }
 
         .btn-primary {
-            background-color: var(--primary-color); /* Primary color button */
-            color: white;
-            width: 100%; /* Full width for submit button */
-            margin-top: 15px;
+            background-color: var(--primary-color); /* สีหลัก */
+            color: white; /* สีตัวอักษร */
+            width: 100%;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* เงาธรรมชาติ ไม่เรืองแสงขาว */
         }
 
         .btn-primary:hover {
-            background-color: #6A1B9A; /* Darker primary on hover */
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            background-color: #6A1B9A; /* สีเข้มขึ้น */
+            transform: translateY(-2px); /* ยกขึ้นเวลา hover */
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4); /* เงาเข้มขึ้นเวลา hover */
         }
+
+        .btn-primary:active {
+            transform: translateY(0); /* เวลากดกลับลง */
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3); /* ลดเงาเวลากด */
+        }
+
 
         /* Action button group (for sidebar) */
         .action-button-group {
@@ -389,10 +402,6 @@
             .modal .form-input {
                 padding: 8px 10px;
                 font-size: 0.9em;
-            }
-            .modal .btn-primary {
-                padding: 10px 20px;
-                font-size: 1em;
             }
             .data-table th, .data-table td {
                 padding: 8px 10px;
@@ -622,18 +631,6 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
-        }
-
-        .btn-primary:hover {
-            background-color: #9346E2;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(138, 43, 226, 0.4);
         }
 
         .btn-secondary {
