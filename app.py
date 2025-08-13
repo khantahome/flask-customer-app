@@ -734,6 +734,9 @@ def save_approved_data():
             table_columns['โต๊ะ3']['PrincipalReturned'],
             table_columns['โต๊ะ3']['LostAmount'],
         ]
+        print("DATA RECEIVED:", data)
+        print("ROW DATA BEFORE SAVE:", row_data)
+
 
         worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
         worksheet.append_row(row_data)
