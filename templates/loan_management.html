@@ -988,7 +988,7 @@
     const newRow = row.cloneNode(true);
 
     // ล้างค่าในแถวใหม่
-    newRow.querySelectorAll('select, input').forEach(el => {
+    newRow.querySelectorAll('input[name="amount[]"]').forEach(el => el.value = '');
       if (el.tagName === 'SELECT') el.selectedIndex = 0;
       if (el.tagName === 'INPUT') el.value = '';
     });
@@ -1171,8 +1171,6 @@
       if (targetTable) targetTable.style.display = 'block';
     });
   });
-
-});
 
 </script>
 </body>
