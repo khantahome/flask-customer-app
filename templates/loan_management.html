@@ -1000,14 +1000,14 @@
 
   // กำหนด event ลบแถวแถวแรก (ถ้ามีมากกว่า 1 แถว)
   const firstDeleteBtn = shareContainer.querySelector('.delete-share-btn');
-  if (firstDeleteBtn) {
-    firstDeleteBtn.onclick = function() {
-      if (shareContainer.children.length > 1) {
-        this.closest('.share-row').remove();
-        checkOtherCompanyVisibility();
-      }
-    };
-  }
+if (firstDeleteBtn) {
+  firstDeleteBtn.onclick = function() {
+    if (shareContainer.children.length > 1) {
+      this.closest('.share-row').remove(); // ใช้ this แทน newRow
+      checkOtherCompanyVisibility();
+    }
+  };
+}
 
   // ฟังก์ชันตรวจสอบว่ามีแถวไหนเลือก "อื่นๆ" ไหม เพื่อแสดงช่องกรอกบริษัทอื่นๆ
   function checkOtherCompanyVisibility() {
