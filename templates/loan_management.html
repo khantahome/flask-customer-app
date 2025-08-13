@@ -980,85 +980,75 @@
     if (body) body.classList.add('loaded');
   });
 
-  // ส่วนของการจัดการส่วนแบ่ง: ปุ่มเพิ่มและลบ
-    const shareContainer = document.getElementById('share-container');
-    const addShareBtn = document.getElementById('add-share-btn');
-    const otherCompanyContainer = document.getElementById('other-company-container');
-    const otherCompanyInput = document.getElementById('other_company');
+  // แสดงช่องกรอกบริษัทอื่นๆ สำหรับ share-container (multi-row)
+  const shareContainer = document.getElementById('share-container');
+  const addShareBtn = document.getElementById('add-share-btn');
+  const otherCompanyContainer = document.getElementById('other-company-container');
+  const otherCompanyInput = document.getElementById('other_company');
 
-    // ฟังก์ชันสำหรับแสดง/ซ่อนปุ่มลบ
-    const updateDeleteButtons = () => {
-        const allShareRows = shareContainer.querySelectorAll('.share-row');
-        if (allShareRows.length > 1) {
-            allShareRows.forEach(row => {
-                const deleteBtn = row.querySelector('.delete-share-btn');
-                if (deleteBtn) {
-                    deleteBtn.style.display = 'inline-block';
-                }
-            });
-        } else {
-            const deleteBtn = allShareRows[0].querySelector('.delete-share-btn');
-            if (deleteBtn) {
-                deleteBtn.style.display = 'none';
-            }
-        }
+  // ฟังก์ชันเพิ่มแถวส่วนแบ่ง
+  addShareBtn.addEventListener('click', function() {
+    const row = shareContainer.querySelector('.share-row');
+    const newRow = row.cloneNode(true);
+
+    // ล้างค่าในแถวใหม่
+    newRow.querySelectorAll('select, input').forEach(el => {
+      if (el.tagName === 'SELECT') el.selectedIndex = 0;
+      if (el.tagName === 'INPUT') el.value = '';
+    });
+
+    // แสดงปุ่ม Delete ในแถวใหม่
+    const deleteBtn = newRow.querySelector('.delete-share-btn');
+    deleteBtn.style.display = 'inline-block';
+
+    // เพิ่ม event ให้ปุ่ม Delete
+    deleteBtn.onclick = function() {
+      if (shareContainer.children.length > 1) {
+        newRow.remove();
+        // ถ้ไม่มีแถวไหนเลือก "อื่นๆ" ให้ซ่อนช่องอื่นๆ
+        checkOtherCompanyVisibility();
+      }
     };
 
-    // ฟังก์ชันสำหรับตรวจสอบและแสดง/ซ่อนช่อง "บริษัทอื่นๆ"
-    function checkOtherCompanyVisibility() {
-        let showOther = false;
-        shareContainer.querySelectorAll('select[name="company[]"]').forEach(sel => {
-            if (sel.value === 'อื่นๆ') {
-                showOther = true;
-            }
-        });
-        if (showOther) {
-            otherCompanyContainer.style.display = 'block';
-            otherCompanyInput.required = true;
-        } else {
-            otherCompanyContainer.style.display = 'none';
-            otherCompanyInput.required = false;
-            otherCompanyInput.value = '';
-        }
-    }
+    shareContainer.appendChild(newRow);
+  });
 
-    // Event listener สำหรับปุ่ม "เพิ่มส่วนแบ่ง"
-    addShareBtn.addEventListener('click', () => {
-        const firstShareRow = shareContainer.querySelector('.share-row');
-        const newShareRow = firstShareRow.cloneNode(true);
-
-        newShareRow.querySelectorAll('select, input').forEach(el => {
-            if (el.tagName === 'SELECT') el.selectedIndex = 0;
-            if (el.tagName === 'INPUT') el.value = '';
-        });
-
-        shareContainer.appendChild(newShareRow);
-        updateDeleteButtons();
+  // กำหนด event ลบแถวแถวแรก (ถ้ามีมากกว่า 1 แถว)
+  const firstDeleteBtn = shareContainer.querySelector('.delete-share-btn');
+  if (firstDeleteBtn) {
+    firstDeleteBtn.onclick = function() {
+      if (shareContainer.children.length > 1) {
+        this.closest('.share-row').remove();
         checkOtherCompanyVisibility();
-    });
+      }
+    };
+  }
 
-    // Event listener สำหรับปุ่ม "ลบ" โดยใช้ event delegation
-    shareContainer.addEventListener('click', (event) => {
-        if (event.target.classList.contains('delete-share-btn')) {
-            const allShareRows = shareContainer.querySelectorAll('.share-row');
-            if (allShareRows.length > 1) {
-                event.target.closest('.share-row').remove();
-                updateDeleteButtons();
-                checkOtherCompanyVisibility();
-            }
-        }
+  // ฟังก์ชันตรวจสอบว่ามีแถวไหนเลือก "อื่นๆ" ไหม เพื่อแสดงช่องกรอกบริษัทอื่นๆ
+  function checkOtherCompanyVisibility() {
+    let showOther = false;
+    shareContainer.querySelectorAll('select[name="company[]"]').forEach(sel => {
+      if (sel.value === 'อื่นๆ') {
+        showOther = true;
+      }
     });
+    if (showOther) {
+      otherCompanyContainer.style.display = 'block';
+      otherCompanyInput.required = true;
+    } else {
+      otherCompanyContainer.style.display = 'none';
+      otherCompanyInput.required = false;
+      otherCompanyInput.value = '';
+    }
+  }
 
-    // Event listener สำหรับการเลือกบริษัทเพื่อแสดง/ซ่อนช่อง "บริษัทอื่นๆ"
-    shareContainer.addEventListener('change', (event) => {
-        if (event.target.classList.contains('company-select')) {
-            checkOtherCompanyVisibility();
-        }
-    });
+  // ฟังชั่นตรวจจับการเปลี่ยนค่า company[] เพื่อแสดง/ซ่อนช่องบริษัทอื่นๆ
+  shareContainer.addEventListener('change', function(e) {
+    if (e.target.name === 'company[]') {
+      checkOtherCompanyVisibility();
+    }
+  });
 
-    // Initial call to hide delete button if there's only one row
-    updateDeleteButtons();
-});
   // โค้ดส่วนอื่น ๆ ที่คุณมี เช่น
 
   // แสดงข้อความ
@@ -1170,6 +1160,7 @@
     });
   });
 
+});
 
 </script>
 </body>
