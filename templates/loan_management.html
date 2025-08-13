@@ -918,17 +918,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 <script>
-  function showMessage(message, type) {
-    const messageBox = document.getElementById('message-box');
-    messageBox.textContent = message;
-    messageBox.className = ''; // ลบคลาสเดิมทั้งหมด
-    messageBox.classList.add(type, 'visible'); // เพิ่มคลาสใหม่
-
-    setTimeout(() => {
-      messageBox.classList.remove('visible');
-    }, 3000);
-  }
-
   document.addEventListener('DOMContentLoaded', () => {
   // Modal variables
   const approveLoanBtn = document.getElementById('approveLoanBtn');
@@ -984,30 +973,30 @@
 
   // ฟังก์ชันเพิ่มแถวส่วนแบ่ง
   addShareBtn.addEventListener('click', function() {
-    const row = shareContainer.querySelector('.share-row');
-    const newRow = row.cloneNode(true);
+  const row = shareContainer.querySelector('.share-row');
+  const newRow = row.cloneNode(true);
 
-    // ล้างค่าในแถวใหม่
-    newRow.querySelectorAll('input[name="amount[]"]').forEach(el => el.value = '');
-      if (el.tagName === 'SELECT') el.selectedIndex = 0;
-      if (el.tagName === 'INPUT') el.value = '';
-    });
-
-    // แสดงปุ่ม Delete ในแถวใหม่
-    const deleteBtn = newRow.querySelector('.delete-share-btn');
-    deleteBtn.style.display = 'inline-block';
-
-    // เพิ่ม event ให้ปุ่ม Delete
-    deleteBtn.onclick = function() {
-      if (shareContainer.children.length > 1) {
-        newRow.remove();
-        // ถ้ไม่มีแถวไหนเลือก "อื่นๆ" ให้ซ่อนช่องอื่นๆ
-        checkOtherCompanyVisibility();
-      }
-    };
-
-    shareContainer.appendChild(newRow);
+  // ล้างค่าในแถวใหม่
+  newRow.querySelectorAll('select, input').forEach(el => {
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    if (el.tagName === 'INPUT') el.value = '';
   });
+
+  // แสดงปุ่ม Delete ในแถวใหม่
+  const deleteBtn = newRow.querySelector('.delete-share-btn');
+  deleteBtn.style.display = 'inline-block';
+
+  // เพิ่ม event ให้ปุ่ม Delete
+  deleteBtn.onclick = function() {
+    if (shareContainer.children.length > 1) {
+      newRow.remove();
+      checkOtherCompanyVisibility();
+    }
+  };
+
+  shareContainer.appendChild(newRow);
+});
+
 
   // กำหนด event ลบแถวแถวแรก (ถ้ามีมากกว่า 1 แถว)
   const firstDeleteBtn = shareContainer.querySelector('.delete-share-btn');
@@ -1171,7 +1160,7 @@
       if (targetTable) targetTable.style.display = 'block';
     });
   });
-
+});
 </script>
 </body>
 </html>
