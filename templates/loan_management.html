@@ -674,7 +674,55 @@
             .form-actions .btn {
                 width: 100%;
             }
-        }
+            /* Responsive: ตารางไม่ล้นจอและเลื่อนซ้ายขวาได้ */
+.daily-job-table-section {
+  width: 100%;
+}
+.daily-job-table-section > div[style*="overflow-x:auto"] {
+  width: 100%;
+  overflow-x: auto;
+}
+.closejob-table {
+  min-width: 900px; /* ป้องกันหัวตารางซ้อนกันบนจอเล็ก */
+}
+
+/* Responsive: แสดง data-label บนมือถือ */
+@media (max-width: 900px) {
+  .closejob-table, .closejob-table thead, .closejob-table tbody, .closejob-table th, .closejob-table td, .closejob-table tr {
+    display: block;
+  }
+  .closejob-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  .closejob-table tr {
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--table-row-even);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .closejob-table td {
+    border: none;
+    position: relative;
+    padding-left: 50%;
+    min-height: 32px;
+    text-align: left;
+    white-space: pre-line;
+  }
+  .closejob-table td:before {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    width: 45%;
+    white-space: nowrap;
+    font-weight: bold;
+    color: var(--light-text-color);
+    content: attr(data-label);
+  }
+}
+}
     </style>
 </head>
 <body class="initial-hidden"> {# Add initial-hidden class to body #}
@@ -819,7 +867,6 @@
 <!-- ตารางค้นหา/ปิดจ๊อบรายวัน -->
 <div class="daily-job-table-section" style="display:none;">
   <h3>ค้นหา/ปิดจ๊อบรายวัน</h3>
-
   <form id="daily-job-search-form" style="margin-bottom: 15px;">
     <label>
       วันที่:
@@ -831,33 +878,34 @@
     </label>
     <button type="submit">ค้นหา</button>
   </form>
-
-  <table class="closejob-table" id="daily-job-table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>CompanyName</th>
-        <th>CustomerID</th>
-        <th>Time</th>
-        <th>CustomerName</th>
-        <th>Table1_OpeningBalance</th>
-        <th>Table1_NetOpening</th>
-        <th>Table1_PrincipalReturned</th>
-        <th>Table1_LostAmount</th>
-        <th>Table2_OpeningBalance</th>
-        <th>Table2_NetOpening</th>
-        <th>Table2_PrincipalReturned</th>
-        <th>Table2_LostAmount</th>
-        <th>Table3_OpeningBalance</th>
-        <th>Table3_NetOpening</th>
-        <th>Table3_PrincipalReturned</th>
-        <th>Table3_LostAmount</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- ข้อมูลจะมาเติมตรงนี้ -->
-    </tbody>
-  </table>
+  <div style="overflow-x:auto;">
+    <table class="closejob-table" id="daily-job-table">
+      <thead>
+        <tr>
+          <th>วันที่</th>
+          <th>บริษัท</th>
+          <th>รหัสลูกค้า</th>
+          <th>เวลา</th>
+          <th>ชื่อลูกค้า</th>
+          <th>ยอดเปิดโต๊ะ1</th>
+          <th>สุทธิ1</th>
+          <th>คืนต้น1</th>
+          <th>เสีย1</th>
+          <th>ยอดเปิดโต๊ะ2</th>
+          <th>สุทธิ2</th>
+          <th>คืนต้น2</th>
+          <th>เสีย2</th>
+          <th>ยอดเปิดโต๊ะ3</th>
+          <th>สุทธิ3</th>
+          <th>คืนต้น3</th>
+          <th>เสีย3</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- ข้อมูลจะมาเติมตรงนี้ -->
+      </tbody>
+    </table>
+  </div>
 </div>
 
 
@@ -1160,11 +1208,17 @@ if (approveForm) {
     const amounts = formData.getAll('amount[]');
 
     // ดึง input ของบริษัทอื่นๆ (ต้องตรงกับชื่อ element จริง)
-    const otherCompanyInput = document.getElementById('otherCompanyInput'); 
+    const otherCompanyInput = document.getElementById('other_company'); 
 
     for (let i = 0; i < companies.length; i++) {
       // ถ้าเลือก "อื่นๆ" ใช้ค่าที่กรอก
       const companyValue = companies[i] === 'อื่นๆ' ? otherCompanyInput.value.trim() : companies[i];
+
+      // ถ้าเลือก "อื่นๆ" แต่ไม่กรอก ให้แจ้งเตือน
+      if (companies[i] === 'อื่นๆ' && !companyValue) {
+        alert('กรุณากรอกชื่อบริษัทอื่นๆ');
+        return;
+      }
 
       const singleRecord = {
         status: formData.get('status'),
@@ -1243,12 +1297,20 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
                 tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;">ไม่พบข้อมูล</td></tr>';
                 return;
             }
+            const dailyJobHeaders = [
+              "วันที่", "บริษัท", "รหัสลูกค้า", "เวลา", "ชื่อลูกค้า",
+              "ยอดเปิดโต๊ะ1", "สุทธิ1", "คืนต้น1", "เสีย1",
+              "ยอดเปิดโต๊ะ2", "สุทธิ2", "คืนต้น2", "เสีย2",
+              "ยอดเปิดโต๊ะ3", "สุทธิ3", "คืนต้น3", "เสีย3"
+            ];
 
             data.forEach(row => {
                 const tr = document.createElement('tr');
+                let i = 0;
                 Object.values(row).forEach(value => {
                     const td = document.createElement('td');
                     td.textContent = value;
+                    td.setAttribute('data-label', dailyJobHeaders[i++] || "");
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
