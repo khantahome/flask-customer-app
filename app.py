@@ -785,6 +785,10 @@ def edit_customer_data(row_index):
 
     if request.method == 'POST':
         # Get updated text data from the form
+        sub_profession_group = request.form.get('sub_profession_group', '') or '-'
+        other_sub_profession = request.form.get('other_sub_profession', '') or '-'
+        # ถ้าเลือก "อื่นๆ" ให้ใช้ค่าที่กรอกเอง
+        final_sub_profession_value = other_sub_profession if sub_profession_group == "อื่นๆ" else sub_profession_group
         updated_data = {
             'Timestamp': customer_data.get('Timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
             'ชื่อ': request.form.get('customer_name', '') or '-',
@@ -792,8 +796,8 @@ def edit_customer_data(row_index):
             'เลขบัตรประชาชน': request.form.get('id_card_number', '') or '-',
             'เบอร์มือถือ': request.form.get('mobile_phone_number', '') or '-',
             'กลุ่มลูกค้าหลัก': request.form.get('main_customer_group', '') or '-',
-            'กลุ่มอาชีพย่อย': request.form.get('sub_profession_group', '') or '-',
-            'ระบุอาชีพย่อยอื่นๆ': request.form.get('other_sub_profession', '') or '-',
+            'กลุ่มอาชีพย่อย': final_sub_profession_value,
+            'ระบุอาชีพย่อยอื่นๆ': other_sub_profession,
             'จดทะเบียน': request.form.get('registered', '') or '-',
             'ชื่อกิจการ': request.form.get('business_name', '') or '-',
             'ประเภทธุรกิจ': request.form.get('business_type', '') or '-',

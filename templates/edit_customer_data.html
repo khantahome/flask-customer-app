@@ -729,13 +729,16 @@ body {
                 }
             });
 
-                    function toggleOtherSubProfession() {
+            function toggleOtherSubProfession() {
                 const subProfessionSelect = document.getElementById('sub_profession_group');
-                const otherInputGroup = document.getElementById('other_sub_profession_group');
+                const otherInputGroup = document.getElementById('otherSubProfessionInputGroup'); // <-- แก้ id ให้ตรง
                 if (subProfessionSelect.value === 'อื่นๆ') {
                     otherInputGroup.style.display = 'block';
+                    document.getElementById('other_sub_profession').setAttribute('required', 'required');
                 } else {
                     otherInputGroup.style.display = 'none';
+                    document.getElementById('other_sub_profession').value = '';
+                    document.getElementById('other_sub_profession').removeAttribute('required');
                 }
             }
 
@@ -898,7 +901,9 @@ body {
         toggleOtherSubProfessionInput();
     });
 
-    subProfessionGroupSelect.addEventListener('change', toggleOtherSubProfessionInput);
+    subProfessionGroupSelect.addEventListener('change', function() {
+    toggleOtherSubProfession();
+});
 
     // ตั้งค่าเริ่มต้นจากฐานข้อมูล (ต้องแก้ตามตัวแปร template ของคุณ)
     const currentMainGroup = "{{ customer_data.get('กลุ่มลูกค้าหลัก', '') }}";
