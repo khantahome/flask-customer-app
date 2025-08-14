@@ -867,17 +867,27 @@
 <!-- ตารางค้นหา/ปิดจ๊อบรายวัน -->
 <div class="daily-job-table-section" style="display:none;">
   <h3>ค้นหา/ปิดจ๊อบรายวัน</h3>
-  <form id="daily-job-search-form" style="margin-bottom: 15px;">
-    <label>
-      วันที่:
-      <input type="date" name="date" required>
-    </label>
-    <label>
-      ชื่อบริษัท:
-      <input type="text" name="company" placeholder="ใส่ชื่อบริษัท (ถ้ามี)">
-    </label>
-    <button type="submit">ค้นหา</button>
-  </form>
+  <form id="daily-job-search-form" style="margin-bottom: 15px; display: flex; gap: 16px; align-items: flex-end;">
+  <div style="flex:1;">
+    <label class="form-label" style="color: var(--light-text-color);">วันที่:</label>
+    <input type="date" name="date" class="form-input" required style="width:100%;">
+  </div>
+  <div style="flex:1;">
+    <label class="form-label" style="color: var(--light-text-color);">บริษัท:</label>
+    <select name="company" id="company-select" class="form-input" style="width:100%;">
+      <option value="">--เลือกบริษัท--</option>
+      <option value="STARLOAN">STARLOAN</option>
+      <option value="GLORYCASH">GLORYCASH</option>
+      <option value="CASHCREDIT">CASHCREDIT</option>
+      <option value="อื่นๆ">อื่นๆ</option>
+    </select>
+  </div>
+  <div id="other-company-search-container" style="flex:1; display:none;">
+    <label class="form-label" style="color: var(--light-text-color);">บริษัทอื่นๆ:</label>
+    <input type="text" id="other-company-search" name="other_company_search" class="form-input" placeholder="กรอกชื่อบริษัท" style="width:100%;">
+  </div>
+  <button type="submit" class="btn btn-primary" style="height:42px; margin-top:0;">ค้นหา</button>
+</form>
   <div style="overflow-x:auto;">
     <table class="closejob-table" id="daily-job-table">
       <thead>
@@ -951,6 +961,7 @@
                       <option value="">--เลือกบริษัท--</option>
                       <option value="STARLOAN">STARLOAN</option>
                       <option value="GLORYCASH">GLORYCASH</option>
+                      <option value="CASHCREDIT">CASHCREDIT</option>
                       <option value="อื่นๆ">อื่นๆ</option>
                   </select>
               </div>
@@ -1277,15 +1288,6 @@ if (approveForm) {
 document.getElementById('daily-job-search-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    const date = this.date.value;
-    const company = this.company.value;
-
-    if (!date) {
-        alert('กรุณาเลือกวันที่');
-        return;
-    }
-
-    const url = `/api/daily-jobs?date=${encodeURIComponent(date)}&company=${encodeURIComponent(company)}`;
 
     fetch(url)
         .then(res => res.json())
@@ -1321,7 +1323,20 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
             alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
         });
 });
+      const companySelect = document.getElementById('company-select');
+      const otherCompanySearchContainer = document.getElementById('other-company-search-container');
+      const otherCompanySearchInput = document.getElementById('other-company-search');
 
+      companySelect.addEventListener('change', function() {
+        if (this.value === 'อื่นๆ') {
+          otherCompanySearchContainer.style.display = 'block';
+          otherCompanySearchInput.required = true;
+        } else {
+          otherCompanySearchContainer.style.display = 'none';
+          otherCompanySearchInput.required = false;
+          otherCompanySearchInput.value = '';
+      }
+});
 </script>
 </body>
 </html>
