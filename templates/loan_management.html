@@ -1105,7 +1105,6 @@ if (firstDeleteBtn) {
   }
 
   // ฟังกฺชั่นบันทึกลงชีทหน้าปิดจ๊อบ
-  // เพิ่มฟังก์ชัน submit แยกแต่ละ share-row เป็นเรคคอร์ดใหม่
 const approveForm = document.getElementById('approve-form');
 if (approveForm) {
   approveForm.addEventListener('submit', async e => {
@@ -1117,7 +1116,13 @@ if (approveForm) {
     const tables = formData.getAll('table_select[]');
     const amounts = formData.getAll('amount[]');
 
+    // ดึง input ของบริษัทอื่นๆ (ต้องตรงกับชื่อ element จริง)
+    const otherCompanyInput = document.getElementById('otherCompanyInput'); 
+
     for (let i = 0; i < companies.length; i++) {
+      // ถ้าเลือก "อื่นๆ" ใช้ค่าที่กรอก
+      const companyValue = companies[i] === 'อื่นๆ' ? otherCompanyInput.value.trim() : companies[i];
+
       const singleRecord = {
         status: formData.get('status'),
         customer_id: formData.get('customer_id'),
@@ -1127,7 +1132,7 @@ if (approveForm) {
         approved_amount: formData.get('approved_amount'),
         open_balance: formData.get('open_balance'),
         registrar: formData.get('registrar'),
-        company: companies[i],
+        company: companyValue, // ใช้ค่าที่ปรับแล้ว
         action_type: actions[i],
         table_select: tables[i],
         amount: amounts[i]
@@ -1149,6 +1154,7 @@ if (approveForm) {
     document.getElementById('approve-popup').style.display = 'none';
   });
 }
+
 
   // สลับตารางเมื่อคลิก dropdown-menu item ที่มี data-table
   document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
