@@ -1300,9 +1300,50 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
 });
 const dailyJobSearchForm = document.getElementById('daily-job-search-form');
 if (dailyJobSearchForm) {
-  dailyJobSearchForm.addEventListener('submit', function(e) {
+  dailyJobSearchForm.addEventListener('submit', async function(e) {
     e.preventDefault();
-    // ...ใส่โค้ดค้นหาของคุณตรงนี้...
+
+    // ดึงค่าจากฟอร์ม
+    const formData = new FormData(dailyJobSearchForm);
+    const params = new URLSearchParams();
+    for (const pair of formData.entries()) {
+      params.append(pair[0], pair[1]);
+    }
+
+    // เรียก backend เพื่อค้นหา
+    const res = await fetch('/api/daily-jobs?' + params.toString());
+    const data = await res.json();
+
+    // เติมข้อมูลลงตาราง
+    const tbody = document.querySelector('#daily-job-table tbody');
+    tbody.innerHTML = '';
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
+    } else {
+      data.forEach(row => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${row.date || ''}</td>
+            <td>${row.company || ''}</td>
+            <td>${row.customer_id || ''}</td>
+            <td>${row.time || ''}</td>
+            <td>${row.fullname || ''}</td>
+            <td>${row.table1_open || ''}</td>
+            <td>${row.table1_net || ''}</td>
+            <td>${row.table1_return || ''}</td>
+            <td>${row.table1_bad || ''}</td>
+            <td>${row.table2_open || ''}</td>
+            <td>${row.table2_net || ''}</td>
+            <td>${row.table2_return || ''}</td>
+            <td>${row.table2_bad || ''}</td>
+            <td>${row.table3_open || ''}</td>
+            <td>${row.table3_net || ''}</td>
+            <td>${row.table3_return || ''}</td>
+            <td>${row.table3_bad || ''}</td>
+          </tr>
+        `;
+      });
+    }
 
     // แสดงตารางค้นหา/ปิดจ๊อบรายวัน
     document.querySelectorAll(
@@ -1312,6 +1353,22 @@ if (dailyJobSearchForm) {
     });
     const dailySection = document.querySelector('.daily-job-table-section');
     if (dailySection) dailySection.style.display = 'block';
+  });
+}
+const companySelect = document.getElementById('company-select');
+const otherCompanySearchContainer = document.getElementById('other-company-search-container');
+const otherCompanySearchInput = document.getElementById('other-company-search');
+
+if (companySelect) {
+  companySelect.addEventListener('change', function() {
+    if (companySelect.value === 'อื่นๆ') {
+      otherCompanySearchContainer.style.display = 'block';
+      otherCompanySearchInput.required = true;
+    } else {
+      otherCompanySearchContainer.style.display = 'none';
+      otherCompanySearchInput.required = false;
+      otherCompanySearchInput.value = '';
+    }
   });
 }
 });
