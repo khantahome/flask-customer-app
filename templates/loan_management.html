@@ -892,23 +892,28 @@
     <table class="closejob-table" id="daily-job-table">
       <thead>
         <tr>
-          <th>วันที่</th>
-          <th>บริษัท</th>
-          <th>รหัสลูกค้า</th>
-          <th>เวลา</th>
-          <th>ชื่อลูกค้า</th>
-          <th>ยอดเปิดโต๊ะ1</th>
-          <th>สุทธิ1</th>
-          <th>คืนต้น1</th>
-          <th>เสีย1</th>
-          <th>ยอดเปิดโต๊ะ2</th>
-          <th>สุทธิ2</th>
-          <th>คืนต้น2</th>
-          <th>เสีย2</th>
-          <th>ยอดเปิดโต๊ะ3</th>
-          <th>สุทธิ3</th>
-          <th>คืนต้น3</th>
-          <th>เสีย3</th>
+          <th rowspan="2">วันที่</th>
+          <th rowspan="2">บริษัท</th>
+          <th rowspan="2">รหัสลูกค้า</th>
+          <th rowspan="2">เวลา</th>
+          <th rowspan="2">ชื่อลูกค้า</th>
+          <th colspan="4" style="background:#3f51b5; color:#fff;">โต๊ะ1</th>
+          <th colspan="4" style="background:#009688; color:#fff;">โต๊ะ2</th>
+          <th colspan="4" style="background:#ff9800; color:#fff;">โต๊ะ3</th>
+        </tr>
+        <tr>
+          <th style="background:#47a7d3;">ยอดเปิดโต๊ะ</th>
+          <th style="background:#df8a29;">สุทธิ</th>
+          <th style="background:#26ff00;">คืนต้น</th>
+          <th style="background:#ff0019;">เสีย</th>
+          <th style="background:#47a7d3;">ยอดเปิดโต๊ะ</th>
+          <th style="background:#df8a29;">สุทธิ</th>
+          <th style="background:#26ff00;">คืนต้น</th>
+          <th style="background:#ff0019;">เสีย</th>
+          <th style="background:#47a7d3;">ยอดเปิดโต๊ะ</th>
+          <th style="background:#df8a29;">สุทธิ</th>
+          <th style="background:#26ff00;">คืนต้น</th>
+          <th style="background:#ff0019;">เสีย</th>
         </tr>
       </thead>
       <tbody>
@@ -1288,6 +1293,18 @@ if (approveForm) {
 document.getElementById('daily-job-search-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
+    const date = this.date.value;
+    let company = this.company.value;
+    if (company === 'อื่นๆ') {
+      company = this.other_company_search.value;
+      }
+
+    if (!date) {
+        alert('กรุณาเลือกวันที่');
+        return;
+      }
+
+    const url = `/api/daily-jobs?date=${encodeURIComponent(date)}&company=${encodeURIComponent(company)}`;
 
     fetch(url)
         .then(res => res.json())
@@ -1298,13 +1315,13 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
             if (!Array.isArray(data) || data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;">ไม่พบข้อมูล</td></tr>';
                 return;
-            }
+              }
             const dailyJobHeaders = [
               "วันที่", "บริษัท", "รหัสลูกค้า", "เวลา", "ชื่อลูกค้า",
               "ยอดเปิดโต๊ะ1", "สุทธิ1", "คืนต้น1", "เสีย1",
               "ยอดเปิดโต๊ะ2", "สุทธิ2", "คืนต้น2", "เสีย2",
               "ยอดเปิดโต๊ะ3", "สุทธิ3", "คืนต้น3", "เสีย3"
-            ];
+              ];
 
             data.forEach(row => {
                 const tr = document.createElement('tr');
@@ -1314,15 +1331,16 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
                     td.textContent = value;
                     td.setAttribute('data-label', dailyJobHeaders[i++] || "");
                     tr.appendChild(td);
-                });
+                  });
                 tbody.appendChild(tr);
-            });
-        })
+              });
+          })
         .catch(err => {
             console.error(err);
             alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
-        });
-});
+          });
+    });
+
       const companySelect = document.getElementById('company-select');
       const otherCompanySearchContainer = document.getElementById('other-company-search-container');
       const otherCompanySearchInput = document.getElementById('other-company-search');
