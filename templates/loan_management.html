@@ -1104,51 +1104,51 @@ if (firstDeleteBtn) {
     });
   }
 
-  // ฟังก์ชั่นบันทึกปิดจ๊อบ
-  const approveForm = document.getElementById('approve-form');
+  // ฟังกฺชั่นบันทึกลงชีทหน้าปิดจ๊อบ
+  // เพิ่มฟังก์ชัน submit แยกแต่ละ share-row เป็นเรคคอร์ดใหม่
+const approveForm = document.getElementById('approve-form');
 if (approveForm) {
   approveForm.addEventListener('submit', async e => {
     e.preventDefault();
     const formData = new FormData(e.target);
 
-    // เก็บข้อมูลแต่ละแถว share-row ให้เป็น record แยก
-    const shareRows = [];
-    document.querySelectorAll('.share-row').forEach(row => {
-      shareRows.push({
-        company: row.querySelector('select[name="company[]"]').value,
-        action_type: row.querySelector('select[name="action_type[]"]').value,
-        table_select: row.querySelector('select[name="table_select[]"]').value,
-        amount: row.querySelector('input[name="amount[]"]').value
+    const companies = formData.getAll('company[]');
+    const actions = formData.getAll('action_type[]');
+    const tables = formData.getAll('table_select[]');
+    const amounts = formData.getAll('amount[]');
+
+    for (let i = 0; i < companies.length; i++) {
+      const singleRecord = {
+        status: formData.get('status'),
+        customer_id: formData.get('customer_id'),
+        fullname: formData.get('fullname'),
+        phone: formData.get('phone'),
+        approve_date: formData.get('approve_date'),
+        approved_amount: formData.get('approved_amount'),
+        open_balance: formData.get('open_balance'),
+        registrar: formData.get('registrar'),
+        company: companies[i],
+        action_type: actions[i],
+        table_select: tables[i],
+        amount: amounts[i]
+      };
+
+      const res = await fetch('/save-approved-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(singleRecord)
       });
-    });
 
-    const jsonData = {
-      status: formData.get('status'),
-      customer_id: formData.get('customer_id'),
-      fullname: formData.get('fullname'),
-      phone: formData.get('phone'),
-      approve_date: formData.get('approve_date'),
-      approved_amount: formData.get('approved_amount'),
-      open_balance: formData.get('open_balance'),
-      registrar: formData.get('registrar'),
-      share_rows: shareRows
-    };
-
-    const res = await fetch('/save-approved-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(jsonData)
-    });
-
-    if (res.ok) {
-      alert('บันทึกข้อมูลเรียบร้อย');
-      document.getElementById('approve-popup').style.display = 'none';
-    } else {
-      alert('เกิดข้อผิดพลาดในการบันทึก');
+      if (!res.ok) {
+        alert('เกิดข้อผิดพลาดในการบันทึก record: ' + (i+1));
+        return;
+      }
     }
+
+    alert('บันทึกข้อมูลเรียบร้อย');
+    document.getElementById('approve-popup').style.display = 'none';
   });
 }
-
 
   // สลับตารางเมื่อคลิก dropdown-menu item ที่มี data-table
   document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {

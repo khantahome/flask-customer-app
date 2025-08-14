@@ -691,10 +691,10 @@ def save_approved_data():
         open_balance = data.get('open_balance')
         registrar = data.get('registrar')
 
-        companies = data.get('company[]', [])
-        actions = data.get('action_type[]', [])
-        tables = data.get('table_select[]', [])
-        amounts = data.get('amount[]', [])
+        company = data.get('company', '')
+        action = data.get('action_type', '')
+        table = data.get('table_select', '')
+        amount = data.get('amount', '')
 
         time_str = datetime.now().strftime("%H:%M:%S")
 
@@ -704,20 +704,19 @@ def save_approved_data():
             'โต๊ะ3': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
         }
 
-        for c, a, t, am in zip(companies, actions, tables, amounts):
-            if t in table_columns:
-                if a == 'เปิดยอด':
-                    table_columns[t]['OpeningBalance'] = am
-                elif a == 'เปิดสุทธิ':
-                    table_columns[t]['NetOpening'] = am
-                elif a == 'คืนต้น':
-                    table_columns[t]['PrincipalReturned'] = am
-                elif a == 'สูญเสีย':
-                    table_columns[t]['LostAmount'] = am
+        if table in table_columns:
+            if action == 'เปิดยอด':
+                table_columns[table]['OpeningBalance'] = amount
+            elif action == 'เปิดสุทธิ':
+                table_columns[table]['NetOpening'] = amount
+            elif action == 'คืนต้น':
+                table_columns[table]['PrincipalReturned'] = amount
+            elif action == 'สูญเสีย':
+                table_columns[table]['LostAmount'] = amount
 
         row_data = [
             approve_date,
-            companies[0] if companies else '',
+            company,
             customer_id,
             time_str,
             fullname,
@@ -734,11 +733,6 @@ def save_approved_data():
             table_columns['โต๊ะ3']['PrincipalReturned'],
             table_columns['โต๊ะ3']['LostAmount'],
         ]
-        print("DATA RECEIVED:", data)
-        print("ROW DATA BEFORE SAVE:", row_data)
-        current_app.logger.info(f"DATA RECEIVED: {data}")
-        current_app.logger.info(f"ROW DATA BEFORE SAVE: {row_data}")
-
 
         worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
         worksheet.append_row(row_data)
