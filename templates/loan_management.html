@@ -872,7 +872,7 @@
     <label class="form-label" style="color: var(--light-text-color);">วันที่:</label>
     <input type="date" name="date" class="form-input" required style="width:100%;">
   </div>
-  <div style="flex:1;">
+  <div style="flex:2;">
     <label class="form-label" style="color: var(--light-text-color);">บริษัท:</label>
     <select name="company" id="company-select" class="form-input" style="width:100%;">
       <option value="">--เลือกบริษัท--</option>
@@ -882,11 +882,11 @@
       <option value="อื่นๆ">อื่นๆ</option>
     </select>
   </div>
-  <div id="other-company-search-container" style="flex:1; display:none;">
+  <div id="other-company-search-container" style="flex:2; display:none;">
     <label class="form-label" style="color: var(--light-text-color);">บริษัทอื่นๆ:</label>
     <input type="text" id="other-company-search" name="other_company_search" class="form-input" placeholder="กรอกชื่อบริษัท" style="width:100%;">
   </div>
-  <button type="submit" class="btn btn-primary" style="height:42px; margin-top:0;">ค้นหา</button>
+  <button type="submit" class="btn btn-primary" style="height:32px; min-width:80px; font-size:0.95em; padding: 4px 16px; margin-top:0;">ค้นหา</button>
 </form>
   <div style="overflow-x:auto;">
     <table class="closejob-table" id="daily-job-table">
@@ -1298,6 +1298,10 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
     if (company === 'อื่นๆ') {
       company = this.other_company_search.value;
       }
+    // ตัด index ต่อท้ายออก เช่น STARLOAN:1 => STARLOAN
+    if (company && company.includes(':')) {
+      company = company.split(':')[0];
+      }
 
     if (!date) {
         alert('กรุณาเลือกวันที่');
@@ -1321,7 +1325,7 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
               "ยอดเปิดโต๊ะ1", "สุทธิ1", "คืนต้น1", "เสีย1",
               "ยอดเปิดโต๊ะ2", "สุทธิ2", "คืนต้น2", "เสีย2",
               "ยอดเปิดโต๊ะ3", "สุทธิ3", "คืนต้น3", "เสีย3"
-              ];
+             ];
 
             data.forEach(row => {
                 const tr = document.createElement('tr');
@@ -1339,7 +1343,7 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
             console.error(err);
             alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
           });
-    });
+  });
 
       const companySelect = document.getElementById('company-select');
       const otherCompanySearchContainer = document.getElementById('other-company-search-container');
