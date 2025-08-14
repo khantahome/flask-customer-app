@@ -1288,14 +1288,14 @@ if (approveForm) {
 
       // ซ่อนทุกตารางก่อน
       document.querySelectorAll(
-        '.approove-table-section, .closejob-table-section, .baddebt-table-section, .pullplug-table-section, .returnprincipal-table-section, .daily-job-table-section'
-      ).forEach(section => {
-        section.style.display = 'none';
-      });
-      document.querySelector('.daily-job-table-section').style.display = 'block';
-      // แสดงเฉพาะตารางที่เลือก
-      const targetTable = document.querySelector('.' + tableClass);
-      if (targetTable) targetTable.style.display = 'block';
+      '.approove-table-section, .closejob-table-section, .baddebt-table-section, .pullplug-table-section, .returnprincipal-table-section, .daily-job-table-section'
+    ).forEach(section => {
+      section.style.display = 'none';
+    });
+    document.querySelector('.daily-job-table-section').style.display = 'block';
+    // แสดงเฉพาะตารางที่เลือก
+    const targetTable = document.querySelector('.' + tableClass);
+    if (targetTable) targetTable.style.display = 'block';
     });
   });
 });
