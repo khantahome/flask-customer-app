@@ -1036,7 +1036,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
   // Modal variables
   const approveLoanBtn = document.getElementById('approveLoanBtn');
   const repaymentBtn = document.getElementById('repaymentBtn');
@@ -1047,28 +1047,28 @@
 
   function openModal(modal) {
     if (modal) modal.classList.add('visible');
-  }
+    }
   function closeModal(modal) {
     if (modal) modal.classList.remove('visible');
-  }
+    }
 
   if (approveLoanBtn && approveModal) {
     approveLoanBtn.addEventListener('click', () => openModal(approveModal));
-  }
+    }
   if (repaymentBtn && repaymentModal) {
     repaymentBtn.addEventListener('click', () => openModal(repaymentModal));
-  }
+    }
   if (closeApproveModal && approveModal) {
     closeApproveModal.addEventListener('click', () => closeModal(approveModal));
-  }
+    }
   if (closeRepaymentModal && repaymentModal) {
     closeRepaymentModal.addEventListener('click', () => closeModal(repaymentModal));
-  }
+    }
 
   window.addEventListener('click', (event) => {
     if (event.target === approveModal) closeModal(approveModal);
     if (event.target === repaymentModal) closeModal(repaymentModal);
-  });
+    });
 
   // Loading indicator
   const loadingOverlay = document.getElementById('loadingOverlay');
@@ -1078,10 +1078,10 @@
       loadingOverlay.classList.add('hidden');
       loadingOverlay.addEventListener('transitionend', () => {
         loadingOverlay.style.display = 'none';
-      }, { once: true });
-    }
+        }, { once: true });
+      }
     if (body) body.classList.add('loaded');
-  });
+    });
 
   // แสดงช่องกรอกบริษัทอื่นๆ สำหรับ share-container (multi-row)
   const shareContainer = document.getElementById('share-container');
@@ -1098,7 +1098,7 @@
   newRow.querySelectorAll('select, input').forEach(el => {
     if (el.tagName === 'SELECT') el.selectedIndex = 0;
     if (el.tagName === 'INPUT') el.value = '';
-  });
+    });
 
   // แสดงปุ่ม Delete ในแถวใหม่
   const deleteBtn = newRow.querySelector('.delete-share-btn');
@@ -1109,7 +1109,7 @@
     if (shareContainer.children.length > 1) {
       newRow.remove();
       checkOtherCompanyVisibility();
-    }
+      }
   };
 
   shareContainer.appendChild(newRow);
@@ -1123,7 +1123,7 @@ if (firstDeleteBtn) {
     if (shareContainer.children.length > 1) {
       this.closest('.share-row').remove(); // ใช้ this แทน newRow
       checkOtherCompanyVisibility();
-    }
+      }
   };
 }
 
@@ -1133,7 +1133,7 @@ if (firstDeleteBtn) {
     shareContainer.querySelectorAll('select[name="company[]"]').forEach(sel => {
       if (sel.value === 'อื่นๆ') {
         showOther = true;
-      }
+        }
     });
     if (showOther) {
       otherCompanyContainer.style.display = 'block';
@@ -1142,14 +1142,14 @@ if (firstDeleteBtn) {
       otherCompanyContainer.style.display = 'none';
       otherCompanyInput.required = false;
       otherCompanyInput.value = '';
-    }
+      }
   }
 
   // ฟังชั่นตรวจจับการเปลี่ยนค่า company[] เพื่อแสดง/ซ่อนช่องบริษัทอื่นๆ
   shareContainer.addEventListener('change', function(e) {
     if (e.target.name === 'company[]') {
       checkOtherCompanyVisibility();
-    }
+      }
   });
 
   // โค้ดส่วนอื่น ๆ ที่คุณมี เช่น
@@ -1163,7 +1163,7 @@ if (firstDeleteBtn) {
 
     setTimeout(() => {
       messageBox.classList.remove('visible');
-    }, 3000);
+      }, 3000);
   }
 
   // เปิด Popup "อนุมัติยอด"
@@ -1174,7 +1174,7 @@ if (firstDeleteBtn) {
       if (!res.ok) {
         alert('ไม่พบข้อมูลลูกค้า');
         return;
-      }
+        }
       const data = await res.json();
 
       function safe(val) { return (val === undefined || val === null || val === "") ? '-' : val; }
@@ -1195,13 +1195,13 @@ if (firstDeleteBtn) {
           row.querySelectorAll('select, input').forEach(el => {
             if (el.tagName === 'SELECT') el.selectedIndex = 0;
             if (el.tagName === 'INPUT') el.value = '';
-          });
+            });
           // ซ่อนปุ่มลบแถวแรก
           const delBtn = row.querySelector('.delete-share-btn');
           if (delBtn) delBtn.style.display = 'none';
         } else {
           row.remove();
-        }
+          }
       });
 
       // ซ่อนช่องบริษัทอื่นๆ
@@ -1219,8 +1219,8 @@ if (firstDeleteBtn) {
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
       document.getElementById('approve-popup').style.display = 'none';
-    });
-  }
+      });
+    }
 
   // ฟังกฺชั่นบันทึกลงชีทหน้าปิดจ๊อบ
 const approveForm = document.getElementById('approve-form');
@@ -1245,7 +1245,7 @@ if (approveForm) {
       if (companies[i] === 'อื่นๆ' && !companyValue) {
         alert('กรุณากรอกชื่อบริษัทอื่นๆ');
         return;
-      }
+        }
 
       const singleRecord = {
         status: formData.get('status'),
@@ -1260,19 +1260,19 @@ if (approveForm) {
         action_type: actions[i],
         table_select: tables[i],
         amount: amounts[i]
-      };
+        };
 
       const res = await fetch('/save-approved-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(singleRecord)
-      });
+        });
 
       if (!res.ok) {
         alert('เกิดข้อผิดพลาดในการบันทึก record: ' + (i+1));
         return;
+        }
       }
-    }
 
     alert('บันทึกข้อมูลเรียบร้อย');
     document.getElementById('approve-popup').style.display = 'none';
@@ -1298,82 +1298,6 @@ if (approveForm) {
       if (targetTable) targetTable.style.display = 'block';
     });
   });
-});
-
-// ฟังก์ชันค้นหาปิดจ๊อบรายวัน
-document.getElementById('daily-job-search-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const date = this.date.value;
-    // อ้างอิง select โดยตรง ป้องกัน select2 หรือปลั๊กอินอื่น
-    let company = document.getElementById('company-select').value;
-    // ตัด index ต่อท้ายออก เช่น STARLOAN:1 => STARLOAN
-    if (company && company.includes(':')) {
-      company = company.split(':')[0];
-     }
-    if (company === 'อื่นๆ') {
-      company = document.getElementById('other-company-search').value;
-      // ตัด index ออกจากช่องกรอกด้วย (กันไว้)
-      if (company && company.includes(':')) {
-        company = company.split(':')[0];
-        }
-    }
-
-    if (!date) {
-        alert('กรุณาเลือกวันที่');
-        return;
-    }
-
-    const url = `/api/daily-jobs?date=${encodeURIComponent(date)}&company=${encodeURIComponent(company)}`;
-
-    fetch(url)
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.querySelector('#daily-job-table tbody');
-            tbody.innerHTML = ''; // เคลียร์ข้อมูลเก่า
-
-            if (!Array.isArray(data) || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;">ไม่พบข้อมูล</td></tr>';
-                return;
-              }
-            const dailyJobHeaders = [
-              "วันที่", "บริษัท", "รหัสลูกค้า", "เวลา", "ชื่อลูกค้า",
-              "ยอดเปิดโต๊ะ1", "สุทธิ1", "คืนต้น1", "เสีย1",
-              "ยอดเปิดโต๊ะ2", "สุทธิ2", "คืนต้น2", "เสีย2",
-              "ยอดเปิดโต๊ะ3", "สุทธิ3", "คืนต้น3", "เสีย3"
-              ];
-
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                let i = 0;
-                Object.values(row).forEach(value => {
-                    const td = document.createElement('td');
-                    td.textContent = value;
-                    td.setAttribute('data-label', dailyJobHeaders[i++] || "");
-                    tr.appendChild(td);
-                  });
-                tbody.appendChild(tr);
-            });
-        })
-        .catch(err => {
-            console.error(err);
-            alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
-          });
-});
-
-      const companySelect = document.getElementById('company-select');
-      const otherCompanySearchContainer = document.getElementById('other-company-search-container');
-      const otherCompanySearchInput = document.getElementById('other-company-search');
-
-      companySelect.addEventListener('change', function() {
-        if (this.value === 'อื่นๆ') {
-          otherCompanySearchContainer.style.display = 'block';
-          otherCompanySearchInput.required = true;
-        } else {
-          otherCompanySearchContainer.style.display = 'none';
-          otherCompanySearchInput.required = false;
-          otherCompanySearchInput.value = '';
-      }
 });
 </script>
 </body>
