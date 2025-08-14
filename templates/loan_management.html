@@ -721,6 +721,15 @@
     color: var(--light-text-color);
     content: attr(data-label);
   }
+  /* เฉพาะปุ่มค้นหาในฟอร์มนี้ */
+#daily-job-search-form .search-btn {
+    width: 100% !important;
+    min-width: 70px;
+    max-width: 90px;
+    height: 32px;
+    font-size: 0.95em;
+    padding: 4px 10px;
+  }
 }
 }
     </style>
@@ -872,21 +881,23 @@
     <label class="form-label" style="color: var(--light-text-color);">วันที่:</label>
     <input type="date" name="date" class="form-input" required style="width:100%;">
   </div>
-  <div style="flex:2;">
-    <label class="form-label" style="color: var(--light-text-color);">บริษัท:</label>
-    <select name="company" id="company-select" class="form-input" style="width:100%;">
-      <option value="">--เลือกบริษัท--</option>
-      <option value="STARLOAN">STARLOAN</option>
-      <option value="GLORYCASH">GLORYCASH</option>
-      <option value="CASHCREDIT">CASHCREDIT</option>
-      <option value="อื่นๆ">อื่นๆ</option>
-    </select>
-  </div>
-  <div id="other-company-search-container" style="flex:2; display:none;">
+  <div style="flex:1.5;">
+  <label class="form-label" style="color: var(--light-text-color);">บริษัท:</label>
+  <select name="company" id="company-select" class="form-input" style="width:100%;">
+    <option value="">--เลือกบริษัท--</option>
+    <option value="STARLOAN">STARLOAN</option>
+    <option value="GLORYCASH">GLORYCASH</option>
+    <option value="CASHCREDIT">CASHCREDIT</option>
+    <option value="อื่นๆ">อื่นๆ</option>
+  </select>
+</div>
+  <div id="other-company-search-container" style="flex:1.5; display:none;">
     <label class="form-label" style="color: var(--light-text-color);">บริษัทอื่นๆ:</label>
     <input type="text" id="other-company-search" name="other_company_search" class="form-input" placeholder="กรอกชื่อบริษัท" style="width:100%;">
   </div>
-  <button type="submit" class="btn btn-primary" style="height:32px; min-width:80px; font-size:0.95em; padding: 4px 16px; margin-top:0;">ค้นหา</button>
+<div style="flex:0 0 90px; max-width:90px;">
+  <button type="submit" class="btn btn-primary search-btn" style="height:32px; min-width:70px; font-size:0.95em; padding: 4px 10px; margin-top:0; width:100%;">ค้นหา</button>
+</div>
 </form>
   <div style="overflow-x:auto;">
     <table class="closejob-table" id="daily-job-table">
@@ -904,16 +915,16 @@
         <tr>
           <th style="background:#47a7d3;">ยอดเปิดโต๊ะ</th>
           <th style="background:#df8a29;">สุทธิ</th>
-          <th style="background:#26ff00;">คืนต้น</th>
-          <th style="background:#ff0019;">เสีย</th>
+          <th style="background:#7de76a;">คืนต้น</th>
+          <th style="background:#ff4255;">เสีย</th>
           <th style="background:#47a7d3;">ยอดเปิดโต๊ะ</th>
           <th style="background:#df8a29;">สุทธิ</th>
-          <th style="background:#26ff00;">คืนต้น</th>
-          <th style="background:#ff0019;">เสีย</th>
+          <th style="background:#7de76a;">คืนต้น</th>
+          <th style="background:#ff4255;">เสีย</th>
           <th style="background:#47a7d3;">ยอดเปิดโต๊ะ</th>
           <th style="background:#df8a29;">สุทธิ</th>
-          <th style="background:#26ff00;">คืนต้น</th>
-          <th style="background:#ff0019;">เสีย</th>
+          <th style="background:#7de76a;">คืนต้น</th>
+          <th style="background:#ff4255;">เสีย</th>
         </tr>
       </thead>
       <tbody>
@@ -1295,13 +1306,16 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
 
     const date = this.date.value;
     let company = this.company.value;
-    if (company === 'อื่นๆ') {
-      company = this.other_company_search.value;
-      }
-    // ตัด index ต่อท้ายออก เช่น STARLOAN:1 => STARLOAN
-    if (company && company.includes(':')) {
-      company = company.split(':')[0];
-      }
+if (company && company.includes(':')) {
+  company = company.split(':')[0];
+}
+if (company === 'อื่นๆ') {
+  company = this.other_company_search.value;
+  // ตัด index ออกจากช่องกรอกด้วย (กันไว้)
+  if (company && company.includes(':')) {
+    company = company.split(':')[0];
+  }
+}
 
     if (!date) {
         alert('กรุณาเลือกวันที่');
