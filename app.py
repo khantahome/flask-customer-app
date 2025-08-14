@@ -645,6 +645,64 @@ def search_customer_data():
         username=logged_in_user,
         display_title=display_title
     )
+
+#เรียกตารางค้นหา/ปิดจ๊อบรายวัน
+@app.route('/api/daily-jobs', methods=['GET'])
+def api_daily_jobs():
+    # รับ query params
+    date_q = request.args.get('date', '').strip()
+    company_q = request.args.get('company', '').strip()
+
+    if not date_q:
+        return jsonify({"error": "Missing 'date'"}), 400
+
+    try:
+        # เชื่อมต่อ Google Sheets
+        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+        client = gspread.authorize(creds)
+
+        # เปิดเวิร์กชีต
+        sheet = client.open("data1").worksheet("allpidjob")
+        data = sheet.get_all_records()
+
+        # แปลงเป็น DataFrame เพื่อกรองข้อมูลง่ายขึ้น
+        df = pd.DataFrame(data)
+
+        # แปลงคอลัมน์ Date ให้เป็น datetime object
+        df['DateParsed'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True).dt.date
+
+        # แปลง date_q ให้เป็น date object
+        date_try = pd.to_datetime(date_q, errors='coerce', dayfirst=True)
+        if pd.isna(date_try):
+            date_try = pd.to_datetime(date_q, errors='coerce', dayfirst=False)
+        if pd.isna(date_try):
+            return jsonify({"error": "Invalid 'date' format"}), 400
+        date_obj = date_try.date()
+
+        # กรองวันที่
+        filtered = df[df['DateParsed'] == date_obj]
+
+        # กรองชื่อบริษัท ถ้ามี
+        if company_q:
+            mask = filtered['CompanyName'].astype(str).str.contains(company_q, case=False, na=False)
+            filtered = filtered[mask]
+
+        # เอาเฉพาะคอลัมน์ตามหัวตาราง
+        columns = [
+            "Date", "CompanyName", "CustomerID", "Time", "CustomerName",
+            "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
+            "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
+            "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
+        ]
+        filtered = filtered[columns].fillna("")
+
+        return jsonify(filtered.to_dict(orient='records'))
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # . . .เรียกตารางอนุมัติยอด(appove)มาโชว์
 @app.route('/get_approove_data')
 def get_approove_data():

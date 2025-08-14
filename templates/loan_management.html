@@ -720,7 +720,7 @@
                 <i class="fas fa-clipboard-check"></i> ปิดจ๊อบ
                 </button>
                 <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">ตารางปิดจ๊อบ</a></li>
+                <li><a class="dropdown-item" href="#">ค้นหา/ปิดจ๊อบรายวัน</a></li>
                 <li><a class="dropdown-item" href="#" data-table="closejob-table-section">ตารางลูกค้าปิดจ๊อบ</a></li>
                 </ul>
             </div>
@@ -816,6 +816,49 @@
 </div>
 {% endif %}
 
+<!-- ตารางค้นหา/ปิดจ๊อบรายวัน -->
+<div class="daily-job-table-section" style="display:none;">
+  <h3>ค้นหา/ปิดจ๊อบรายวัน</h3>
+
+  <form id="daily-job-search-form" style="margin-bottom: 15px;">
+    <label>
+      วันที่:
+      <input type="date" name="date" required>
+    </label>
+    <label>
+      ชื่อบริษัท:
+      <input type="text" name="company" placeholder="ใส่ชื่อบริษัท (ถ้ามี)">
+    </label>
+    <button type="submit">ค้นหา</button>
+  </form>
+
+  <table class="closejob-table" id="daily-job-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>CompanyName</th>
+        <th>CustomerID</th>
+        <th>Time</th>
+        <th>CustomerName</th>
+        <th>Table1_OpeningBalance</th>
+        <th>Table1_NetOpening</th>
+        <th>Table1_PrincipalReturned</th>
+        <th>Table1_LostAmount</th>
+        <th>Table2_OpeningBalance</th>
+        <th>Table2_NetOpening</th>
+        <th>Table2_PrincipalReturned</th>
+        <th>Table2_LostAmount</th>
+        <th>Table3_OpeningBalance</th>
+        <th>Table3_NetOpening</th>
+        <th>Table3_PrincipalReturned</th>
+        <th>Table3_LostAmount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- ข้อมูลจะมาเติมตรงนี้ -->
+    </tbody>
+  </table>
+</div>
 
 
 <div id="approve-popup" class="modal">
@@ -1157,14 +1200,14 @@ if (approveForm) {
 
 
   // สลับตารางเมื่อคลิก dropdown-menu item ที่มี data-table
-  document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
+    document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
     item.addEventListener('click', e => {
       e.preventDefault();
       const tableClass = item.getAttribute('data-table');
 
       // ซ่อนทุกตารางก่อน
       document.querySelectorAll(
-        '.approove-table-section, .closejob-table-section, .baddebt-table-section, .pullplug-table-section, .returnprincipal-table-section'
+        '.approove-table-section, .closejob-table-section, .baddebt-table-section, .pullplug-table-section, .returnprincipal-table-section, .daily-job-table-section'
       ).forEach(section => {
         section.style.display = 'none';
       });
@@ -1175,6 +1218,48 @@ if (approveForm) {
     });
   });
 });
+
+// ฟังก์ชันค้นหาปิดจ๊อบรายวัน
+document.getElementById('daily-job-search-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const date = this.date.value;
+    const company = this.company.value;
+
+    if (!date) {
+        alert('กรุณาเลือกวันที่');
+        return;
+    }
+
+    const url = `/api/daily-jobs?date=${encodeURIComponent(date)}&company=${encodeURIComponent(company)}`;
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.querySelector('#daily-job-table tbody');
+            tbody.innerHTML = ''; // เคลียร์ข้อมูลเก่า
+
+            if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;">ไม่พบข้อมูล</td></tr>';
+                return;
+            }
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+        });
+});
+
 </script>
 </body>
 </html>
