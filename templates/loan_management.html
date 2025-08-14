@@ -1292,7 +1292,7 @@ if (approveForm) {
       ).forEach(section => {
         section.style.display = 'none';
       });
-
+      document.querySelector('.daily-job-table-section').style.display = 'block';
       // แสดงเฉพาะตารางที่เลือก
       const targetTable = document.querySelector('.' + tableClass);
       if (targetTable) targetTable.style.display = 'block';
