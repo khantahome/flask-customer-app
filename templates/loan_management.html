@@ -1310,13 +1310,13 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
     // ตัด index ต่อท้ายออก เช่น STARLOAN:1 => STARLOAN
     if (company && company.includes(':')) {
       company = company.split(':')[0];
-    }
+     }
     if (company === 'อื่นๆ') {
       company = document.getElementById('other-company-search').value;
       // ตัด index ออกจากช่องกรอกด้วย (กันไว้)
       if (company && company.includes(':')) {
         company = company.split(':')[0];
-      }
+        }
     }
 
     if (!date) {
@@ -1335,13 +1335,13 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
             if (!Array.isArray(data) || data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;">ไม่พบข้อมูล</td></tr>';
                 return;
-            }
+              }
             const dailyJobHeaders = [
               "วันที่", "บริษัท", "รหัสลูกค้า", "เวลา", "ชื่อลูกค้า",
               "ยอดเปิดโต๊ะ1", "สุทธิ1", "คืนต้น1", "เสีย1",
               "ยอดเปิดโต๊ะ2", "สุทธิ2", "คืนต้น2", "เสีย2",
               "ยอดเปิดโต๊ะ3", "สุทธิ3", "คืนต้น3", "เสีย3"
-            ];
+              ];
 
             data.forEach(row => {
                 const tr = document.createElement('tr');
@@ -1351,14 +1351,14 @@ document.getElementById('daily-job-search-form').addEventListener('submit', func
                     td.textContent = value;
                     td.setAttribute('data-label', dailyJobHeaders[i++] || "");
                     tr.appendChild(td);
-                });
+                  });
                 tbody.appendChild(tr);
             });
         })
         .catch(err => {
             console.error(err);
             alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
-        });
+          });
 });
 
       const companySelect = document.getElementById('company-select');
