@@ -652,56 +652,40 @@ def api_daily_jobs():
     date_q = request.args.get('date', '').strip()
     company_q = request.args.get('company', '').strip()
 
-    if not date_q:
-        return jsonify({"error": "Missing 'date'"}), 400
+    # ...existing code...
 
-    try:
-        # ใช้ GSPREAD_CLIENT ที่สร้างไว้แล้ว
-        if not GSPREAD_CLIENT:
-            return jsonify({"error": "Google Sheets client not initialized"}), 500
+    sheet = GSPREAD_CLIENT.open("data1").worksheet("allpidjob")
+    data = sheet.get_all_records()
+    df = pd.DataFrame(data)
 
-        sheet = GSPREAD_CLIENT.open("data1").worksheet("allpidjob")
-        data = sheet.get_all_records()
-        df = pd.DataFrame(data)
-        #หัวตาราง ค้นหา/ปิดจ๊อบรายวัน
-        columns = [
-            "Date", "CompanyName", "CustomerID", "Time", "CustomerName", "interest",
-            "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
-            "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
-            "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
-        ]
-        missing_cols = [col for col in columns if col not in df.columns]
-        if missing_cols:
-            return jsonify({"error": f"Missing columns: {missing_cols}"}), 500
+    columns = [
+        "Date", "CompanyName", "CustomerID", "Time", "CustomerName", "interest",
+        "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
+        "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
+        "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
+    ]
+    missing_cols = [col for col in columns if col not in df.columns]
+    if missing_cols:
+        return jsonify({"error": f"Missing columns: {missing_cols}"}), 500
 
-        df['DateParsed'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True).dt.date
+    df['DateParsed'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True).dt.date
 
-        date_try = pd.to_datetime(date_q, errors='coerce', dayfirst=True)
-        if pd.isna(date_try):
-            date_try = pd.to_datetime(date_q, errors='coerce', dayfirst=False)
-        if pd.isna(date_try):
-            return jsonify({"error": "Invalid 'date' format"}), 400
-        date_obj = date_try.date()
+    date_try = pd.to_datetime(date_q, errors='coerce', dayfirst=True)
+    if pd.isna(date_try):
+        date_try = pd.to_datetime(date_q, errors='coerce', dayfirst=False)
+    if pd.isna(date_try):
+        return jsonify({"error": "Invalid 'date' format"}), 400
+    date_obj = date_try.date()
 
-        filtered = df[df['DateParsed'] == date_obj]
+    filtered = df[df['DateParsed'] == date_obj]
 
-        if company_q:
-            mask = filtered['CompanyName'].astype(str).str.contains(company_q, case=False, na=False)
-            filtered = filtered[mask]
+    if company_q:
+        mask = filtered['CompanyName'].astype(str).str.contains(company_q, case=False, na=False)
+        filtered = filtered[mask]
 
-        # ถ้าไม่มีข้อมูลเลย ให้คืน array ว่าง
-        if filtered.empty:
-            return jsonify([])
-
-        # ปรับตรงนี้ให้ robust กับแถวว่าง/ขาดคอลัมน์
-        filtered = filtered.reindex(columns=columns, fill_value="").fillna("")
-
-        return jsonify(filtered.to_dict(orient='records'))
-
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return jsonify({"error": str(e)}), 500
+    # ...existing code...
+    filtered = filtered.reindex(columns=columns, fill_value="").fillna("")
+    return jsonify(filtered.to_dict(orient='records'))
 
 
 # . . .เรียกตารางอนุมัติยอด(appove)มาโชว์
@@ -804,7 +788,11 @@ def save_approved_data():
         worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
         worksheet.append_row(row_data)
 
+        
+
         return jsonify({'success': True})
+    
+    
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
