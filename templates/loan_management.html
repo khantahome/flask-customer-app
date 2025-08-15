@@ -730,6 +730,11 @@
     font-size: 0.95em;
     padding: 4px 10px;
   }
+  .closejob-table td:nth-child(5), .closejob-table th:nth-child(5) {
+    min-width: 180px;
+    width: auto;
+    white-space: normal;
+}
   }
 }
     </style>
@@ -1189,7 +1194,11 @@ if (firstDeleteBtn) {
       document.getElementById('customer_id').value = safe(data['Customer ID']);
       document.getElementById('fullname').value = safe(data['ชื่อ-นามสกุล']);
       document.getElementById('phone').value = safe(data['หมายเลขโทรศัพท์']);
-      document.getElementById('approve_date').value = safe(data['วันที่อนุมัติ']);
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = String(now.getFullYear() + 543); // ปีไทย
+      document.getElementById('approve_date').value = `${day}/${month}/${year}`;
       document.getElementById('approved_amount').value = safe(data['วงเงินที่อนุมัติ']);
       document.getElementById('registrar').value = safe(data['ชื่อผู้ลงทะเบียน']);
 
@@ -1283,6 +1292,14 @@ if (approveForm) {
 
     alert('บันทึกข้อมูลเรียบร้อย');
     document.getElementById('approve-popup').style.display = 'none';
+    // ลบแถวลูกค้าคนนั้นออกจากตารางปิดจ๊อบ
+      const customerId = formData.get('customer_id');
+      document.querySelectorAll('.closejob-table-section tbody tr').forEach(tr => {
+        const tdId = tr.querySelector('td'); // สมมติ Customer ID อยู่คอลัมน์แรก
+        if (tdId && tdId.textContent.trim() === customerId) {
+          tr.remove();
+        }
+      });
   });
 }
 
