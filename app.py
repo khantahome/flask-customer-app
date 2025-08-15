@@ -746,6 +746,11 @@ def save_approved_data():
         fullname = data.get('fullname')
         phone = data.get('phone')
         approve_date = data.get('approve_date')
+        if approve_date:
+            try:
+                approve_date = pd.to_datetime(approve_date).strftime('%Y-%m-%d')
+            except Exception:
+                pass
         approved_amount = data.get('approved_amount')
         open_balance = data.get('open_balance')
         registrar = data.get('registrar')
