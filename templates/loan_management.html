@@ -976,53 +976,39 @@
         
         <!-- ช่องสำหรับส่วนแบ่ง (ตัวอย่าง) -->
         <div id="share-container">
-        <table style="width:100%;">
-          <thead>
-            <tr>
-              <th style="width:22%;">บริษัท</th>
-              <th style="width:22%;">ดำเนินการ</th>
-              <th style="width:22%;">เลือกโต๊ะ</th>
-              <th style="width:22%;">จำนวนเงิน</th>
-              <th style="width:12%;"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="share-row">
-              <td>
-                <select name="company[]" class="form-input company-select" required>
-                  <option value="">--เลือกบริษัท--</option>
-                  <option value="STARLOAN">STARLOAN</option>
-                  <option value="GLORYCASH">GLORYCASH</option>
-                  <option value="CASHCREDIT">CASHCREDIT</option>
-                  <option value="อื่นๆ">อื่นๆ</option>
-                </select>
-              </td>
-              <td>
-                <select name="action_type[]" class="form-input" required>
-                  <option value="">--เลือกดำเนินการ--</option>
-                  <option value="เปิดยอด">เปิดยอด</option>
-                  <option value="เปิดสุทธิ">เปิดสุทธิ</option>
-                  <option value="คืนต้น">คืนต้น</option>
-                </select>
-              </td>
-              <td>
-                <select name="table_select[]" class="form-input" required>
-                  <option value="">--เลือกโต๊ะ--</option>
-                  <option value="โต๊ะ1">โต๊ะ1</option>
-                  <option value="โต๊ะ2">โต๊ะ2</option>
-                  <option value="โต๊ะ3">โต๊ะ3</option>
-                </select>
-              </td>
-              <td>
-                <input type="number" name="amount[]" class="form-input" required min="0">
-              </td>
-              <td style="vertical-align:bottom;">
-                <button type="button" class="btn btn-danger delete-share-btn" style="padding:6px 12px; margin-bottom:6px; display:none;">ลบ</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <div class="share-row">
+              <div style="flex:1;">
+                  <label class="form-label">บริษัท:</label>
+                  <select name="company[]" class="form-input company-select" required>
+                      <option value="">--เลือกบริษัท--</option>
+                      <option value="STARLOAN">STARLOAN</option>
+                      <option value="GLORYCASH">GLORYCASH</option>
+                      <option value="CASHCREDIT">CASHCREDIT</option>
+                      <option value="อื่นๆ">อื่นๆ</option>
+                  </select>
+              </div>
+              <div style="flex:1;">
+                  <label class="form-label">ดำเนินการ:</label>
+                  <select name="action_type[]" class="form-input" required>
+                      <option value="">--เลือกดำเนินการ--</option>
+                      <option value="เปิดยอด">เปิดยอด</option>
+                      <option value="เปิดสุทธิ">เปิดสุทธิ</option>
+                      <option value="คืนต้น">คืนต้น</option>
+                  </select>
+              </div>
+              <div style="flex:1;">
+                  <label class="form-label">เลือกโต๊ะ:</label>
+                  <select name="table_select[]" class="form-input" required>
+                      <option value="">--เลือกโต๊ะ--</option>
+                      <option value="โต๊ะ1">โต๊ะ1</option>
+                      <option value="โต๊ะ2">โต๊ะ2</option>
+                      <option value="โต๊ะ3">โต๊ะ3</option>
+                  </select>
+              </div>
+              <div style="flex:1;">
+                  <label class="form-label">จำนวนเงิน:</label>
+                  <input type="number" name="amount[]" class="form-input" required min="0">
+              </div>
               <!-- ปุ่มลบส่วนแบ่ง จะต้องอยู่ภายใน share-row นี้ -->
               <div style="display: flex; align-items: flex-end;">
                   <button type="button" class="btn btn-danger delete-share-btn" style="padding:6px 12px; margin-bottom:6px; display:none;">ลบส่วนแบ่ง</button>
