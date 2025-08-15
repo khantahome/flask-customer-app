@@ -1252,7 +1252,7 @@ if (approveForm) {
         alert('กรุณากรอกชื่อบริษัทอื่นๆ');
         return;
         }
-
+      const interest = formData.get('interest');
       const singleRecord = {
         status: formData.get('status'),
         customer_id: formData.get('customer_id'),
