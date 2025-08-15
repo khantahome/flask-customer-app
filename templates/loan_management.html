@@ -730,8 +730,8 @@
     font-size: 0.95em;
     padding: 4px 10px;
   }
-  .closejob-table td:nth-child(5), .closejob-table th:nth-child(5) {
-    min-width: 180px;
+  #daily-job-table td:nth-child(5), #daily-job-table th:nth-child(5) {
+    min-width: 200px;
     width: auto;
     white-space: normal;
 }
@@ -914,7 +914,7 @@
           <th rowspan="2">รหัสลูกค้า</th>
           <th rowspan="2">เวลา</th>
           <th rowspan="2">ชื่อลูกค้า</th>
-          <th rowspan="2">ดอกเบี้ย</th>
+          <th rowspan="2">ดอกเบี้ย %</th>
           <th colspan="4" style="background:#3f51b5; color:#fff;">โต๊ะ1</th>
           <th colspan="4" style="background:#009688; color:#fff;">โต๊ะ2</th>
           <th colspan="4" style="background:#ff9800; color:#fff;">โต๊ะ3</th>
@@ -1195,9 +1195,10 @@ if (firstDeleteBtn) {
       document.getElementById('fullname').value = safe(data['ชื่อ-นามสกุล']);
       document.getElementById('phone').value = safe(data['หมายเลขโทรศัพท์']);
       const now = new Date();
-      const day = String(now.getDate()).padStart(2, '0');
+      const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
-      const year = String(now.getFullYear() + 543); // ปีไทย
+      const day = String(now.getDate()).padStart(2, '0');
+      document.getElementById('approve_date').value = `${year}-${month}-${day}`;
       document.getElementById('approve_date').value = `${day}/${month}/${year}`;
       document.getElementById('approved_amount').value = safe(data['วงเงินที่อนุมัติ']);
       document.getElementById('registrar').value = safe(data['ชื่อผู้ลงทะเบียน']);
@@ -1295,7 +1296,8 @@ if (approveForm) {
     // ลบแถวลูกค้าคนนั้นออกจากตารางปิดจ๊อบ
       const customerId = formData.get('customer_id');
       document.querySelectorAll('.closejob-table-section tbody tr').forEach(tr => {
-        const tdId = tr.querySelector('td'); // สมมติ Customer ID อยู่คอลัมน์แรก
+        // สมมติ Customer ID อยู่คอลัมน์ที่ 3 (ถ้าไม่ใช่ปรับเลข index)
+        const tdId = tr.querySelectorAll('td')[1];
         if (tdId && tdId.textContent.trim() === customerId) {
           tr.remove();
         }
