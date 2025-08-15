@@ -656,11 +656,11 @@ def api_daily_jobs():
         return jsonify({"error": "Missing 'date'"}), 400
 
     try:
-        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-        creds = ServiceAccountCredentials.from_json_keyfile_name('firebase-service-account.json', scope)
-        client = gspread.authorize(creds)
+        # ใช้ GSPREAD_CLIENT ที่สร้างไว้แล้ว
+        if not GSPREAD_CLIENT:
+            return jsonify({"error": "Google Sheets client not initialized"}), 500
 
-        sheet = client.open("data1").worksheet("allpidjob")
+        sheet = GSPREAD_CLIENT.open("data1").worksheet("allpidjob")
         data = sheet.get_all_records()
         df = pd.DataFrame(data)
 

@@ -1313,38 +1313,40 @@ if (dailyJobSearchForm) {
     // เรียก backend เพื่อค้นหา
     const res = await fetch('/api/daily-jobs?' + params.toString());
     const data = await res.json();
+    console.log('data from backend:', data);
 
-    // เติมข้อมูลลงตาราง
     const tbody = document.querySelector('#daily-job-table tbody');
     tbody.innerHTML = '';
-    if (!data || data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
-    } else {
-      data.forEach(row => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${row.date || ''}</td>
-            <td>${row.company || ''}</td>
-            <td>${row.customer_id || ''}</td>
-            <td>${row.time || ''}</td>
-            <td>${row.fullname || ''}</td>
-            <td>${row.table1_open || ''}</td>
-            <td>${row.table1_net || ''}</td>
-            <td>${row.table1_return || ''}</td>
-            <td>${row.table1_bad || ''}</td>
-            <td>${row.table2_open || ''}</td>
-            <td>${row.table2_net || ''}</td>
-            <td>${row.table2_return || ''}</td>
-            <td>${row.table2_bad || ''}</td>
-            <td>${row.table3_open || ''}</td>
-            <td>${row.table3_net || ''}</td>
-            <td>${row.table3_return || ''}</td>
-            <td>${row.table3_bad || ''}</td>
-          </tr>
-        `;
-      });
-    }
-
+    if (!Array.isArray(data)) {
+  tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">${data.error || 'เกิดข้อผิดพลาด'}</td></tr>`;
+} else if (data.length === 0) {
+  tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
+} else {
+  data.forEach(row => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${row.Date || ''}</td>
+        <td>${row.CompanyName || ''}</td>
+        <td>${row.CustomerID || ''}</td>
+        <td>${row.Time || ''}</td>
+        <td>${row.CustomerName || ''}</td>
+        <td>${row.Table1_OpeningBalance || ''}</td>
+        <td>${row.Table1_NetOpening || ''}</td>
+        <td>${row.Table1_PrincipalReturned || ''}</td>
+        <td>${row.Table1_LostAmount || ''}</td>
+        <td>${row.Table2_OpeningBalance || ''}</td>
+        <td>${row.Table2_NetOpening || ''}</td>
+        <td>${row.Table2_PrincipalReturned || ''}</td>
+        <td>${row.Table2_LostAmount || ''}</td>
+        <td>${row.Table3_OpeningBalance || ''}</td>
+        <td>${row.Table3_NetOpening || ''}</td>
+        <td>${row.Table3_PrincipalReturned || ''}</td>
+        <td>${row.Table3_LostAmount || ''}</td>
+      </tr>
+    `;
+  });
+}
+    
     // แสดงตารางค้นหา/ปิดจ๊อบรายวัน
     document.querySelectorAll(
       '.approove-table-section, .closejob-table-section, .baddebt-table-section, .pullplug-table-section, .returnprincipal-table-section'
