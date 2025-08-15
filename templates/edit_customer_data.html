@@ -894,13 +894,19 @@ body {
     const currentMainGroup = "{{ customer_data.get('กลุ่มลูกค้าหลัก', '') }}";
     const currentSubProfession = "{{ customer_data.get('กลุ่มอาชีพย่อย', '') }}";
 
-    if (currentMainGroup) {
+        if (currentMainGroup) {
         mainCustomerGroupSelect.value = currentMainGroup;
         updateSubProfessionOptions();
         if (currentSubProfession) {
             subProfessionGroupSelect.value = currentSubProfession;
         }
-        toggleOtherSubProfessionInput();
+        // ถ้าค่าเดิมเป็น "อื่นๆ" ให้โชว์ช่องกรอกทันที
+        if (currentSubProfession === "อื่นๆ") {
+            otherSubProfessionInputGroup.style.display = 'block';
+            otherSubProfessionInput.setAttribute('required', 'required');
+        } else {
+            toggleOtherSubProfessionInput();
+        }
     } else {
         updateSubProfessionOptions();
         toggleOtherSubProfessionInput();
