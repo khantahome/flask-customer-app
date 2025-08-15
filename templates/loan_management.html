@@ -730,9 +730,10 @@
     font-size: 0.95em;
     padding: 4px 10px;
   }
-}
+  }
 }
     </style>
+ <meta name="viewport" content="width=1200">   
 </head>
 <body class="initial-hidden"> {# Add initial-hidden class to body #}
     {# NEW: Loading Overlay #}
@@ -908,6 +909,7 @@
           <th rowspan="2">รหัสลูกค้า</th>
           <th rowspan="2">เวลา</th>
           <th rowspan="2">ชื่อลูกค้า</th>
+          <th rowspan="2">ดอกเบี้ย</th>
           <th colspan="4" style="background:#3f51b5; color:#fff;">โต๊ะ1</th>
           <th colspan="4" style="background:#009688; color:#fff;">โต๊ะ2</th>
           <th colspan="4" style="background:#ff9800; color:#fff;">โต๊ะ3</th>
@@ -967,42 +969,60 @@
             <label class="form-label">เปิดยอด:</label>
             <input type="number" id="open_balance" name="open_balance" class="form-input" value="0" min="0">
         </div>
+            <div class="form-group">
+        <label class="form-label">ดอกเบี้ย:</label>
+        <input type="number" id="interest" name="interest" class="form-input" value="0" min="0" step="0.01">
+         </div>
         
         <!-- ช่องสำหรับส่วนแบ่ง (ตัวอย่าง) -->
         <div id="share-container">
-          <div class="share-row">
-              <div style="flex:1;">
-                  <label class="form-label">บริษัท:</label>
-                  <select name="company[]" class="form-input company-select" required>
-                      <option value="">--เลือกบริษัท--</option>
-                      <option value="STARLOAN">STARLOAN</option>
-                      <option value="GLORYCASH">GLORYCASH</option>
-                      <option value="CASHCREDIT">CASHCREDIT</option>
-                      <option value="อื่นๆ">อื่นๆ</option>
-                  </select>
-              </div>
-              <div style="flex:1;">
-                  <label class="form-label">ดำเนินการ:</label>
-                  <select name="action_type[]" class="form-input" required>
-                      <option value="">--เลือกดำเนินการ--</option>
-                      <option value="เปิดยอด">เปิดยอด</option>
-                      <option value="เปิดสุทธิ">เปิดสุทธิ</option>
-                      <option value="คืนต้น">คืนต้น</option>
-                  </select>
-              </div>
-              <div style="flex:1;">
-                  <label class="form-label">เลือกโต๊ะ:</label>
-                  <select name="table_select[]" class="form-input" required>
-                      <option value="">--เลือกโต๊ะ--</option>
-                      <option value="โต๊ะ1">โต๊ะ1</option>
-                      <option value="โต๊ะ2">โต๊ะ2</option>
-                      <option value="โต๊ะ3">โต๊ะ3</option>
-                  </select>
-              </div>
-              <div style="flex:1;">
-                  <label class="form-label">จำนวนเงิน:</label>
-                  <input type="number" name="amount[]" class="form-input" required min="0">
-              </div>
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th style="width:22%;">บริษัท</th>
+              <th style="width:22%;">ดำเนินการ</th>
+              <th style="width:22%;">เลือกโต๊ะ</th>
+              <th style="width:22%;">จำนวนเงิน</th>
+              <th style="width:12%;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="share-row">
+              <td>
+                <select name="company[]" class="form-input company-select" required>
+                  <option value="">--เลือกบริษัท--</option>
+                  <option value="STARLOAN">STARLOAN</option>
+                  <option value="GLORYCASH">GLORYCASH</option>
+                  <option value="CASHCREDIT">CASHCREDIT</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+              </td>
+              <td>
+                <select name="action_type[]" class="form-input" required>
+                  <option value="">--เลือกดำเนินการ--</option>
+                  <option value="เปิดยอด">เปิดยอด</option>
+                  <option value="เปิดสุทธิ">เปิดสุทธิ</option>
+                  <option value="คืนต้น">คืนต้น</option>
+                </select>
+              </td>
+              <td>
+                <select name="table_select[]" class="form-input" required>
+                  <option value="">--เลือกโต๊ะ--</option>
+                  <option value="โต๊ะ1">โต๊ะ1</option>
+                  <option value="โต๊ะ2">โต๊ะ2</option>
+                  <option value="โต๊ะ3">โต๊ะ3</option>
+                </select>
+              </td>
+              <td>
+                <input type="number" name="amount[]" class="form-input" required min="0">
+              </td>
+              <td style="vertical-align:bottom;">
+                <button type="button" class="btn btn-danger delete-share-btn" style="padding:6px 12px; margin-bottom:6px; display:none;">ลบ</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
               <!-- ปุ่มลบส่วนแบ่ง จะต้องอยู่ภายใน share-row นี้ -->
               <div style="display: flex; align-items: flex-end;">
                   <button type="button" class="btn btn-danger delete-share-btn" style="padding:6px 12px; margin-bottom:6px; display:none;">ลบส่วนแบ่ง</button>
@@ -1255,6 +1275,7 @@ if (approveForm) {
         approve_date: formData.get('approve_date'),
         approved_amount: formData.get('approved_amount'),
         open_balance: formData.get('open_balance'),
+        interest: interest,
         registrar: formData.get('registrar'),
         company: companyValue, // ใช้ค่าที่ปรับแล้ว
         action_type: actions[i],
@@ -1330,6 +1351,7 @@ if (dailyJobSearchForm) {
         <td>${row.CustomerID || ''}</td>
         <td>${row.Time || ''}</td>
         <td>${row.CustomerName || ''}</td>
+        <td>${row.interest || ''}</td>
         <td>${row.Table1_OpeningBalance || ''}</td>
         <td>${row.Table1_NetOpening || ''}</td>
         <td>${row.Table1_PrincipalReturned || ''}</td>

@@ -663,9 +663,9 @@ def api_daily_jobs():
         sheet = GSPREAD_CLIENT.open("data1").worksheet("allpidjob")
         data = sheet.get_all_records()
         df = pd.DataFrame(data)
-
+        #หัวตาราง ค้นหา/ปิดจ๊อบรายวัน
         columns = [
-            "Date", "CompanyName", "CustomerID", "Time", "CustomerName",
+            "Date", "CompanyName", "CustomerID", "Time", "CustomerName", "interest",
             "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
             "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
             "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
@@ -754,6 +754,8 @@ def save_approved_data():
         action = data.get('action_type', '')
         table = data.get('table_select', '')
         amount = data.get('amount', '')
+        interest = data.get('interest', '')  # << เพิ่มตรงนี้
+
 
         time_str = datetime.now().strftime("%H:%M:%S")
 
@@ -779,6 +781,7 @@ def save_approved_data():
             customer_id,
             time_str,
             fullname,
+            interest,
             table_columns['โต๊ะ1']['OpeningBalance'],
             table_columns['โต๊ะ1']['NetOpening'],
             table_columns['โต๊ะ1']['PrincipalReturned'],
