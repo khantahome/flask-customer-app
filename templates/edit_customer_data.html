@@ -846,71 +846,51 @@ body {
             "อื่นๆ": []
         };
 
-         function updateSubProfessionOptions() {
-        const selectedMainGroup = mainCustomerGroupSelect.value;
-        const subProfessions = subProfessionData[selectedMainGroup] || [];
-
-        subProfessionGroupSelect.innerHTML = '<option value="">--- เลือกกลุ่มอาชีพย่อย ---</option>';
-        subProfessionGroupSelect.disabled = true;
-
-        if (selectedMainGroup) {
-            subProfessions.forEach(prof => {
-                const option = document.createElement('option');
-                option.value = prof;
-                option.textContent = prof;
-                subProfessionGroupSelect.appendChild(option);
-            });
-            const otherOption = document.createElement('option');
-            otherOption.value = "อื่นๆ";
-            otherOption.textContent = "อื่นๆ";
-            subProfessionGroupSelect.appendChild(otherOption);
-            subProfessionGroupSelect.disabled = false;
-        } else {
-            otherSubProfessionInputGroup.style.display = 'none';
-            otherSubProfessionInput.value = '';
-        }
-    }
-
-    function toggleOtherSubProfessionInput() {
-        if (subProfessionGroupSelect.value === "อื่นๆ") {
-            otherSubProfessionInputGroup.style.display = 'block';
-            otherSubProfessionInput.setAttribute('required', 'required');
-        } else {
-            otherSubProfessionInputGroup.style.display = 'none';
-            otherSubProfessionInput.value = '';
-            otherSubProfessionInput.removeAttribute('required');
-        }
-    }
-
-    mainCustomerGroupSelect.addEventListener('change', () => {
-        updateSubProfessionOptions();
-        toggleOtherSubProfessionInput();
-    });
-
-    subProfessionGroupSelect.addEventListener('change', toggleOtherSubProfessionInput);
-    
-
-    // ตั้งค่าเริ่มต้นจากฐานข้อมูล (ต้องแก้ตามตัวแปร template ของคุณ)
-    const currentMainGroup = "{{ customer_data.get('กลุ่มลูกค้าหลัก', '') }}";
+       function updateSubProfessionOptions() {
+    const selectedMainGroup = mainCustomerGroupSelect.value;
+    const subProfessions = subProfessionData[selectedMainGroup] || [];
     const currentSubProfession = "{{ customer_data.get('กลุ่มอาชีพย่อย', '') }}";
 
-        if (currentMainGroup) {
-        mainCustomerGroupSelect.value = currentMainGroup;
-        updateSubProfessionOptions();
-        if (currentSubProfession) {
-            subProfessionGroupSelect.value = currentSubProfession;
-        }
-        // ถ้าค่าเดิมเป็น "อื่นๆ" ให้โชว์ช่องกรอกทันที
+    subProfessionGroupSelect.innerHTML = '<option value="">--- เลือกกลุ่มอาชีพย่อย ---</option>';
+    subProfessionGroupSelect.disabled = true;
+
+    if (selectedMainGroup) {
+        let found = false;
+        subProfessions.forEach(prof => {
+            const option = document.createElement('option');
+            option.value = prof;
+            option.textContent = prof;
+            if (prof === currentSubProfession) {
+                option.selected = true;
+                found = true;
+            }
+            subProfessionGroupSelect.appendChild(option);
+        });
+        // เพิ่ม "อื่นๆ"
+        const otherOption = document.createElement('option');
+        otherOption.value = "อื่นๆ";
+        otherOption.textContent = "อื่นๆ";
         if (currentSubProfession === "อื่นๆ") {
-            otherSubProfessionInputGroup.style.display = 'block';
-            otherSubProfessionInput.setAttribute('required', 'required');
-        } else {
-            toggleOtherSubProfessionInput();
+            otherOption.selected = true;
+            found = true;
         }
+        subProfessionGroupSelect.appendChild(otherOption);
+
+        // ถ้าค่าเดิมไม่อยู่ใน list ให้เติม option พิเศษ
+        if (currentSubProfession && !found) {
+            const customOption = document.createElement('option');
+            customOption.value = currentSubProfession;
+            customOption.textContent = currentSubProfession + " (ข้อมูลเดิม)";
+            customOption.selected = true;
+            subProfessionGroupSelect.appendChild(customOption);
+        }
+
+        subProfessionGroupSelect.disabled = false;
     } else {
-        updateSubProfessionOptions();
-        toggleOtherSubProfessionInput();
+        otherSubProfessionInputGroup.style.display = 'none';
+        otherSubProfessionInput.value = '';
     }
+}
 });
     </script>
 </body>
