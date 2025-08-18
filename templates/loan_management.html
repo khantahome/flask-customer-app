@@ -689,7 +689,7 @@
 /* Responsive: แสดง data-label บนมือถือ */
 @media (max-width: 900px) {
   .closejob-table, .closejob-table thead, .closejob-table tbody, .closejob-table th, .closejob-table td, .closejob-table tr {
-    display: block;
+    display: table;
   }
   .closejob-table thead tr {
     position: absolute;
@@ -733,10 +733,9 @@
   #daily-job-table th:nth-child(5),
   #daily-job-table td:nth-child(5) {
   min-width: 250px;
-  max-width: 400px;
   white-space: nowrap;     
-  overflow: auto;         
-  text-overflow: unset;  
+  overflow: hidden;        
+  text-overflow: ellipsis; 
 }
   }
 }
