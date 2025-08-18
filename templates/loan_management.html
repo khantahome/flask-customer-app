@@ -732,10 +732,11 @@
   }
   #daily-job-table th:nth-child(5),
   #daily-job-table td:nth-child(5) {
-    min-width: 200px;
-    width: auto;
-    white-space: normal;
-    word-break: break-word;
+  min-width: 250px;
+  max-width: 400px;
+  white-space: nowrap;     
+  overflow: auto;         
+  text-overflow: unset;  
 }
   }
 }
@@ -1327,10 +1328,10 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
     if (targetTable) targetTable.style.display = 'block';
   });
 });
-const dailyJobSearchForm = document.getElementById('daily-job-search-form');
-if (dailyJobSearchForm) {
-  dailyJobSearchForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
+    const dailyJobSearchForm = document.getElementById('daily-job-search-form');
+    if (dailyJobSearchForm) {
+      dailyJobSearchForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
 
     // ดึงค่าจากฟอร์ม
     const formData = new FormData(dailyJobSearchForm);
