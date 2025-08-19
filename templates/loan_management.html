@@ -854,9 +854,23 @@
 </div>
 
 <!-- ตารางปิดจ๊อบ -->
-<div class="closejob-table-section" style="display:none;">
-  <h3>ตารางลูกค้าปิดจ๊อบ</h3>
-  <table class="closejob-table">
+<form id="closejob-search-form" style="margin-bottom: 15px; display: flex; gap: 16px; align-items: flex-end;">
+    <div style="flex:1;">
+      <label class="form-label">รหัสลูกค้า:</label>
+      <input type="text" id="closejob-search-id" class="form-input" placeholder="ค้นหารหัสลูกค้า">
+    </div>
+    <div style="flex:2;">
+      <label class="form-label">ชื่อ-นามสกุล:</label>
+      <input type="text" id="closejob-search-name" class="form-input" placeholder="ค้นหาชื่อลูกค้า">
+    </div>
+    <div style="flex:0 0 90px; max-width:90px;">
+      <button type="submit" class="btn btn-primary" style="height:32px; min-width:70px; font-size:0.95em; padding: 4px 10px;">ค้นหา</button>
+    </div>
+    <div style="flex:0 0 90px; max-width:90px;">
+      <button type="button" id="closejob-clear-btn" class="btn btn-secondary" style="height:32px; min-width:70px; font-size:0.95em; padding: 4px 10px;">ล้างการค้นหา</button>
+    </div>
+  </form>
+  <table class="closejob-table" id="closejob-table">
     <thead>
       <tr>
         {% for header in approove_data[0].keys() %}
@@ -866,7 +880,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for record in approove_data %}
+      {% for record in approove_data if record['Status'] == 'รอปิดจ๊อบ' %}
       <tr>
         {% for value in record.values() %}
           <td>{{ value }}</td>
@@ -879,7 +893,6 @@
     </tbody>
   </table>
 </div>
-{% endif %}
 
 <!-- ตารางค้นหา/ปิดจ๊อบรายวัน -->
 <div class="daily-job-table-section" style="display:none;">
@@ -1253,18 +1266,14 @@ if (approveForm) {
     const tables = formData.getAll('table_select[]');
     const amounts = formData.getAll('amount[]');
 
-    // ดึง input ของบริษัทอื่นๆ (ต้องตรงกับชื่อ element จริง)
     const otherCompanyInput = document.getElementById('other_company'); 
 
     for (let i = 0; i < companies.length; i++) {
-      // ถ้าเลือก "อื่นๆ" ใช้ค่าที่กรอก
       const companyValue = companies[i] === 'อื่นๆ' ? otherCompanyInput.value.trim() : companies[i];
-
-      // ถ้าเลือก "อื่นๆ" แต่ไม่กรอก ให้แจ้งเตือน
       if (companies[i] === 'อื่นๆ' && !companyValue) {
         alert('กรุณากรอกชื่อบริษัทอื่นๆ');
         return;
-        }
+      }
       const interest = formData.get('interest');
       const singleRecord = {
         status: formData.get('status'),
@@ -1276,36 +1285,38 @@ if (approveForm) {
         open_balance: formData.get('open_balance'),
         interest: interest,
         registrar: formData.get('registrar'),
-        company: companyValue, // ใช้ค่าที่ปรับแล้ว
+        company: companyValue,
         action_type: actions[i],
         table_select: tables[i],
         amount: amounts[i]
-        };
+      };
 
       const res = await fetch('/save-approved-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(singleRecord)
-        });
+      });
 
       if (!res.ok) {
         alert('เกิดข้อผิดพลาดในการบันทึก record: ' + (i+1));
         return;
-        }
       }
+    }
 
     alert('บันทึกข้อมูลเรียบร้อย');
     document.getElementById('approve-popup').style.display = 'none';
-    // ลบแถวลูกค้าคนนั้นออกจากตารางปิดจ๊อบ
-      const customerId = formData.get('customer_id');
-      document.querySelectorAll('.closejob-table-section tbody tr').forEach(tr => {
-        // สมมติ Customer ID อยู่คอลัมน์ที่ 3 (ถ้าไม่ใช่ปรับเลข index)
-        const tdId = tr.querySelectorAll('td')[1];
-        if (tdId && tdId.textContent.trim() === customerId) {
-          tr.remove();
-        }
-      });
-  });
+    // เปลี่ยนสถานะในตารางเป็น "ปิดจ๊อบแล้ว"
+    const customerId = formData.get('customer_id');
+    document.querySelectorAll('.closejob-table-section tbody tr').forEach(tr => {
+      // สมมติ Customer ID อยู่คอลัมน์ที่ 2 (index 1)
+      const tdId = tr.querySelectorAll('td')[1];
+      if (tdId && tdId.textContent.trim() === customerId) {
+        // สมมติคอลัมน์ "สถานะ" อยู่ index 0 (ปรับตามจริง)
+        const statusTd = tr.querySelectorAll('td')[0];
+        if (statusTd) statusTd.textContent = 'ปิดจ๊อบแล้ว';
+      }
+    });
+});
 }
 
 
