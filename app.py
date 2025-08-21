@@ -706,7 +706,9 @@ def get_approove_data():
 
         # ใช้ key 'สถานะ' (ภาษาไทย) ให้ตรงกับ Google Sheet
         approve_data = [r for r in records if r.get('สถานะ') == 'อนุมัติ']
-        closejob_data = [r for r in records if r.get('สถานะ') == 'ปิดจ๊อบ']
+        closejob_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
+
+
 
         return render_template('loan_management.html',
                                approve_data=approve_data,
