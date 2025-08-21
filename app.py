@@ -434,33 +434,6 @@ def dashboard():
     username = session['username']
     return render_template('main_menu.html', username=username)
 
-@app.route('/loan_management')
-def loan_management():
-    if 'username' not in session:
-        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
-        return redirect(url_for('login'))
-
-    approove_data = []
-
-    try:
-        worksheet = GSPREAD_CLIENT.open("data1").worksheet("approove")
-        data = worksheet.get_all_values()
-
-        if data and len(data) > 1:
-            headers = data[0]
-            rows = data[1:]
-            approove_data = [dict(zip(headers, row)) for row in rows]
-
-    except Exception as e:
-        flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")
-
-    return render_template(
-        'loan_management.html',
-        username=session['username'],
-        approove_data=approove_data
-    )
-
-
 
 @app.route('/logout')
 def logout():
@@ -707,7 +680,7 @@ def loan_management():
             rows = data[1:]
             records = [dict(zip(headers, row)) for row in rows]
             approove_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
-            closejob_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']  # หรือเงื่อนไขที่ต้องการ
+            closejob_data = [r for r in records if r.get('สถานะ') == 'ปิดจ๊อบ']  # หรือเงื่อนไขที่ต้องการ
 
     except Exception as e:
         flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")
