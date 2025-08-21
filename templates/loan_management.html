@@ -826,7 +826,7 @@
 
 {% if approve_data %}
 <!-- ตารางอนุมัติยอด -->
-<div class="approve-table-section" style="display:none;">
+<div class="approove-table-section" style="display:none;">
   <h3>ตารางลูกค้าที่รอปิดจ๊อบ</h3>
   <table class="approve-table">
     <thead>
@@ -1318,7 +1318,7 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
     e.preventDefault();
     const tableClass = item.getAttribute('data-table');
 
-    // ซ่อนทุกตารางก่อน
+    // ซ่อนทุกตารางก่อน อันนี้คือรายชื่อทุกตาราง
     document.querySelectorAll(
       '.approove-table-section, .closejob-table-section, .baddebt-table-section, .pullplug-table-section, .returnprincipal-table-section, .daily-job-table-section'
     ).forEach(section => {
