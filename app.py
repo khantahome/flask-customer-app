@@ -689,34 +689,35 @@ def api_daily_jobs():
 
 
 # . . .เรียกตารางอนุมัติยอด(appove)มาโชว์
-@app.route('/get_approove_data')
-def get_approove_data():
+@app.route('/loan_management')
+def loan_management():
     if 'username' not in session:
+        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
         return redirect(url_for('login'))
 
+    approove_data = []
+    closejob_data = []
+
     try:
-        worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        worksheet = GSPREAD_CLIENT.open("data1").worksheet("approove")
         data = worksheet.get_all_values()
-        if not data or len(data) < 2:
-            records = []
-        else:
+
+        if data and len(data) > 1:
             headers = data[0]
             rows = data[1:]
             records = [dict(zip(headers, row)) for row in rows]
+            approove_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
+            closejob_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']  # หรือเงื่อนไขที่ต้องการ
 
-        # ใช้ key 'สถานะ' (ภาษาไทย) ให้ตรงกับ Google Sheet
-        approove_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
-        closejob_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
-
-
-
-        return render_template('loan_management.html',
-                               approove=approove_data,
-                               closejob_data=closejob_data,
-                               username=session['username'])
     except Exception as e:
         flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")
-        return redirect(url_for('dashboard'))
+
+    return render_template(
+        'loan_management.html',
+        username=session['username'],
+        approove=approove_data,
+        closejob_data=closejob_data
+    )
 
 @app.route('/save-approved-data', methods=['POST'])
 def save_approved_data():
