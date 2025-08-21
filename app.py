@@ -705,7 +705,7 @@ def get_approove_data():
             records = [dict(zip(headers, row)) for row in rows]
 
         # ใช้ key 'สถานะ' (ภาษาไทย) ให้ตรงกับ Google Sheet
-        approve_data = [r for r in records if r.get('สถานะ') == 'อนุมัติ']
+        approve_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
         closejob_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
 
 

@@ -824,21 +824,21 @@
             </div>
             </div>
 
-            {% if approove_data %}
+{% if approve_data %}
 <!-- ตารางอนุมัติยอด -->
-<div class="approove-table-section" style="display:none;">
-  <h3>ตารางอนุมัติลูกค้า</h3>
-  <table class="approove-table">
+<div class="approve-table-section" style="display:none;">
+  <h3>ตารางลูกค้าที่รอปิดจ๊อบ</h3>
+  <table class="approve-table">
     <thead>
       <tr>
-        {% for header in approove_data[0].keys() %}
+        {% for header in approve_data[0].keys() %}
           <th>{{ header }}</th>
         {% endfor %}
         <th>การกระทำ</th>
       </tr>
     </thead>
     <tbody>
-      {% for record in approove_data %}
+      {% for record in approve_data %}
       <tr>
         {% for value in record.values() %}
           <td>{{ value }}</td>
@@ -852,21 +852,23 @@
     </tbody>
   </table>
 </div>
+{% endif %}
 
+{% if closejob_data %}
 <!-- ตารางปิดจ๊อบ -->
 <div class="closejob-table-section" style="display:none;">
   <h3>ตารางลูกค้าปิดจ๊อบ</h3>
   <table class="closejob-table">
     <thead>
       <tr>
-        {% for header in approove_data[0].keys() %}
+        {% for header in closejob_data[0].keys() %}
           <th>{{ header }}</th>
         {% endfor %}
         <th>การกระทำ</th>
       </tr>
     </thead>
     <tbody>
-      {% for record in approove_data %}
+      {% for record in closejob_data %}
       <tr>
         {% for value in record.values() %}
           <td>{{ value }}</td>
@@ -880,6 +882,7 @@
   </table>
 </div>
 {% endif %}
+
 
 <!-- ตารางค้นหา/ปิดจ๊อบรายวัน -->
 <div class="daily-job-table-section" style="display:none;">
