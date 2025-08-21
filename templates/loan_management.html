@@ -824,21 +824,21 @@
             </div>
             </div>
 
-{% if approve_data %}
+{% if approove %}
 <!-- ตารางอนุมัติยอด -->
 <div class="approove-table-section" style="display:none;">
   <h3>ตารางลูกค้าที่รอปิดจ๊อบ</h3>
   <table class="approve-table">
     <thead>
       <tr>
-        {% for header in approve_data[0].keys() %}
+        {% for header in approove[0].keys() %}
           <th>{{ header }}</th>
         {% endfor %}
         <th>การกระทำ</th>
       </tr>
     </thead>
     <tbody>
-      {% for record in approve_data %}
+      {% for record in approove %}
       <tr>
         {% for value in record.values() %}
           <td>{{ value }}</td>

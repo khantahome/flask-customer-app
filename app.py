@@ -705,13 +705,13 @@ def get_approove_data():
             records = [dict(zip(headers, row)) for row in rows]
 
         # ใช้ key 'สถานะ' (ภาษาไทย) ให้ตรงกับ Google Sheet
-        approve_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
+        approove_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
         closejob_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
 
 
 
         return render_template('loan_management.html',
-                               approve_data=approve_data,
+                               approove=approove_data,
                                closejob_data=closejob_data,
                                username=session['username'])
     except Exception as e:
