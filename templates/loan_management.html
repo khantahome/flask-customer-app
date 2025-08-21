@@ -828,7 +828,7 @@
 <!-- ตารางอนุมัติยอด -->
 <div class="approove-table-section" style="display:none;">
   <h3>ตารางลูกค้าที่รอปิดจ๊อบ</h3>
-  <table class="approve-table">
+  <table class="approove-table">
     <thead>
       <tr>
         {% for header in approove[0].keys() %}
@@ -854,21 +854,21 @@
 </div>
 {% endif %}
 
-{% if closejob_data %}
-<!-- ตารางปิดจ๊อบ -->
+{% if approove %}
+<!-- ตารางปิดจ๊อบ (แสดงเฉพาะรอปิดจ๊อบ) -->
 <div class="closejob-table-section" style="display:none;">
   <h3>ตารางลูกค้าปิดจ๊อบ</h3>
   <table class="closejob-table">
     <thead>
       <tr>
-        {% for header in closejob_data[0].keys() %}
+        {% for header in approove[0].keys() %}
           <th>{{ header }}</th>
         {% endfor %}
         <th>การกระทำ</th>
       </tr>
     </thead>
     <tbody>
-      {% for record in closejob_data %}
+      {% for record in approove %}
       <tr>
         {% for value in record.values() %}
           <td>{{ value }}</td>
