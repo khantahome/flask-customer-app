@@ -863,10 +863,10 @@
   <h3>ตารางลูกค้าปิดจ๊อบ</h3>
   <!-- ฟอร์มค้นหา -->
   <div style="margin-bottom:16px; display:flex; gap:8px;">
-    <input type="text" id="closejob-search-input" placeholder="ค้นหาลูกค้า..." style="flex:1; padding:6px;">
-    <button type="button" id="closejob-search-btn" style="padding:6px 12px;">ค้นหา</button>
-    <button type="button" id="closejob-reset-btn" style="padding:6px 12px;">ล้างข้อมูล</button>
-  </div>
+    <input type="text" id="closejob-search-input" placeholder="ค้นหาลูกค้า..." class="form-input" style="flex:1; padding:6px;">
+    <button type="button" id="closejob-search-btn" class="btn btn-primary" style="padding:8px 20px; min-width:90px;">ค้นหา</button>
+    <button type="button" id="closejob-reset-btn" class="btn btn-secondary" style="padding:8px 20px; min-width:90px;">ล้างข้อมูล</button>
+</div>
   <table class="closejob-table">
     <thead>
       <tr>
@@ -1139,48 +1139,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
   shareContainer.appendChild(newRow);
 
-    const searchInput = document.getElementById('closejob-search-input');
-    const searchBtn = document.getElementById('closejob-search-btn');
-    const resetBtn = document.getElementById('closejob-reset-btn');
-    const tbody = document.getElementById('closejob-tbody');
+    function setupCloseJobTableSearch() {
+  const searchInput = document.getElementById('closejob-search-input');
+  const searchBtn = document.getElementById('closejob-search-btn');
+  const resetBtn = document.getElementById('closejob-reset-btn');
+  const tbody = document.getElementById('closejob-tbody');
 
-    // เก็บข้อมูลเริ่มต้นทั้งหมด
-    const originalRows = Array.from(tbody.querySelectorAll('tr'));
+  // ดึง rows ใหม่ทุกครั้ง (ป้องกัน DOM ไม่สมบูรณ์)
+  const originalRows = Array.from(tbody.querySelectorAll('tr'));
+  const defaultRows = originalRows.filter(row => row.dataset.status === 'รอปิดจ๊อบ');
 
-    // เก็บเฉพาะลูกค้าที่สถานะ "รอปิดจ๊อบ" สำหรับ default display
-    const defaultRows = originalRows.filter(row => row.dataset.status === 'รอปิดจ๊อบ');
+  function showDefaultRows() {
+    tbody.innerHTML = '';
+    defaultRows.forEach(r => tbody.appendChild(r));
+  }
 
-    // ฟังก์ชันแสดง defaultRows
-    function showDefaultRows() {
-        tbody.innerHTML = '';
-        defaultRows.forEach(r => tbody.appendChild(r));
+  // ตอนเปิด dropdown ให้แสดง defaultRows
+  showDefaultRows();
+
+  searchBtn.onclick = function() {
+    const keyword = searchInput.value.trim().toLowerCase();
+    tbody.innerHTML = '';
+    if (keyword) {
+      const filtered = originalRows.filter(row => {
+        const customerID = row.cells[1].textContent.toLowerCase();
+        const name = row.cells[2].textContent.toLowerCase();
+        return customerID.includes(keyword) || name.includes(keyword);
+      });
+      filtered.forEach(r => tbody.appendChild(r));
+    } else {
+      showDefaultRows();
     }
+    document.querySelector('.closejob-table-section').style.display = 'block';
+  };
 
-    // ตอนเปิด dropdown ให้แสดง defaultRows
+  resetBtn.onclick = function() {
+    searchInput.value = '';
     showDefaultRows();
+    document.querySelector('.closejob-table-section').style.display = 'block';
+  };
+}
 
-    // ค้นหา Customer ID (คอลัมน์ 2) หรือ ชื่อ-นามสกุล (คอลัมน์ 3)
-    searchBtn.addEventListener('click', () => {
-        const keyword = searchInput.value.trim().toLowerCase();
-        tbody.innerHTML = '';
-
-        if(keyword) {
-            const filtered = originalRows.filter(row => {
-                const customerID = row.cells[1].textContent.toLowerCase(); // คอลัมน์ 2
-                const name = row.cells[2].textContent.toLowerCase();       // คอลัมน์ 3
-                return customerID.includes(keyword) || name.includes(keyword);
-            });
-            filtered.forEach(r => tbody.appendChild(r));
-        } else {
-            showDefaultRows();
-        }
-    });
-
-    // ล้างข้อมูล
-    resetBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        showDefaultRows();
-    });
+// เรียกใช้ฟังก์ชันนี้ทุกครั้งที่แสดง .closejob-table-section
+document.querySelectorAll('.dropdown-item[data-table="closejob-table-section"]').forEach(item => {
+  item.addEventListener('click', () => {
+    setTimeout(setupCloseJobTableSearch, 0); // ให้ DOM render เสร็จก่อน
+  });
+});
 });
 
 // --------------------------------------------------------สิ้นสุด DOM ---------------------------------
