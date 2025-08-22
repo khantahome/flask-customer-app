@@ -22,7 +22,7 @@
             --shadow-light: 0 6px 20px rgba(0, 0, 0, 0.4); /* Stronger shadow for dark mode */
             --success-bg: #28A745; /* Green for success messages */
             --success-text: #FFFFFF;
-            --error-bg: #DC3545; /* Red for error messages */
+            --error-bg: #f42b3f; /* Red for error messages */
             --error-text: #FFFFFF;
             --info-bg: #17A2B8; /* Blue for info messages */
             --info-text: #FFFFFF;
@@ -250,7 +250,7 @@
         }
 
         .action-button.logout:hover {
-            background-color: #B02A37; /* Darker red on hover */
+            background-color: #de1f32; /* Darker red on hover */
         }
 
         .logged-in-user {
@@ -634,13 +634,13 @@
         }
 
         .btn-secondary {
-            background-color: #ac0000 ;
+            background-color: #00d238 ;
             color: var(--light-text-color);
             box-shadow: none;
         }
 
         .btn-secondary:hover {
-            background-color: #ff0000;
+            background-color: #019e2b;
             color: var(--text-color);
             transform: translateY(-2px);
         }
@@ -1188,15 +1188,8 @@ function setupCloseJobTableSearch() {
     document.querySelector('.closejob-table-section').style.display = 'block';
   };
 }
-
-// เรียกใช้ฟังก์ชันนี้ทุกครั้งที่แสดง .closejob-table-section
-document.querySelectorAll('.dropdown-item[data-table="closejob-table-section"]').forEach(item => {
-  item.addEventListener('click', () => {
-    setTimeout(setupCloseJobTableSearch, 0); // ให้ DOM render เสร็จก่อน
+    setupCloseJobTableSearch(); // ให้ DOM render เสร็จก่อน
   });
-});
-});
-
 // --------------------------------------------------------สิ้นสุด DOM ---------------------------------
 
   // กำหนด event ลบแถวแถวแรก (ถ้ามีมากกว่า 1 แถว)
