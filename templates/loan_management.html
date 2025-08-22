@@ -861,7 +861,7 @@
 <!-- ตารางปิดจ๊อบ (แสดงเฉพาะรอปิดจ๊อบ) -->
 <div class="closejob-table-section" style="display:none;">
   <h3>ตารางลูกค้าปิดจ๊อบ</h3>
- <!-- ฟอร์มค้นหา -->
+<!-- ฟอร์มค้นหา -->
   <div style="margin-bottom:16px; display:flex; gap:8px;">
     <input type="text" id="closejob-search-input" placeholder="ค้นหาลูกค้า..." style="flex:1; padding:6px;">
     <button type="button" id="closejob-search-btn" style="padding:6px 12px;">ค้นหา</button>
@@ -879,12 +879,12 @@
     </thead>
     <tbody id="closejob-tbody">
       {% for record in approove %}
-      <tr>
+      <tr data-status="{{ record['สถานะ'] }}">
         {% for value in record.values() %}
           <td>{{ value }}</td>
         {% endfor %}
         <td>
-            <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
+          <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
         </td>
       </tr>
       {% endfor %}
@@ -1139,33 +1139,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   shareContainer.appendChild(newRow);
 
-  const searchInput = document.getElementById('closejob-search-input');
+    const searchInput = document.getElementById('closejob-search-input');
     const searchBtn = document.getElementById('closejob-search-btn');
     const resetBtn = document.getElementById('closejob-reset-btn');
     const tbody = document.getElementById('closejob-tbody');
 
-    // เก็บข้อมูลเริ่มต้น
+    // เก็บข้อมูลเริ่มต้นทั้งหมด
     const originalRows = Array.from(tbody.querySelectorAll('tr'));
 
+    // เก็บเฉพาะลูกค้าที่สถานะ "รอปิดจ๊อบ" สำหรับ default display
+    const defaultRows = originalRows.filter(row => row.dataset.status === 'รอปิดจ๊อบ');
+
+    // ฟังก์ชันแสดง defaultRows
+    function showDefaultRows() {
+        tbody.innerHTML = '';
+        defaultRows.forEach(r => tbody.appendChild(r));
+    }
+
+    // ตอนเปิด dropdown ให้แสดง defaultRows
+    showDefaultRows();
+
+    // ค้นหา Customer ID (คอลัมน์ 2) หรือ ชื่อ-นามสกุล (คอลัมน์ 3)
     searchBtn.addEventListener('click', () => {
         const keyword = searchInput.value.trim().toLowerCase();
         tbody.innerHTML = '';
+
         if(keyword) {
             const filtered = originalRows.filter(row => {
-                const firstCol = row.cells[0].textContent.toLowerCase(); // สมมุติชื่ออยู่คอลัมน์แรก
-                return firstCol.includes(keyword);
+                const customerID = row.cells[1].textContent.toLowerCase(); // คอลัมน์ 2
+                const name = row.cells[2].textContent.toLowerCase();       // คอลัมน์ 3
+                return customerID.includes(keyword) || name.includes(keyword);
             });
             filtered.forEach(r => tbody.appendChild(r));
         } else {
-            // ถ้าไม่มี keyword ให้คืนค่าเดิม
-            originalRows.forEach(r => tbody.appendChild(r));
+            showDefaultRows();
         }
     });
 
+    // ล้างข้อมูล
     resetBtn.addEventListener('click', () => {
         searchInput.value = '';
-        tbody.innerHTML = '';
-        originalRows.forEach(r => tbody.appendChild(r));
+        showDefaultRows();
     });
 });
 
