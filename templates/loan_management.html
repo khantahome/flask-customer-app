@@ -730,12 +730,15 @@
     font-size: 0.95em;
     padding: 4px 10px;
   }
+
   #daily-job-table th:nth-child(5),
   #daily-job-table td:nth-child(5) {
-  min-width: 250px;
-  white-space: nowrap;     
-  overflow: hidden;        
-  text-overflow: ellipsis; 
+  white-space: nowrap;
+  width: 1px;           
+  min-width: 120px;    
+  max-width: none;     
+  overflow: visible;   
+  text-overflow: unset; 
 }
   }
 }
@@ -858,7 +861,14 @@
 <!-- ตารางปิดจ๊อบ (แสดงเฉพาะรอปิดจ๊อบ) -->
 <div class="closejob-table-section" style="display:none;">
   <h3>ตารางลูกค้าปิดจ๊อบ</h3>
-  <table class="closejob-table">
+  <!-- ฟอร์มค้นหา -->
+  <form id="closejob-search-form" style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+    <input type="text" id="closejob-search-id" class="form-input" placeholder="ค้นหา Customer ID" style="max-width:180px;">
+    <input type="text" id="closejob-search-name" class="form-input" placeholder="ค้นหาชื่อ-นามสกุล" style="max-width:220px;">
+    <button type="submit" class="btn btn-primary" style="min-width:90px;">ค้นหา</button>
+    <button type="button" id="closejob-clear-btn" class="btn btn-secondary" style="min-width:90px;">ล้างข้อมูล</button>
+  </form>
+  <table class="closejob-table" id="closejob-table">
     <thead>
       <tr>
         {% for header in approove[0].keys() %}
@@ -1129,7 +1139,35 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   shareContainer.appendChild(newRow);
+
+  const closejobSearchForm = document.getElementById('closejob-search-form');
+const closejobSearchId = document.getElementById('closejob-search-id');
+const closejobSearchName = document.getElementById('closejob-search-name');
+const closejobClearBtn = document.getElementById('closejob-clear-btn');
+const closejobTable = document.getElementById('closejob-table');
+
+if (closejobSearchForm && closejobTable) {
+  closejobSearchForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const idVal = closejobSearchId.value.trim().toLowerCase();
+    const nameVal = closejobSearchName.value.trim().toLowerCase();
+    Array.from(closejobTable.tBodies[0].rows).forEach(row => {
+      // ปรับ index ให้ตรงกับ Customer ID และ ชื่อ-นามสกุล
+      const idCell = row.cells[0]?.textContent.trim().toLowerCase() || '';
+      const nameCell = row.cells[1]?.textContent.trim().toLowerCase() || '';
+      const matchId = !idVal || idCell.includes(idVal);
+      const matchName = !nameVal || nameCell.includes(nameVal);
+      row.style.display = (matchId && matchName) ? '' : 'none';
+    });
+  });
+  closejobClearBtn.addEventListener('click', function() {
+    closejobSearchId.value = '';
+    closejobSearchName.value = '';
+    Array.from(closejobTable.tBodies[0].rows).forEach(row => row.style.display = '');
+  });
+}
 });
+// -------------------------------------------------- สิ้นสุด DOM
 
 
   // กำหนด event ลบแถวแถวแรก (ถ้ามีมากกว่า 1 แถว)
@@ -1405,6 +1443,7 @@ if (companySelect) {
       otherCompanySearchInput.value = '';
     }
   });
+  
 }
 });
 </script>
