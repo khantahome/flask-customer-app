@@ -1146,7 +1146,46 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   shareContainer.appendChild(newRow);
-  //setupCloseJobTableSearch();
+  function setupCloseJobTableSearch() {
+  const searchInput = document.getElementById('closejob-search-input');
+  const searchBtn = document.getElementById('closejob-search-btn');
+  const resetBtn = document.getElementById('closejob-reset-btn');
+  const tbody = document.getElementById('closejob-tbody');
+
+  // เก็บ rows ทั้งหมดไว้ก่อน
+  const allRows = Array.from(tbody.querySelectorAll('tr'));
+
+  function showRows(rows) {
+    tbody.innerHTML = '';
+    rows.forEach(r => tbody.appendChild(r));
+  }
+
+  // ตอนเปิด dropdown ให้แสดงทุกแถว
+  showRows(allRows);
+
+  searchBtn.onclick = function() {
+    const keyword = searchInput.value.trim().toLowerCase();
+    if (keyword) {
+      // ค้นหาจาก customer id หรือชื่อ-นามสกุล
+      const filtered = allRows.filter(row => {
+        const id = (row.dataset.customerId || '').toLowerCase();
+        const name = (row.dataset.customerName || '').toLowerCase();
+        return id.includes(keyword) || name.includes(keyword);
+      });
+      showRows(filtered);
+    } else {
+      showRows(allRows);
+    }
+    document.querySelector('.closejob-table-section').style.display = 'block';
+  };
+
+  resetBtn.onclick = function() {
+    searchInput.value = '';
+    showRows(allRows);
+    document.querySelector('.closejob-table-section').style.display = 'block';
+  };
+}
+setupCloseJobTableSearch(); 
 });
 
 // --------------------------------------------------------สิ้นสุด DOM ---------------------------------
@@ -1397,49 +1436,6 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
       </tr>
     `;
   });
-  
-  function setupCloseJobTableSearch() {
-  const searchInput = document.getElementById('closejob-search-input');
-  const searchBtn = document.getElementById('closejob-search-btn');
-  const resetBtn = document.getElementById('closejob-reset-btn');
-  const tbody = document.getElementById('closejob-tbody');
-
-  // เก็บ rows ทั้งหมดไว้ก่อน
-  const allRows = Array.from(tbody.querySelectorAll('tr'));
-  // เฉพาะ rows ที่สถานะ "รอปิดจ๊อบ"
-  const defaultRows = allRows.filter(row => row.dataset.status === 'รอปิดจ๊อบ');
-
-  function showRows(rows) {
-    tbody.innerHTML = '';
-    rows.forEach(r => tbody.appendChild(r));
-  }
-
-  // ตอนเปิด dropdown ให้แสดง defaultRows
-  showRows(defaultRows);
-
-  searchBtn.onclick = function() {
-    const keyword = searchInput.value.trim().toLowerCase();
-    if (keyword) {
-      // ค้นหาจาก customer id หรือชื่อ-นามสกุล
-      const filtered = allRows.filter(row => {
-        const id = (row.dataset.customerId || '').toLowerCase();
-        const name = (row.dataset.customerName || '').toLowerCase();
-        return id.includes(keyword) || name.includes(keyword);
-      });
-      showRows(filtered);
-    } else {
-      showRows(defaultRows);
-    }
-    document.querySelector('.closejob-table-section').style.display = 'block';
-  };
-
-  resetBtn.onclick = function() {
-    searchInput.value = '';
-    showRows(defaultRows);
-    document.querySelector('.closejob-table-section').style.display = 'block';
-  };
-}
-    setupCloseJobTableSearch(); // ให้ DOM render เสร็จก่อน    
 }
 
     
