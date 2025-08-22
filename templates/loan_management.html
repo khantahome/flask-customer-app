@@ -859,39 +859,36 @@
 
 {% if approove %}
 <!-- ตารางปิดจ๊อบ (แสดงเฉพาะรอปิดจ๊อบ) -->
-<div class="closejob-table-section" style="display:none;">
-  <h3>ตารางลูกค้าปิดจ๊อบ</h3>
-  <!-- ฟอร์มค้นหา -->
-  <form id="closejob-search-form" style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-    <input type="text" id="closejob-search-id" class="form-input" placeholder="ค้นหา Customer ID" style="max-width:180px;">
-    <input type="text" id="closejob-search-name" class="form-input" placeholder="ค้นหาชื่อ-นามสกุล" style="max-width:220px;">
-    <button type="submit" class="btn btn-primary" style="min-width:90px;">ค้นหา</button>
-    <button type="button" id="closejob-clear-btn" class="btn btn-secondary" style="min-width:90px;">ล้างข้อมูล</button>
-  </form>
-  <table class="closejob-table" id="closejob-table">
-    <thead>
-      <tr>
-        {% for header in approove[0].keys() %}
-          <th>{{ header }}</th>
-        {% endfor %}
-        <th>การกระทำ</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for record in approove %}
-      <tr>
-        {% for value in record.values() %}
-          <td>{{ value }}</td>
-        {% endfor %}
-        <td>
-            <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
-        </td>
-      </tr>
+<form id="closejob-search-form" style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+  <input type="text" id="closejob-search-id" class="form-input" placeholder="ค้นหา Customer ID" style="max-width:180px;">
+  <input type="text" id="closejob-search-name" class="form-input" placeholder="ค้นหาชื่อ-นามสกุล" style="max-width:220px;">
+  <div style="display:flex; gap:8px;">
+    <button type="submit" class="btn btn-primary" style="min-width:100px;">ค้นหา</button>
+    <button type="button" id="closejob-clear-btn" class="btn btn-secondary" style="min-width:100px;">ล้างข้อมูล</button>
+  </div>
+</form>
+<table class="closejob-table" id="closejob-table">
+  <thead>
+    <tr>
+      {% for header in approove[0].keys() %}
+        <th>{{ header }}</th>
       {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endif %}
+      <th>การกระทำ</th>
+    </tr>
+  </thead>
+  <tbody id="closejob-table-body">
+    {% for record in approove %}
+    <tr>
+      {% for value in record.values() %}
+        <td>{{ value }}</td>
+      {% endfor %}
+      <td>
+          <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
 
 <!-- ตารางค้นหา/ปิดจ๊อบรายวัน -->
@@ -1140,30 +1137,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
   shareContainer.appendChild(newRow);
 
-  const closejobSearchForm = document.getElementById('closejob-search-form');
+const closejobSearchForm = document.getElementById('closejob-search-form');
 const closejobSearchId = document.getElementById('closejob-search-id');
 const closejobSearchName = document.getElementById('closejob-search-name');
 const closejobClearBtn = document.getElementById('closejob-clear-btn');
-const closejobTable = document.getElementById('closejob-table');
+const closejobTableBody = document.getElementById('closejob-table-body');
 
-if (closejobSearchForm && closejobTable) {
+// เก็บข้อมูลลูกค้าทั้งหมดไว้ (ดึงจาก template)
+let closejobAllRows = Array.from(closejobTableBody.querySelectorAll('tr')).map(tr => {
+  const tds = tr.querySelectorAll('td');
+  return {
+    tr: tr,
+    id: tds[0]?.textContent.trim().toLowerCase() || '',
+    name: tds[1]?.textContent.trim().toLowerCase() || '',
+    status: tds[2]?.textContent.trim() || ''
+  };
+});
+
+// ฟังก์ชันแสดงแถวที่ต้องการ
+function renderClosejobRows(rows) {
+  closejobTableBody.innerHTML = '';
+  rows.forEach(rowObj => closejobTableBody.appendChild(rowObj.tr));
+}
+
+// กดค้นหา
+if (closejobSearchForm && closejobTableBody) {
   closejobSearchForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const idVal = closejobSearchId.value.trim().toLowerCase();
     const nameVal = closejobSearchName.value.trim().toLowerCase();
-    Array.from(closejobTable.tBodies[0].rows).forEach(row => {
-      // ปรับ index ให้ตรงกับ Customer ID และ ชื่อ-นามสกุล
-      const idCell = row.cells[0]?.textContent.trim().toLowerCase() || '';
-      const nameCell = row.cells[1]?.textContent.trim().toLowerCase() || '';
-      const matchId = !idVal || idCell.includes(idVal);
-      const matchName = !nameVal || nameCell.includes(nameVal);
-      row.style.display = (matchId && matchName) ? '' : 'none';
-    });
+    // กรองเฉพาะแถวที่ตรงกับ id หรือ name
+    const filtered = closejobAllRows.filter(row =>
+      (!idVal || row.id.includes(idVal)) &&
+      (!nameVal || row.name.includes(nameVal))
+    );
+    renderClosejobRows(filtered);
   });
+
+  // กดล้างข้อมูล
   closejobClearBtn.addEventListener('click', function() {
     closejobSearchId.value = '';
     closejobSearchName.value = '';
-    Array.from(closejobTable.tBodies[0].rows).forEach(row => row.style.display = '');
+    // แสดงเฉพาะลูกค้าที่มีสถานะ "รอปิดจ๊อบ"
+    const waitingRows = closejobAllRows.filter(row => row.status === 'รอปิดจ๊อบ');
+    renderClosejobRows(waitingRows);
+  });
+
+  // โหลดหน้า: แสดงเฉพาะ "รอปิดจ๊อบ"
+  window.addEventListener('DOMContentLoaded', function() {
+    const waitingRows = closejobAllRows.filter(row => row.status === 'รอปิดจ๊อบ');
+    renderClosejobRows(waitingRows);
   });
 }
 });
