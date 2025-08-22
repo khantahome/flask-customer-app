@@ -669,7 +669,6 @@ def loan_management():
         return redirect(url_for('login'))
 
     approove_data = []
-    closejob_data = []
 
     try:
         worksheet = GSPREAD_CLIENT.open("data1").worksheet("approove")
@@ -680,7 +679,6 @@ def loan_management():
             rows = data[1:]
             records = [dict(zip(headers, row)) for row in rows]
             approove_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
-            closejob_data = [r for r in records if r.get('สถานะ') == 'ปิดจ๊อบ']  # หรือเงื่อนไขที่ต้องการ
 
     except Exception as e:
         flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")
@@ -688,8 +686,7 @@ def loan_management():
     return render_template(
         'loan_management.html',
         username=session['username'],
-        approove=approove_data,
-        closejob_data=closejob_data
+        approove=approove_data
     )
 
 @app.route('/save-approved-data', methods=['POST'])

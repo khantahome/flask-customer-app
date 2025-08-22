@@ -861,13 +861,12 @@
 <!-- ตารางปิดจ๊อบ (แสดงเฉพาะรอปิดจ๊อบ) -->
 <div class="closejob-table-section" style="display:none;">
   <h3>ตารางลูกค้าปิดจ๊อบ</h3>
-<!-- ฟอร์มค้นหา -->
+  <!-- ฟอร์มค้นหา -->
   <div style="margin-bottom:16px; display:flex; gap:8px;">
     <input type="text" id="closejob-search-input" placeholder="ค้นหาลูกค้า..." style="flex:1; padding:6px;">
     <button type="button" id="closejob-search-btn" style="padding:6px 12px;">ค้นหา</button>
     <button type="button" id="closejob-reset-btn" style="padding:6px 12px;">ล้างข้อมูล</button>
   </div>
-
   <table class="closejob-table">
     <thead>
       <tr>
@@ -891,6 +890,7 @@
     </tbody>
   </table>
 </div>
+{% endif %}
 
 
 <!-- ตารางค้นหา/ปิดจ๊อบรายวัน -->
