@@ -858,24 +858,19 @@
 {% endif %}
 
 {% if approove %}
-<!-- ตารางปิดจ๊อบ (แสดงเฉพาะรอปิดจ๊อบ) -->
 <div class="closejob-table-section" style="display:none;">
   <h3>ตารางลูกค้าปิดจ๊อบ</h3>
   <!-- ฟอร์มค้นหา -->
-  <div style="margin-bottom: 15px; display: flex; gap: 16px; align-items: flex-end;">
-  <div style="flex:1.5;">
-    <label class="form-label" style="color: var(--light-text-color);">ค้นหาลูกค้า:</label>
-    <input type="text" id="closejob-search-input" class="form-input" placeholder="กรอก Customer ID หรือ ชื่อ-นามสกุล" style="width:100%;">
+  <div style="margin-bottom: 15px; display: flex; gap: 8px; align-items: flex-end;">
+    <div style="flex:2;">
+      <label class="form-label" style="color: var(--light-text-color);">ค้นหาลูกค้า:</label>
+      <input type="text" id="closejob-search-input" class="form-input" placeholder="กรอก Customer ID หรือ ชื่อ-นามสกุล" style="width:100%;">
+    </div>
+    <div style="flex:1; display:flex; gap:8px;">
+      <button type="button" id="closejob-search-btn" class="btn btn-primary" style="width:100%;">ค้นหา</button>
+      <button type="button" id="closejob-reset-btn" class="btn btn-primary" style="width:100%;">ล้างข้อมูล</button>
+    </div>
   </div>
-  <div style="flex:0.7; display:flex; gap:8px;">
-    <button type="button" id="closejob-search-btn" class="form-input" style="padding:6px 12px; text-align:center; cursor:pointer;">
-      ค้นหา
-    </button>
-    <button type="button" id="closejob-reset-btn" class="form-input" style="padding:6px 12px; text-align:center; cursor:pointer;">
-      ล้างข้อมูล
-    </button>
-  </div>
-</div>
   <table class="closejob-table">
     <thead>
       <tr>
@@ -887,7 +882,11 @@
     </thead>
     <tbody id="closejob-tbody">
       {% for record in approove %}
-      <tr data-status="{{ record['สถานะ'] }}">
+      <tr 
+        data-status="{{ record['สถานะ'] }}" 
+        data-customer-id="{{ record['Customer ID'] }}" 
+        data-customer-name="{{ record['ชื่อ-นามสกุล'] }}"
+      >
         {% for value in record.values() %}
           <td>{{ value }}</td>
         {% endfor %}
@@ -1148,43 +1147,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   shareContainer.appendChild(newRow);
 
-    function setupCloseJobTableSearch() {
+function setupCloseJobTableSearch() {
   const searchInput = document.getElementById('closejob-search-input');
   const searchBtn = document.getElementById('closejob-search-btn');
   const resetBtn = document.getElementById('closejob-reset-btn');
   const tbody = document.getElementById('closejob-tbody');
 
-  // ดึง rows ใหม่ทุกครั้ง (ป้องกัน DOM ไม่สมบูรณ์)
-  const originalRows = Array.from(tbody.querySelectorAll('tr'));
-  const defaultRows = originalRows.filter(row => row.dataset.status === 'รอปิดจ๊อบ');
+  // เก็บ rows ทั้งหมดไว้ก่อน
+  const allRows = Array.from(tbody.querySelectorAll('tr'));
+  // เฉพาะ rows ที่สถานะ "รอปิดจ๊อบ"
+  const defaultRows = allRows.filter(row => row.dataset.status === 'รอปิดจ๊อบ');
 
-  function showDefaultRows() {
+  function showRows(rows) {
     tbody.innerHTML = '';
-    defaultRows.forEach(r => tbody.appendChild(r));
+    rows.forEach(r => tbody.appendChild(r));
   }
 
   // ตอนเปิด dropdown ให้แสดง defaultRows
-  showDefaultRows();
+  showRows(defaultRows);
 
   searchBtn.onclick = function() {
     const keyword = searchInput.value.trim().toLowerCase();
-    tbody.innerHTML = '';
     if (keyword) {
-      const filtered = originalRows.filter(row => {
-        const customerID = row.cells[1].textContent.toLowerCase();
-        const name = row.cells[2].textContent.toLowerCase();
-        return customerID.includes(keyword) || name.includes(keyword);
+      // ค้นหาจาก customer id หรือชื่อ-นามสกุล
+      const filtered = allRows.filter(row => {
+        const id = (row.dataset.customerId || '').toLowerCase();
+        const name = (row.dataset.customerName || '').toLowerCase();
+        return id.includes(keyword) || name.includes(keyword);
       });
-      filtered.forEach(r => tbody.appendChild(r));
+      showRows(filtered);
     } else {
-      showDefaultRows();
+      showRows(defaultRows);
     }
     document.querySelector('.closejob-table-section').style.display = 'block';
   };
 
   resetBtn.onclick = function() {
     searchInput.value = '';
-    showDefaultRows();
+    showRows(defaultRows);
     document.querySelector('.closejob-table-section').style.display = 'block';
   };
 }
