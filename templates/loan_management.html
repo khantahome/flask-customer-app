@@ -1146,64 +1146,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   shareContainer.appendChild(newRow);
-function setupCloseJobTableSearch() {
-  const searchInput = document.getElementById('closejob-search-input');
-  const searchBtn = document.getElementById('closejob-search-btn');
-  const resetBtn = document.getElementById('closejob-reset-btn');
-  const tbody = document.getElementById('closejob-tbody');
-  const allRows = Array.from(tbody.querySelectorAll('tr'));
-
-  console.log('setupCloseJobTableSearch: allRows count =', allRows.length);
-
-  function showPendingOnly() {
-    tbody.innerHTML = '';
-    let count = 0;
-    allRows.forEach(row => {
-      if ((row.dataset.status || '').trim() === 'รอปิดจ๊อบ') {
-        tbody.appendChild(row);
-        count++;
-      }
-    });
-    console.log('showPendingOnly: rows shown =', count);
-  }
-
-  function showRows(rows) {
-    tbody.innerHTML = '';
-    rows.forEach(r => tbody.appendChild(r));
-    console.log('showRows: rows shown =', rows.length);
-  }
-
-  searchBtn.onclick = function() {
-    const keyword = searchInput.value.trim().toLowerCase();
-    console.log('searchBtn clicked, keyword =', keyword);
-    let filtered = allRows;
-    if (keyword) {
-      filtered = allRows.filter(row => {
-        const id = (row.dataset.customerId || '').toLowerCase();
-        const name = (row.dataset.customerName || '').toLowerCase();
-        const status = (row.dataset.status || '').toLowerCase();
-        const match = id.includes(keyword) || name.includes(keyword) || status.includes(keyword);
-        if (match) {
-          console.log('Matched row:', {id, name, status});
-        }
-        return match;
-      });
-    }
-    showRows(filtered);
-    document.querySelector('.closejob-table-section').style.display = 'block';
-  };
-
-  resetBtn.onclick = function() {
-    console.log('resetBtn clicked');
-    searchInput.value = '';
-    showPendingOnly();
-    document.querySelector('.closejob-table-section').style.display = 'block';
-  };
-
-  // โหลดหน้า: โชว์เฉพาะ "รอปิดจ๊อบ"
-  showPendingOnly();
-}
-setupCloseJobTableSearch();
 });
 
 // --------------------------------------------------------สิ้นสุด DOM ---------------------------------
@@ -1482,6 +1424,65 @@ if (companySelect) {
       otherCompanySearchInput.value = '';
     }
   });
+
+  function setupCloseJobTableSearch() {
+  const searchInput = document.getElementById('closejob-search-input');
+  const searchBtn = document.getElementById('closejob-search-btn');
+  const resetBtn = document.getElementById('closejob-reset-btn');
+  const tbody = document.getElementById('closejob-tbody');
+  const allRows = Array.from(tbody.querySelectorAll('tr'));
+
+  console.log('setupCloseJobTableSearch: allRows count =', allRows.length);
+
+  function showPendingOnly() {
+    tbody.innerHTML = '';
+    let count = 0;
+    allRows.forEach(row => {
+      if ((row.dataset.status || '').trim() === 'รอปิดจ๊อบ') {
+        tbody.appendChild(row);
+        count++;
+      }
+    });
+    console.log('showPendingOnly: rows shown =', count);
+  }
+
+  function showRows(rows) {
+    tbody.innerHTML = '';
+    rows.forEach(r => tbody.appendChild(r));
+    console.log('showRows: rows shown =', rows.length);
+  }
+
+  searchBtn.onclick = function() {
+    const keyword = searchInput.value.trim().toLowerCase();
+    console.log('searchBtn clicked, keyword =', keyword);
+    let filtered = allRows;
+    if (keyword) {
+      filtered = allRows.filter(row => {
+        const id = (row.dataset.customerId || '').toLowerCase();
+        const name = (row.dataset.customerName || '').toLowerCase();
+        const status = (row.dataset.status || '').toLowerCase();
+        const match = id.includes(keyword) || name.includes(keyword) || status.includes(keyword);
+        if (match) {
+          console.log('Matched row:', {id, name, status});
+        }
+        return match;
+      });
+    }
+    showRows(filtered);
+    document.querySelector('.closejob-table-section').style.display = 'block';
+  };
+
+  resetBtn.onclick = function() {
+    console.log('resetBtn clicked');
+    searchInput.value = '';
+    showPendingOnly();
+    document.querySelector('.closejob-table-section').style.display = 'block';
+  };
+
+  // โหลดหน้า: โชว์เฉพาะ "รอปิดจ๊อบ"
+  showPendingOnly();
+}
+setupCloseJobTableSearch();
 }
 });
 </script>
