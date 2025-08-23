@@ -1146,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   shareContainer.appendChild(newRow);
-  function setupCloseJobTableSearch() {
+function setupCloseJobTableSearch() {
   const searchInput = document.getElementById('closejob-search-input');
   const searchBtn = document.getElementById('closejob-search-btn');
   const resetBtn = document.getElementById('closejob-reset-btn');
@@ -1160,22 +1160,17 @@ document.addEventListener('DOMContentLoaded', () => {
     rows.forEach(r => tbody.appendChild(r));
   }
 
-  // ตอนเปิด dropdown ให้แสดงทุกแถว
-  showRows(allRows);
-
   searchBtn.onclick = function() {
     const keyword = searchInput.value.trim().toLowerCase();
+    let filtered = allRows;
     if (keyword) {
-      // ค้นหาจาก customer id หรือชื่อ-นามสกุล
-      const filtered = allRows.filter(row => {
+      filtered = allRows.filter(row => {
         const id = (row.dataset.customerId || '').toLowerCase();
         const name = (row.dataset.customerName || '').toLowerCase();
         return id.includes(keyword) || name.includes(keyword);
       });
-      showRows(filtered);
-    } else {
-      showRows(allRows);
     }
+    showRows(filtered);
     document.querySelector('.closejob-table-section').style.display = 'block';
   };
 
