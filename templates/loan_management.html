@@ -1151,10 +1151,19 @@ function setupCloseJobTableSearch() {
   const searchBtn = document.getElementById('closejob-search-btn');
   const resetBtn = document.getElementById('closejob-reset-btn');
   const tbody = document.getElementById('closejob-tbody');
-
-  // เก็บ rows ทั้งหมดไว้ก่อน
   const allRows = Array.from(tbody.querySelectorAll('tr'));
 
+  // ตอนโหลดหน้า: โชว์เฉพาะสถานะ "รอปิดจ๊อบ"
+  function showPendingOnly() {
+    tbody.innerHTML = '';
+    allRows.forEach(row => {
+      if ((row.dataset.status || '').trim() === 'รอปิดจ๊อบ') {
+        tbody.appendChild(row);
+      }
+    });
+  }
+
+  // ค้นหา: โชว์ทุกสถานะที่ตรง keyword
   function showRows(rows) {
     tbody.innerHTML = '';
     rows.forEach(r => tbody.appendChild(r));
@@ -1167,7 +1176,9 @@ function setupCloseJobTableSearch() {
       filtered = allRows.filter(row => {
         const id = (row.dataset.customerId || '').toLowerCase();
         const name = (row.dataset.customerName || '').toLowerCase();
-        return id.includes(keyword) || name.includes(keyword);
+        const status = (row.dataset.status || '').toLowerCase();
+        // ค้นหาทุกสถานะ
+        return id.includes(keyword) || name.includes(keyword) || status.includes(keyword);
       });
     }
     showRows(filtered);
@@ -1176,11 +1187,14 @@ function setupCloseJobTableSearch() {
 
   resetBtn.onclick = function() {
     searchInput.value = '';
-    showRows(allRows);
+    showPendingOnly();
     document.querySelector('.closejob-table-section').style.display = 'block';
   };
+
+  // โหลดหน้า: โชว์เฉพาะ "รอปิดจ๊อบ"
+  showPendingOnly();
 }
-setupCloseJobTableSearch(); 
+setupCloseJobTableSearch();
 });
 
 // --------------------------------------------------------สิ้นสุด DOM ---------------------------------
