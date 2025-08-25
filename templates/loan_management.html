@@ -1213,7 +1213,7 @@ if (firstDeleteBtn) {
 
       function safe(val) { return (val === undefined || val === null || val === "") ? '-' : val; }
 
-      document.getElementById('status').value = safe(data['Status']);
+      document.getElementById('status').value = safe(data['สถานะ'] || data['Status']);
       document.getElementById('customer_id').value = safe(data['Customer ID']);
       document.getElementById('fullname').value = safe(data['ชื่อ-นามสกุล']);
       document.getElementById('phone').value = safe(data['หมายเลขโทรศัพท์']);
@@ -1317,15 +1317,18 @@ if (approveForm) {
 
     alert('บันทึกข้อมูลเรียบร้อย');
     document.getElementById('approve-popup').style.display = 'none';
-    // ลบแถวลูกค้าคนนั้นออกจากตารางปิดจ๊อบ
-      const customerId = formData.get('customer_id');
-      document.querySelectorAll('.closejob-table-section tbody tr').forEach(tr => {
-        // สมมติ Customer ID อยู่คอลัมน์ที่ 3 (ถ้าไม่ใช่ปรับเลข index)
-        const tdId = tr.querySelectorAll('td')[1];
-        if (tdId && tdId.textContent.trim() === customerId) {
-          tr.remove();
-        }
-      });
+    // เปลี่ยนสถานะในตารางเป็น "ปิดจ๊อบแล้ว"
+    const customerId = formData.get('customer_id');
+    document.querySelectorAll('.closejob-table-section tbody tr').forEach(tr => {
+      const tdId = tr.querySelectorAll('td')[1];
+      if (tdId && tdId.textContent.trim() === customerId) {
+        // หา index ของคอลัมน์สถานะ (สมมติเป็น td[0] หรือ td[?])
+        const statusTd = tr.querySelectorAll('td')[0]; // ปรับ index ให้ตรงกับคอลัมน์สถานะจริง
+        if (statusTd) statusTd.textContent = 'ปิดจ๊อบแล้ว';
+        // อัปเดต data-status ด้วย
+        tr.dataset.status = 'ปิดจ๊อบแล้ว';
+  }
+});
   });
 }
 
