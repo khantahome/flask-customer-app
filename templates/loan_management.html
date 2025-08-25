@@ -1459,19 +1459,18 @@ if (companySelect) {
     let filtered = allRows;
     if (keyword) {
       filtered = allRows.filter(row => {
-        const id = (row.dataset.customerId || '').toLowerCase();
-        const name = (row.dataset.customerName || '').toLowerCase();
-        const status = (row.dataset.status || '').toLowerCase();
-        const match = id.includes(keyword) || name.includes(keyword) || status.includes(keyword);
-        if (match) {
-          console.log('Matched row:', {id, name, status});
-        }
-        return match;
-      });
-    }
-    showRows(filtered);
-    document.querySelector('.closejob-table-section').style.display = 'block';
-  };
+      const id = (row.dataset.customerId || '').toLowerCase();
+      const name = (row.dataset.customerName || '').toLowerCase();
+      const status = (row.dataset.status || '').toLowerCase();
+      // ตรง keyword กับ id, name, หรือ status
+      return id.includes(keyword) || name.includes(keyword) || status.includes(keyword);
+    });
+    showRows(filtered); // แสดงทุกสถานะที่ค้นเจอ
+  } else {
+    showPendingOnly(); // ถ้าไม่กรอก keyword ให้แสดงเฉพาะ "รอปิดจ๊อบ"
+  }
+  document.querySelector('.closejob-table-section').style.display = 'block';
+};
 
   resetBtn.onclick = function() {
     console.log('resetBtn clicked');
