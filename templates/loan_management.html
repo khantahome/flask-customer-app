@@ -1465,7 +1465,11 @@ if (companySelect) {
       // ตรง keyword กับ id, name, หรือ status
       return id.includes(keyword) || name.includes(keyword) || status.includes(keyword);
     });
-    showRows(filtered); // แสดงทุกสถานะที่ค้นเจอ
+     if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${tbody.parentElement.querySelectorAll('th').length}" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
+    } else {
+      showRows(filtered);
+    }
   } else {
     showPendingOnly(); // ถ้าไม่กรอก keyword ให้แสดงเฉพาะ "รอปิดจ๊อบ"
   }
@@ -1473,11 +1477,10 @@ if (companySelect) {
 };
 
   resetBtn.onclick = function() {
-    console.log('resetBtn clicked');
-    searchInput.value = '';
-    showPendingOnly();
-    document.querySelector('.closejob-table-section').style.display = 'block';
-  };
+  searchInput.value = '';
+  showPendingOnly(); // รีเซ็ตกลับมาแสดงเฉพาะ "รอปิดจ๊อบ"
+  document.querySelector('.closejob-table-section').style.display = 'block';
+};
 
   // โหลดหน้า: โชว์เฉพาะ "รอปิดจ๊อบ"
   showPendingOnly();
