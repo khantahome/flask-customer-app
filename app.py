@@ -761,7 +761,18 @@ def save_approved_data():
         worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
         worksheet.append_row(row_data)
 
-        
+        approove_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        approove_data = approove_ws.get_all_values()
+        if approove_data and len(approove_data) > 1:
+            headers = approove_data[0]
+            rows = approove_data[1:]
+            status_idx = headers.index('สถานะ') if 'สถานะ' in headers else None
+            id_idx = headers.index('Customer ID') if 'Customer ID' in headers else None
+            if status_idx is not None and id_idx is not None:
+                for i, row in enumerate(rows, start=2):  # start=2 because row 1 is header
+                    if str(row[id_idx]).strip() == str(customer_id).strip():
+                        approove_ws.update_cell(i, status_idx + 1, 'ปิดจ๊อบแล้ว')
+                        break       
 
         return jsonify({'success': True})
     
