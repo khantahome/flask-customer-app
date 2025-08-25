@@ -1430,7 +1430,7 @@ if (companySelect) {
   const searchBtn = document.getElementById('closejob-search-btn');
   const resetBtn = document.getElementById('closejob-reset-btn');
   const tbody = document.getElementById('closejob-tbody');
-  const allRows = Array.from(tbody.querySelectorAll('tr')).map(row => row.cloneNode(true));
+  const allRows = Array.from(tbody.querySelectorAll('tr'));
 
     
   console.log('setupCloseJobTableSearch: allRows count =', allRows.length);
@@ -1440,7 +1440,7 @@ if (companySelect) {
     let count = 0;
     allRows.forEach(row => {
       if ((row.dataset.status || '').trim() === 'รอปิดจ๊อบ') {
-        tbody.appendChild(row.cloneNode(true));
+        tbody.appendChild(row);
         count++;
       }
     });
@@ -1449,7 +1449,7 @@ if (companySelect) {
 
   function showRows(rows) {
     tbody.innerHTML = '';
-    rows.forEach(r => tbody.appendChild(r.cloneNode(true)));
+    rows.forEach(r => tbody.appendChild(r));
     console.log('showRows: rows shown =', rows.length);
   }
 
