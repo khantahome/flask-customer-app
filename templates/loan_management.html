@@ -685,9 +685,18 @@
 .closejob-table {
   min-width: 900px; /* ป้องกันหัวตารางซ้อนกันบนจอเล็ก */
 }
+  /* เฉพาะปุ่มค้นหาในฟอร์มนี้ */
+#daily-job-search-form .search-btn {
+    width: 100% !important;
+    min-width: 70px;
+    max-width: 90px;
+    height: 32px;
+    font-size: 0.95em;
+    padding: 4px 10px;
+  }
 
 /* Responsive: แสดง data-label บนมือถือ */
-@media (max-width: 900px) {
+/*@media (max-width: 900px) {
   .closejob-table, .closejob-table thead, .closejob-table tbody, .closejob-table th, .closejob-table td, .closejob-table tr {
     display: table;
   }
@@ -721,28 +730,16 @@
     color: var(--light-text-color);
     content: attr(data-label);
   }
-  /* เฉพาะปุ่มค้นหาในฟอร์มนี้ */
-#daily-job-search-form .search-btn {
-    width: 100% !important;
-    min-width: 70px;
-    max-width: 90px;
-    height: 32px;
-    font-size: 0.95em;
-    padding: 4px 10px;
-  }
+
   
-  #daily-job-table th:nth-child(5),
-  #daily-job-table td:nth-child(5) {
-  white-space: nowrap;
-  width: 1px;           
-  min-width: 120px;    
-  max-width: none;     
-  overflow: visible;   
-  text-overflow: unset; 
+#daily-job-table td:nth-child(5) {
+white-space: normal;
+min-width: 120px;
+} */
 }
-  }
-}
-    </style>
+/* ----------------------------------------------------------------สิ้นสุดcss--------------------------------------------------------------- */
+
+  </style>
  <meta name="viewport" content="width=1200">   
 </head>
 <body class="initial-hidden"> {# Add initial-hidden class to body #}
@@ -926,6 +923,13 @@
 <div style="flex:0 0 90px; max-width:90px;">
   <button type="submit" class="btn btn-primary search-btn" style="height:32px; min-width:70px; font-size:0.95em; padding: 4px 10px; margin-top:0; width:100%;">ค้นหา</button>
 </div>
+<div style="flex:0 0 90px; max-width:90px;">
+  <button type="button" class="btn btn-primary search-btn" 
+          style="height:32px; min-width:70px; font-size:0.95em; padding:4px 10px; margin-top:0; width:100%;" 
+          onclick="window.print()">
+    พิมพ์รายงาน
+  </button>
+</div>
 </form>
   <div style="overflow-x:auto;">
     <table class="closejob-table" id="daily-job-table">
@@ -1065,9 +1069,10 @@
             </div> {# End of .container #}
         </div> {# End of .main-content-area #}
     </div> {# End of .dashboard-layout #}
-    
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<!-- ------------------------------------------------------------------สิ้นสุด HTML ------------------------------------------------------------------------>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   // Modal variables
@@ -1148,9 +1153,9 @@ document.addEventListener('DOMContentLoaded', () => {
   shareContainer.appendChild(newRow);
 });
 
-// --------------------------------------------------------สิ้นสุด DOM ---------------------------------
+// --------------------------------------------------------สิ้นสุด DOM ฟังก์ชั่นนอกตาราง ---------------------------------
 
-  // กำหนด event ลบแถวแถวแรก (ถ้ามีมากกว่า 1 แถว)
+  // ลบแถวที่โคลนขึ้นมาจากการเพิ่มส่วนแบ่ง-----------------------------------------
   const firstDeleteBtn = shareContainer.querySelector('.delete-share-btn');
 if (firstDeleteBtn) {
   firstDeleteBtn.onclick = function() {
@@ -1186,7 +1191,6 @@ if (firstDeleteBtn) {
       }
   });
 
-  // โค้ดส่วนอื่น ๆ ที่คุณมี เช่น
 
   // แสดงข้อความ
   function showMessage(message, type) {
@@ -1272,7 +1276,7 @@ if (approveForm) {
     const companies = formData.getAll('company[]');
     const actions = formData.getAll('action_type[]');
     const tables = formData.getAll('table_select[]');
-    const amounts = formData.getAll('amount[]');
+        const amounts = formData.getAll('amount[]');
 
     // ดึง input ของบริษัทอื่นๆ (ต้องตรงกับชื่อ element จริง)
     const otherCompanyInput = document.getElementById('other_company'); 
@@ -1329,6 +1333,7 @@ if (approveForm) {
         tr.dataset.status = 'ปิดจ๊อบแล้ว';
   }
 });
+    showPendingOnly();
   });
 }
 
