@@ -206,6 +206,8 @@ def get_customer_balance(customer_id):
 
         df = pd.DataFrame(all_records)
 
+        # ป้องกันปัญหาช่องว่างที่มองไม่เห็นในชื่อคอลัมน์
+        df.columns = [col.strip() for col in df.columns]
         if 'CustomerID' not in df.columns:
             return jsonify({'error': 'CustomerID column not found in allpidjob sheet'}), 500
 
@@ -214,20 +216,30 @@ def get_customer_balance(customer_id):
         if customer_df.empty:
             return jsonify({'total_balance': 0})
 
-        opening_cols = [col for col in customer_df.columns if 'OpeningBalance' in col or 'NetOpening' in col]
-        closing_cols = [col for col in customer_df.columns if 'PrincipalReturned' in col or 'LostAmount' in col]
+        # ทำให้การค้นหาชื่อคอลัมน์ยืดหยุ่นขึ้น รองรับทั้งภาษาอังกฤษและภาษาไทย
+        opening_cols = [col for col in customer_df.columns if 
+                        'OpeningBalance' in col or 'NetOpening' in col or 
+                        'ยอดเปิดโต๊ะ' in col or 'สุทธิ' in col]
+        
+        closing_cols = [col for col in customer_df.columns if 
+                        'PrincipalReturned' in col or 'LostAmount' in col or 
+                        'คืนต้น' in col or 'เสีย' in col]
 
         total_openings = 0
         for col in opening_cols:
             if col in customer_df.columns:
-                series = customer_df[col].replace('', '0')
-                total_openings += pd.to_numeric(series, errors='coerce').fillna(0).sum()
+                # ทำให้การแปลงเป็นตัวเลขทนทานขึ้น โดยลบตัวอักษรที่ไม่ใช่ตัวเลข (เช่น , หรือ ฿) ออกไปก่อน
+                cleaned_series = customer_df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
+                series_with_zeros = cleaned_series.replace('', '0')
+                total_openings += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
 
         total_closings = 0
         for col in closing_cols:
             if col in customer_df.columns:
-                series = customer_df[col].replace('', '0')
-                total_closings += pd.to_numeric(series, errors='coerce').fillna(0).sum()
+                # ทำความสะอาดข้อมูลเหมือนกับด้านบน
+                cleaned_series = customer_df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
+                series_with_zeros = cleaned_series.replace('', '0')
+                total_closings += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
 
         total_balance = total_openings - total_closings
         return jsonify({'total_balance': total_balance})
