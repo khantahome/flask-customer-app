@@ -318,105 +318,6 @@
         .btn-return-principal { background-color: #17a2b8; color: white; } /* Cyan/Info */
         .btn-return-principal:hover { background-color: #138496; }
 
-
-        /* Responsive adjustments */
-        @media (max-width: 992px) { /* Adjust for smaller screens (tablets) */
-            .dashboard-layout {
-                flex-direction: column;
-                min-height: unset; /* Allow height to adjust */
-                max-width: 90%;
-            }
-            .sidebar {
-                width: 100%;
-                padding: 20px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-                border-bottom-left-radius: 0;
-                border-bottom-right-radius: 0;
-            }
-            .main-content-area {
-                padding: 20px;
-            }
-            .container {
-                padding: 30px;
-                margin-top: 0; /* Handled by main-content-area gap */
-                margin-bottom: 0; /* Handled by main-content-area gap */
-            }
-            .action-button-group {
-                flex-direction: row; /* Buttons in a row on smaller screens */
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .action-button {
-                flex-basis: 48%; /* Two buttons per row */
-            }
-            .action-button.logout {
-                margin-top: 15px;
-                flex-basis: 98%; /* Logout button takes full width */
-            }
-            .sidebar-title {
-                margin-bottom: 20px;
-            }
-            .logged-in-user {
-                margin-top: 15px;
-            }
-            .function-buttons-group .btn-group {
-                flex: 1 1 48%; /* Two buttons per row on medium screens */
-            }
-        }
-
-        @media (max-width: 600px) {
-            body {
-                padding: 0; /* Remove body padding, dashboard-layout handles margin */
-            }
-            .dashboard-layout {
-                margin: 10px; /* Reduced margin for mobile */
-                border-radius: 10px;
-            }
-            .container {
-                padding: 25px;
-            }
-            h2, h3, .card-title, .modal-title {
-                font-size: 1.8em;
-            }
-            .action-button {
-                padding: 12px 20px;
-                font-size: 1em;
-                width: 100%; /* Full width on small screens */
-                min-width: unset; /* Remove min-width for full width */
-            }
-            .action-button-group {
-                flex-direction: column;
-                gap: 10px;
-            }
-            /* Modal related styles are removed */
-            .modal .form-group {
-                flex-direction: column; /* Stack label and input vertically on small screens */
-                align-items: flex-start; /* Align items to the start when stacked */
-                gap: 5px; /* Smaller gap when stacked */
-            }
-            .modal .form-label {
-                width: auto; /* Auto width for labels when stacked */
-                text-align: left; /* Align labels to the left when stacked */
-                margin-bottom: 5px; /* Add back bottom margin for labels when stacked */
-            }
-            .modal .form-input {
-                padding: 8px 10px;
-                font-size: 0.9em;
-            }
-            .data-table th, .data-table td {
-                padding: 8px 10px;
-                font-size: 0.9em;
-            }
-            .btn-info, .btn-success {
-                padding: 6px 10px;
-                font-size: 0.8em;
-            }
-            .function-buttons-group .btn-group {
-                flex: 1 1 100%; /* One button per row on small screens */
-                max-width: 100%;
-            }
-        }
-
         /* Modal Styles - REMOVED */
         .modal {
             display: none; /* Ensure modal is hidden if not explicitly shown */
@@ -655,25 +556,7 @@
 
         .btn-danger:hover {
             background-color: #E24855;
-        }
-
-        /* Mobile adjustments */
-        @media (max-width: 768px) {
-            .closejob-modal-content {
-                max-width: 95vw;
-                padding: 24px 20px;
-            }
-            .share-row {
-                flex-direction: column;
-                gap: 8px;
-            }
-            .form-actions {
-                flex-direction: column;
-                gap: 12px;
-            }
-            .form-actions .btn {
-                width: 100%;
-            }
+        
             /* Responsive: ตารางไม่ล้นจอและเลื่อนซ้ายขวาได้ */
 .daily-job-table-section {
   width: 100%;
@@ -703,61 +586,6 @@
   overflow: visible;   
   text-overflow: unset; 
 }
-
-/* Responsive: แสดง data-label บนมือถือ 
-@media (max-width: 900px) {
-  .closejob-table, .closejob-table thead, .closejob-table tbody, .closejob-table th, .closejob-table td, .closejob-table tr {
-    display: table;
-  }
-  .closejob-table thead tr {
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
-  }
-  .closejob-table tr {
-    margin-bottom: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--table-row-even);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
-  .closejob-table td {
-    border: none;
-    position: relative;
-    padding-left: 50%;
-    min-height: 32px;
-    text-align: left;
-    white-space: pre-line;
-  }
-  .closejob-table td:before {
-    position: absolute;
-    top: 8px;
-    left: 10px;
-    width: 45%;
-    white-space: nowrap;
-    font-weight: bold;
-    color: var(--light-text-color);
-    content: attr(data-label);
-  }
-  /* เฉพาะปุ่มค้นหาในฟอร์มนี้ 
-#daily-job-search-form .search-btn {
-    width: 100% !important;
-    min-width: 70px;
-    max-width: 90px;
-    height: 32px;
-    font-size: 0.95em;
-    padding: 4px 10px;
-  }
-  
-  #daily-job-table th:nth-child(5),
-  #daily-job-table td:nth-child(5) {
-  white-space: nowrap;
-  width: 1px;           
-  min-width: 120px;    
-  max-width: none;     
-  overflow: visible;   
-  text-overflow: unset; 
-} */
 }
 /* ----------------------------------------------------------------สิ้นสุดcss--------------------------------------------------------------- */
 
