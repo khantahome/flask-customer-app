@@ -685,7 +685,6 @@
 .closejob-table {
   min-width: 900px; /* ป้องกันหัวตารางซ้อนกันบนจอเล็ก */
 }
-  /* เฉพาะปุ่มค้นหาในฟอร์มนี้ */
 #daily-job-search-form .search-btn {
     width: 100% !important;
     min-width: 70px;
@@ -694,9 +693,19 @@
     font-size: 0.95em;
     padding: 4px 10px;
   }
+  
+  #daily-job-table th:nth-child(5),
+  #daily-job-table td:nth-child(5) {
+  white-space: nowrap;
+  width: 1px;           
+  min-width: 120px;    
+  max-width: none;     
+  overflow: visible;   
+  text-overflow: unset; 
+}
 
-/* Responsive: แสดง data-label บนมือถือ */
-/*@media (max-width: 900px) {
+/* Responsive: แสดง data-label บนมือถือ 
+@media (max-width: 900px) {
   .closejob-table, .closejob-table thead, .closejob-table tbody, .closejob-table th, .closejob-table td, .closejob-table tr {
     display: table;
   }
@@ -730,11 +739,24 @@
     color: var(--light-text-color);
     content: attr(data-label);
   }
-
+  /* เฉพาะปุ่มค้นหาในฟอร์มนี้ 
+#daily-job-search-form .search-btn {
+    width: 100% !important;
+    min-width: 70px;
+    max-width: 90px;
+    height: 32px;
+    font-size: 0.95em;
+    padding: 4px 10px;
+  }
   
-#daily-job-table td:nth-child(5) {
-white-space: normal;
-min-width: 120px;
+  #daily-job-table th:nth-child(5),
+  #daily-job-table td:nth-child(5) {
+  white-space: nowrap;
+  width: 1px;           
+  min-width: 120px;    
+  max-width: none;     
+  overflow: visible;   
+  text-overflow: unset; 
 } */
 }
 /* ----------------------------------------------------------------สิ้นสุดcss--------------------------------------------------------------- */
