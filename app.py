@@ -725,7 +725,8 @@ def loan_management():
             headers = data[0]
             rows = data[1:]
             records = [dict(zip(headers, row)) for row in rows]
-            approove_data = [r for r in records if r.get('สถานะ') == 'รอปิดจ๊อบ']
+            # ส่งข้อมูลทั้งหมดไปให้ Frontend แล้วให้ JavaScript จัดการการกรองเอง
+            approove_data = records
 
     except Exception as e:
         flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")

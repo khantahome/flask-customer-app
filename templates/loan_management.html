@@ -1188,19 +1188,23 @@ if (approveForm) {
 
     alert('บันทึกข้อมูลเรียบร้อย');
     document.getElementById('approve-popup').style.display = 'none';
-    // เปลี่ยนสถานะในตารางเป็น "ปิดจ๊อบแล้ว"
+
+    // --- [ปรับปรุง] อัปเดตสถานะในตารางโดยไม่รีเฟรชหน้าจอ ---
     const customerId = formData.get('customer_id');
-    document.querySelectorAll('.closejob-table-section tbody tr').forEach(tr => {
-      const tdId = tr.querySelectorAll('td')[1];
-      if (tdId && tdId.textContent.trim() === customerId) {
-        // หา index ของคอลัมน์สถานะ (สมมติเป็น td[0] หรือ td[?])
-        const statusTd = tr.querySelectorAll('td')[0]; // ปรับ index ให้ตรงกับคอลัมน์สถานะจริง
-        if (statusTd) statusTd.textContent = 'ปิดจ๊อบแล้ว';
-        // อัปเดต data-status ด้วย
-        tr.dataset.status = 'ปิดจ๊อบแล้ว';
-  }
-});
-    showPendingOnly();
+    
+    // 1. หาแถวเป้าหมายใน Array ข้อมูลหลัก (allRows)
+    const targetRow = allRows.find(row => (row.dataset.customerId || '').trim() === customerId);
+
+    if (targetRow) {
+        // 2. อัปเดต data-status ใน Array ข้อมูลหลัก เพื่อให้การค้นหาครั้งต่อไปถูกต้อง
+        targetRow.dataset.status = 'ปิดจ๊อบแล้ว';
+
+        // 3. อัปเดตข้อความในเซลล์สถานะที่แสดงผลอยู่บนหน้าจอ (คอลัมน์แรก)
+        if (targetRow.cells[0]) {
+            targetRow.cells[0].textContent = 'ปิดจ๊อบแล้ว';
+        }
+    }
+    // ไม่ต้องเรียก showPendingOnly() อีกต่อไป เพื่อให้หน้าจอไม่เปลี่ยน และผู้ใช้เห็นสถานะที่อัปเดต
   });
 }
 
