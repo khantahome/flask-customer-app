@@ -848,7 +848,7 @@
         </div>
         <div class="form-group">
             <label class="form-label">ยอดเงินที่ใช้อยู่:</label>
-            <input type="text" id="open_balance" name="open_balance" class="form-input" readonly placeholder="ไม่มียอดค้างชำระ">
+            <input type="text" id="open_balance" name="open_balance" class="form-input" readonly placeholder="ไม่มียอดเงินที่ใช้อยู่">
         </div>
             <div class="form-group">
         <label class="form-label">ดอกเบี้ย:</label>
@@ -1334,9 +1334,10 @@ if (companySelect) {
     let filtered = allRows;
     if (keyword) {
       filtered = allRows.filter(row => {
-      const id = (row.dataset.customerId || '').toLowerCase();
-      const name = (row.dataset.customerName || '').toLowerCase();
-      const status = (row.dataset.status || '').toLowerCase();
+      // เพิ่ม .trim() เพื่อความแม่นยำในการค้นหาสถานะ
+      const id = (row.dataset.customerId || '').trim().toLowerCase();
+      const name = (row.dataset.customerName || '').trim().toLowerCase();
+      const status = (row.dataset.status || '').trim().toLowerCase();
       // ตรง keyword กับ id, name, หรือ status
       return id.includes(keyword) || name.includes(keyword) || status.includes(keyword);
     });
@@ -1346,7 +1347,7 @@ if (companySelect) {
       showRows(filtered);
     }
   } else {
-    showPendingOnly(); // ถ้าไม่กรอก keyword ให้แสดงเฉพาะ "รอปิดจ๊อบ"
+    showRows(allRows); // ถ้าไม่กรอก keyword ให้แสดงลูกค้าทั้งหมด
   }
   document.querySelector('.closejob-table-section').style.display = 'block';
 };
