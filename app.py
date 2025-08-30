@@ -188,6 +188,53 @@ def get_customer_info(customer_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/customer-balance/<customer_id>')
+def get_customer_balance(customer_id):
+    """
+    Calculates the current outstanding balance for a given customer ID from the 'allpidjob' sheet.
+    Balance = (All OpeningBalance + All NetOpening) - (All PrincipalReturned + All LostAmount)
+    """
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
+        all_records = worksheet.get_all_records()
+        
+        if not all_records:
+            return jsonify({'total_balance': 0})
+
+        df = pd.DataFrame(all_records)
+
+        if 'CustomerID' not in df.columns:
+            return jsonify({'error': 'CustomerID column not found in allpidjob sheet'}), 500
+
+        customer_df = df[df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()]
+
+        if customer_df.empty:
+            return jsonify({'total_balance': 0})
+
+        opening_cols = [col for col in customer_df.columns if 'OpeningBalance' in col or 'NetOpening' in col]
+        closing_cols = [col for col in customer_df.columns if 'PrincipalReturned' in col or 'LostAmount' in col]
+
+        total_openings = 0
+        for col in opening_cols:
+            if col in customer_df.columns:
+                series = customer_df[col].replace('', '0')
+                total_openings += pd.to_numeric(series, errors='coerce').fillna(0).sum()
+
+        total_closings = 0
+        for col in closing_cols:
+            if col in customer_df.columns:
+                series = customer_df[col].replace('', '0')
+                total_closings += pd.to_numeric(series, errors='coerce').fillna(0).sum()
+
+        total_balance = total_openings - total_closings
+        return jsonify({'total_balance': total_balance})
+
+    except Exception as e:
+        print(f"Error in get_customer_balance for ID {customer_id}: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @cache.cached(timeout=20, key_prefix='all_customer_records')
 def get_all_customer_records():
