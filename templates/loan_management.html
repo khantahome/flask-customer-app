@@ -1013,6 +1013,7 @@ if (firstDeleteBtn) {
     if (shareContainer.children.length > 1) {
       this.closest('.share-row').remove(); // ใช้ this แทน newRow
       checkOtherCompanyVisibility();
+      updateOpenBalanceDisplay(); // คำนวณยอดเงินใหม่
       }
   };
 }
@@ -1040,6 +1041,16 @@ if (firstDeleteBtn) {
     const targetName = e.target.name;
     if (targetName === 'company[]') {
       checkOtherCompanyVisibility();
+    } else if (targetName === 'action_type[]') {
+      // เมื่อมีการเปลี่ยน "ดำเนินการ" ให้คำนวณยอดเงินใหม่
+      updateOpenBalanceDisplay();
+    }
+  });
+
+  // เพิ่ม listener สำหรับช่อง "จำนวนเงิน" เพื่ออัปเดตแบบเรียลไทม์
+  shareContainer.addEventListener('input', function(e) {
+    if (e.target.name === 'amount[]') {
+      updateOpenBalanceDisplay();
     }
   });
 
@@ -1092,6 +1103,7 @@ if (firstDeleteBtn) {
           // [ปรับปรุง] ใช้ค่า `total_transactions_value` ที่คำนวณผลรวมทั้งหมดมาจาก Backend
           const totalTransactions = parseFloat(balanceData.total_transactions_value || 0);
 
+          originalOpenBalance = totalTransactions; // [เพิ่มใหม่] เก็บยอดเงินเริ่มต้นไว้คำนวณ
           // แสดงยอดเงินถ้ามากกว่า 0, ถ้าไม่ก็แสดงเป็นค่าว่าง และจัดรูปแบบตัวเลข
           openBalanceInput.value = totalTransactions > 0 ? new Intl.NumberFormat('th-TH').format(totalTransactions) : '';
       } else {

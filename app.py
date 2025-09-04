@@ -193,8 +193,10 @@ def get_customer_info(customer_id):
 @app.route('/api/customer-balance/<customer_id>')
 def get_customer_balance(customer_id):
     """
-    Calculates the current outstanding balance for a given customer ID from the 'allpidjob' sheet.
-    Balance = (All OpeningBalance + All NetOpening) - (All PrincipalReturned + All LostAmount)
+    คำนวณและส่งคืนยอดต่างๆ ของลูกค้า
+    - total_balance: ยอดคงเหลือสุทธิ (ยอดเปิด - ยอดปิด)
+    - total_openings: ผลรวมของยอดเปิดทั้งหมด
+    - total_transactions_value: ผลรวมของทุกรายการยกเว้น 'คืนต้น' สำหรับแสดงในช่อง 'ยอดเงินที่ใช้อยู่'
     """
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -242,34 +244,36 @@ def get_customer_balance(customer_id):
                 'total_transactions_value': 0
             })
 
-        # ทำให้การค้นหาชื่อคอลัมน์ยืดหยุ่นขึ้น รองรับทั้งภาษาอังกฤษและภาษาไทย
+        # [ปรับปรุง] แยกประเภทคอลัมน์เพื่อคำนวณ "ยอดเงินที่ใช้อยู่" ใหม่
         opening_cols = [col for col in customer_df.columns if 
                         'OpeningBalance' in col or 'NetOpening' in col or 
                         'ยอดเปิดโต๊ะ' in col or 'สุทธิ' in col]
         
-        closing_cols = [col for col in customer_df.columns if 
-                        'PrincipalReturned' in col or 'LostAmount' in col or 
-                        'คืนต้น' in col or 'เสีย' in col]
+        principal_returned_cols = [col for col in customer_df.columns if 'PrincipalReturned' in col or 'คืนต้น' in col]
+        lost_amount_cols = [col for col in customer_df.columns if 'LostAmount' in col or 'เสีย' in col]
 
-        total_openings = 0
-        for col in opening_cols:
-            if col in customer_df.columns:
-                # ทำให้การแปลงเป็นตัวเลขทนทานขึ้น โดยลบตัวอักษรที่ไม่ใช่ตัวเลข (เช่น , หรือ ฿) ออกไปก่อน
-                cleaned_series = customer_df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
-                series_with_zeros = cleaned_series.replace('', '0')
-                total_openings += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
+        # ฟังก์ชันช่วยในการรวมยอดอย่างปลอดภัย
+        def sum_columns(df, cols):
+            total = 0
+            for col in cols:
+                if col in df.columns:
+                    # ทำความสะอาดข้อมูล: ลบตัวอักษร, แทนที่ค่าว่างด้วย '0'
+                    cleaned_series = df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
+                    series_with_zeros = cleaned_series.replace('', '0')
+                    total += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
+            return total
 
-        total_closings = 0
-        for col in closing_cols:
-            if col in customer_df.columns:
-                # ทำความสะอาดข้อมูลเหมือนกับด้านบน
-                cleaned_series = customer_df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
-                series_with_zeros = cleaned_series.replace('', '0')
-                total_closings += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
+        # คำนวณยอดแต่ละประเภท
+        total_openings = sum_columns(customer_df, opening_cols)
+        total_principal_returned = sum_columns(customer_df, principal_returned_cols)
+        total_lost_amount = sum_columns(customer_df, lost_amount_cols)
 
-        # คำนวณยอดรวมต่างๆ
-        total_transactions_value = total_openings + total_closings
-        total_balance = total_openings - total_closings
+        # [แก้ไข] คำนวณ "ยอดเงินที่ใช้อยู่" ใหม่ โดยไม่รวม "คืนต้น"
+        # ยอดเงินที่ใช้อยู่ = ยอดเปิด + ยอดเปิดสุทธิ + ยอดเสีย
+        total_transactions_value = total_openings + total_lost_amount
+
+        # ยอดคงเหลือสุทธิ (สำหรับใช้อ้างอิงอื่นๆ)
+        total_balance = total_openings - (total_principal_returned + total_lost_amount)
 
         # [แก้ไข] แปลงค่าตัวเลขทั้งหมดเป็น float ของ Python ก่อนส่งกลับเป็น JSON
         # เพื่อป้องกันข้อผิดพลาด "Object of type int64 is not JSON serializable"
