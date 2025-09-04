@@ -202,7 +202,11 @@ def get_customer_balance(customer_id):
         all_records = worksheet.get_all_records()
         
         if not all_records:
-            return jsonify({'total_balance': 0})
+            return jsonify({
+                'total_balance': 0,
+                'total_openings': 0,
+                'total_transactions_value': 0
+            })
 
         df = pd.DataFrame(all_records)
 

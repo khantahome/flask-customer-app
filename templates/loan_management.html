@@ -1086,13 +1086,14 @@ if (firstDeleteBtn) {
       // --- ส่วนของการดึงยอดเงินที่ใช้อยู่ ---
       if (balanceRes.ok) {
           const balanceData = await balanceRes.json();
+          console.log('Data from /api/customer-balance:', balanceData); // DEBUG: แสดงข้อมูลที่ได้รับจาก API
           // [ปรับปรุง] ใช้ค่า `total_transactions_value` ที่คำนวณผลรวมทั้งหมดมาจาก Backend
           const totalTransactions = parseFloat(balanceData.total_transactions_value || 0);
 
           // แสดงยอดเงินถ้ามากกว่า 0, ถ้าไม่ก็แสดงเป็นค่าว่าง และจัดรูปแบบตัวเลข
           openBalanceInput.value = totalTransactions > 0 ? new Intl.NumberFormat('th-TH').format(totalTransactions) : '';
       } else {
-          console.error('ไม่สามารถดึงยอดเงินที่ใช้อยู่ได้');
+          console.error('ไม่สามารถดึงยอดเงินที่ใช้อยู่ได้:', balanceRes.status, await balanceRes.text());
       }
       openBalanceInput.placeholder = 'ไม่มียอดเงินที่ใช้อยู่'; // ตั้งค่า placeholder สุดท้าย
 
@@ -1132,6 +1133,9 @@ if (firstDeleteBtn) {
       document.getElementById('approve-popup').style.display = 'block';
     });
   }
+
+  // [ปรับปรุง] ประกาศตัวแปร allRows ใน scope ที่สูงขึ้นเพื่อให้ฟังก์ชันอื่นเข้าถึงได้
+  let allRows = [];
 
   // ปุ่มยกเลิก Popup
   const cancelBtn = document.getElementById('cancel-btn');
@@ -1317,7 +1321,8 @@ if (companySelect) {
   const searchBtn = document.getElementById('closejob-search-btn');
   const resetBtn = document.getElementById('closejob-reset-btn');
   const tbody = document.getElementById('closejob-tbody');
-  const allRows = Array.from(tbody.querySelectorAll('tr'));
+  // [ปรับปรุง] แก้ไขบั๊ก: กำหนดค่าให้กับตัวแปร allRows ที่ประกาศไว้ด้านบน แทนที่จะสร้างตัวแปรใหม่
+  allRows = Array.from(tbody.querySelectorAll('tr'));
 
     
   console.log('setupCloseJobTableSearch: allRows count =', allRows.length);
