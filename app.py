@@ -231,47 +231,40 @@ def get_customer_balance(customer_id):
         if customer_df.empty:
             # If still no match after all attempts, return 0 balance
             return jsonify({
-                'total_open_amount': 0,
-                'total_net_open_amount': 0,
-                'total_balance': 0
+                'total_balance': 0,
+                'total_openings': 0
             })
 
-        # --- [ปรับปรุง] แยกการคำนวณยอดแต่ละประเภทเพื่อให้ Frontend แสดงผลได้ถูกต้อง ---
+        # ทำให้การค้นหาชื่อคอลัมน์ยืดหยุ่นขึ้น รองรับทั้งภาษาอังกฤษและภาษาไทย
+        opening_cols = [col for col in customer_df.columns if 
+                        'OpeningBalance' in col or 'NetOpening' in col or 
+                        'ยอดเปิดโต๊ะ' in col or 'สุทธิ' in col]
         
-        # กำหนดคีย์เวิร์ดสำหรับแต่ละประเภทของยอด
-        open_balance_keys = ['OpeningBalance', 'ยอดเปิดโต๊ะ']
-        net_open_keys = ['NetOpening', 'สุทธิ']
-        principal_returned_keys = ['PrincipalReturned', 'คืนต้น']
-        lost_amount_keys = ['LostAmount', 'เสีย']
+        closing_cols = [col for col in customer_df.columns if 
+                        'PrincipalReturned' in col or 'LostAmount' in col or 
+                        'คืนต้น' in col or 'เสีย' in col]
 
-        # ฟังก์ชันช่วยในการรวมยอดจากคอลัมน์ต่างๆ อย่างปลอดภัย
-        def sum_cols(df, keys):
-            total = 0
-            # ค้นหาคอลัมน์ทั้งหมดใน DataFrame ที่มีชื่อตรงกับคีย์เวิร์ด
-            matching_cols = [col for col in df.columns for key in keys if key in col]
-            for col in set(matching_cols): # ใช้ set เพื่อป้องกันการนับซ้ำ
-                # ทำความสะอาดข้อมูล: ลบตัวอักษรที่ไม่ใช่ตัวเลข, แทนที่ค่าว่างด้วย '0'
-                cleaned_series = df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
+        total_openings = 0
+        for col in opening_cols:
+            if col in customer_df.columns:
+                # ทำให้การแปลงเป็นตัวเลขทนทานขึ้น โดยลบตัวอักษรที่ไม่ใช่ตัวเลข (เช่น , หรือ ฿) ออกไปก่อน
+                cleaned_series = customer_df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
                 series_with_zeros = cleaned_series.replace('', '0')
-                total += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
-            return total
+                total_openings += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
 
-        # คำนวณยอดแต่ละประเภท
-        total_open_amount = sum_cols(customer_df, open_balance_keys)
-        total_net_open_amount = sum_cols(customer_df, net_open_keys)
-        total_principal_returned = sum_cols(customer_df, principal_returned_keys)
-        total_lost_amount = sum_cols(customer_df, lost_amount_keys)
+        total_closings = 0
+        for col in closing_cols:
+            if col in customer_df.columns:
+                # ทำความสะอาดข้อมูลเหมือนกับด้านบน
+                cleaned_series = customer_df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
+                series_with_zeros = cleaned_series.replace('', '0')
+                total_closings += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
 
-        # คำนวณยอดรวม
-        total_openings = total_open_amount + total_net_open_amount
-        total_closings = total_principal_returned + total_lost_amount
         total_balance = total_openings - total_closings
-
-        # ส่งข้อมูลยอดแต่ละประเภทกลับไปให้ Frontend
+        # [ปรับปรุง] ส่งค่า total_openings (ยอดเปิดทั้งหมด) กลับไปด้วย
         return jsonify({
-            'total_open_amount': total_open_amount,
-            'total_net_open_amount': total_net_open_amount,
-            'total_balance': total_balance # ยอดคงเหลือสุทธิ
+            'total_balance': total_balance, # ยอดคงเหลือสุทธิ (เปิด - ปิด)
+            'total_openings': total_openings # ยอดเปิดทั้งหมด (ผลรวมของ OpeningBalance และ NetOpening)
         })
 
     except Exception as e:

@@ -1079,7 +1079,11 @@ if (firstDeleteBtn) {
         // --- ส่วนของการดึงยอดเงินที่ใช้อยู่ ---
         if (balanceRes.ok) {
             const balanceData = await balanceRes.json();
-            const totalBalance = balanceData.total_balance || 0;
+            // [แก้ไข] คำนวณยอดรวมของ "เปิดยอด" และ "เปิดสุทธิ" จาก API
+            const totalOpenAmount = parseFloat(balanceData.total_open_amount || 0);
+            const totalNetOpenAmount = parseFloat(balanceData.total_net_open_amount || 0);
+            const openBalance = totalOpenAmount + totalNetOpenAmount;
+
             // แสดงยอดเงินถ้ามากกว่า 0, ถ้าไม่ก็แสดงเป็นค่าว่าง และจัดรูปแบบตัวเลข
             openBalanceInput.value = totalBalance > 0 ? new Intl.NumberFormat('th-TH').format(totalBalance) : '';
         } else {
