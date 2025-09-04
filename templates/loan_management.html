@@ -1321,8 +1321,7 @@ if (companySelect) {
   const searchBtn = document.getElementById('closejob-search-btn');
   const resetBtn = document.getElementById('closejob-reset-btn');
   const tbody = document.getElementById('closejob-tbody');
-  // [ปรับปรุง] แก้ไขบั๊ก: กำหนดค่าให้กับตัวแปร allRows ที่ประกาศไว้ด้านบน แทนที่จะสร้างตัวแปรใหม่
-  allRows = Array.from(tbody.querySelectorAll('tr'));
+  const allRows = Array.from(tbody.querySelectorAll('tr'));
 
     
   console.log('setupCloseJobTableSearch: allRows count =', allRows.length);

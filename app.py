@@ -265,11 +265,16 @@ def get_customer_balance(customer_id):
                 series_with_zeros = cleaned_series.replace('', '0')
                 total_closings += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
 
+        # คำนวณยอดรวมต่างๆ
+        total_transactions_value = total_openings + total_closings
         total_balance = total_openings - total_closings
-        # [ปรับปรุง] ส่งค่า total_openings (ยอดเปิดทั้งหมด) กลับไปด้วย
+
+        # [แก้ไข] แปลงค่าตัวเลขทั้งหมดเป็น float ของ Python ก่อนส่งกลับเป็น JSON
+        # เพื่อป้องกันข้อผิดพลาด "Object of type int64 is not JSON serializable"
         return jsonify({
-            'total_balance': total_balance, # ยอดคงเหลือสุทธิ (เปิด - ปิด)
-            'total_openings': total_openings # ยอดเปิดทั้งหมด (ผลรวมของ OpeningBalance และ NetOpening)
+            'total_balance': float(total_balance),
+            'total_openings': float(total_openings),
+            'total_transactions_value': float(total_transactions_value)
         })
 
     except Exception as e:
