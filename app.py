@@ -1,6 +1,8 @@
 # Import necessary modules from Flask and other libraries
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify, current_app
 import gspread
+import traceback
+import gspread.utils
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 from pydrive.auth import GoogleAuth
@@ -791,7 +793,6 @@ def save_approved_data():
         data = request.get_json()
 
         # ดึงค่าจาก JSON
-        status = data.get('status')
         customer_id = data.get('customer_id')
         fullname = data.get('fullname')
         phone = data.get('phone')
@@ -809,51 +810,74 @@ def save_approved_data():
         action = data.get('action_type', '')
         table = data.get('table_select', '')
         amount = data.get('amount', '')
-        interest = data.get('interest', '')  # << เพิ่มตรงนี้
-
-
-        time_str = datetime.now().strftime("%H:%M:%S")
-
-        table_columns = {
-            'โต๊ะ1': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
-            'โต๊ะ2': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
-            'โต๊ะ3': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
-        }
-
-        if table in table_columns:
-            if action == 'เปิดยอด':
-                table_columns[table]['OpeningBalance'] = amount
-            elif action == 'เปิดสุทธิ':
-                table_columns[table]['NetOpening'] = amount
-            elif action == 'คืนต้น':
-                table_columns[table]['PrincipalReturned'] = amount
-            elif action == 'สูญเสีย':
-                table_columns[table]['LostAmount'] = amount
-
-        row_data = [
-            approve_date,
-            company,
-            customer_id,
-            time_str,
-            fullname,
-            interest,
-            table_columns['โต๊ะ1']['OpeningBalance'],
-            table_columns['โต๊ะ1']['NetOpening'],
-            table_columns['โต๊ะ1']['PrincipalReturned'],
-            table_columns['โต๊ะ1']['LostAmount'],
-            table_columns['โต๊ะ2']['OpeningBalance'],
-            table_columns['โต๊ะ2']['NetOpening'],
-            table_columns['โต๊ะ2']['PrincipalReturned'],
-            table_columns['โต๊ะ2']['LostAmount'],
-            table_columns['โต๊ะ3']['OpeningBalance'],
-            table_columns['โต๊ะ3']['NetOpening'],
-            table_columns['โต๊ะ3']['PrincipalReturned'],
-            table_columns['โต๊ะ3']['LostAmount'],
-        ]
+        interest = data.get('interest', '')
 
         worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
-        worksheet.append_row(row_data)
 
+        if action == 'คืนต้น':
+            # --- LOGIC FOR UPDATING 'คืนต้น' ---
+            all_records = worksheet.get_all_records()
+            if not all_records:
+                return jsonify({'error': 'allpidjob sheet is empty, cannot apply "คืนต้น".'}), 404
+            
+            df = pd.DataFrame(all_records)
+            df.columns = [c.strip() for c in df.columns]
+
+            mask = (df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()) & \
+                   (df['CompanyName'].astype(str).str.strip() == str(company).strip())
+            
+            target_indices = df.index[mask].tolist()
+            if not target_indices:
+                return jsonify({'error': f'No previous record for Customer {customer_id} at Company {company} to apply "คืนต้น".'}), 404
+
+            last_row_df_index = target_indices[-1]
+            sheet_row_to_update = last_row_df_index + 2
+
+            column_map = {
+                'โต๊ะ1': 'Table1_PrincipalReturned',
+                'โต๊ะ2': 'Table2_PrincipalReturned',
+                'โต๊ะ3': 'Table3_PrincipalReturned'
+            }
+            column_to_update = column_map.get(table)
+
+            if not column_to_update or column_to_update not in df.columns:
+                return jsonify({'error': f'Invalid table or column "{column_to_update}" not found.'}), 400
+
+            sheet_col_to_update = df.columns.get_loc(column_to_update) + 1
+
+            current_value_str = worksheet.cell(sheet_row_to_update, sheet_col_to_update).value
+            current_value = float(str(current_value_str).replace(',', '')) if current_value_str else 0.0
+            amount_to_add = float(amount) if amount else 0.0
+            
+            new_value = current_value + amount_to_add
+            worksheet.update_cell(sheet_row_to_update, sheet_col_to_update, new_value)
+        
+        else:
+            # --- LOGIC FOR APPENDING A NEW ROW (เปิดยอด, เปิดสุทธิ, สูญเสีย) ---
+            time_str = datetime.now().strftime("%H:%M:%S")
+            table_columns = {
+                'โต๊ะ1': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
+                'โต๊ะ2': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
+                'โต๊ะ3': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
+            }
+
+            action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
+            column_key = action_map.get(action)
+            if table in table_columns and column_key:
+                table_columns[table][column_key] = amount
+
+            row_data = [
+                approve_date, company, customer_id, time_str, fullname, interest,
+                table_columns['โต๊ะ1']['OpeningBalance'], table_columns['โต๊ะ1']['NetOpening'],
+                table_columns['โต๊ะ1']['PrincipalReturned'], table_columns['โต๊ะ1']['LostAmount'],
+                table_columns['โต๊ะ2']['OpeningBalance'], table_columns['โต๊ะ2']['NetOpening'],
+                table_columns['โต๊ะ2']['PrincipalReturned'], table_columns['โต๊ะ2']['LostAmount'],
+                table_columns['โต๊ะ3']['OpeningBalance'], table_columns['โต๊ะ3']['NetOpening'],
+                table_columns['โต๊ะ3']['PrincipalReturned'], table_columns['โต๊ะ3']['LostAmount'],
+            ]
+            worksheet.append_row(row_data)
+
+        # --- COMMON LOGIC: Update 'approove' sheet status ---
         approove_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
         approove_data = approove_ws.get_all_values()
         if approove_data and len(approove_data) > 1:
@@ -868,9 +892,6 @@ def save_approved_data():
                         break       
 
         return jsonify({'success': True})
-    
-    
-
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
