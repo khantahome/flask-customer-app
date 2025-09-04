@@ -232,7 +232,8 @@ def get_customer_balance(customer_id):
             # If still no match after all attempts, return 0 balance
             return jsonify({
                 'total_balance': 0,
-                'total_openings': 0
+                'total_openings': 0,
+                'total_transactions_value': 0
             })
 
         # ทำให้การค้นหาชื่อคอลัมน์ยืดหยุ่นขึ้น รองรับทั้งภาษาอังกฤษและภาษาไทย

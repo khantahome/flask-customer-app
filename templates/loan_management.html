@@ -1086,12 +1086,11 @@ if (firstDeleteBtn) {
       // --- ส่วนของการดึงยอดเงินที่ใช้อยู่ ---
       if (balanceRes.ok) {
           const balanceData = await balanceRes.json();
-          const totalOpenAmount = parseFloat(balanceData.total_open_amount || 0);
-          const totalNetOpenAmount = parseFloat(balanceData.total_net_open_amount || 0);
-          const openBalance = totalOpenAmount + totalNetOpenAmount;
+          // [ปรับปรุง] ใช้ค่า `total_transactions_value` ที่คำนวณผลรวมทั้งหมดมาจาก Backend
+          const totalTransactions = parseFloat(balanceData.total_transactions_value || 0);
 
           // แสดงยอดเงินถ้ามากกว่า 0, ถ้าไม่ก็แสดงเป็นค่าว่าง และจัดรูปแบบตัวเลข
-          openBalanceInput.value = openBalance > 0 ? new Intl.NumberFormat('th-TH').format(openBalance) : '';
+          openBalanceInput.value = totalTransactions > 0 ? new Intl.NumberFormat('th-TH').format(totalTransactions) : '';
       } else {
           console.error('ไม่สามารถดึงยอดเงินที่ใช้อยู่ได้');
       }
@@ -1108,6 +1107,7 @@ if (firstDeleteBtn) {
       document.getElementById('approved_amount').value = safe(infoData['วงเงินที่อนุมัติ']);
       document.getElementById('registrar').value = safe(infoData['ชื่อผู้ลงทะเบียน']);
 
+    
       // เคลียร์แถวส่วนแบ่งเหลือแค่ 1 แถว
       const rows = shareContainer.querySelectorAll('.share-row');
       rows.forEach((row, idx) => {
