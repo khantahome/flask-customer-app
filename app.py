@@ -796,92 +796,128 @@ def save_approved_data():
     try:
         data = request.get_json()
 
-        # ดึงค่าจาก JSON
+        # --- 1. Extract and prepare data from request ---
         customer_id = data.get('customer_id')
         fullname = data.get('fullname')
-        phone = data.get('phone')
         approve_date = data.get('approve_date')
-        if approve_date:
-            try:
-                approve_date = pd.to_datetime(approve_date).strftime('%Y-%m-%d')
-            except Exception:
-                pass
-        approved_amount = data.get('approved_amount')
-        open_balance = data.get('open_balance')
-        registrar = data.get('registrar')
-
         company = data.get('company', '')
         action = data.get('action_type', '')
         table = data.get('table_select', '')
-        amount = data.get('amount', '')
-        interest = data.get('interest', '')
+        amount_str = data.get('amount', '0')
+        interest_str = data.get('interest', '0')
 
+        try:
+            amount = float(str(amount_str).replace(',', '')) if amount_str else 0.0
+            interest = float(str(interest_str).replace(',', '')) if interest_str else 0.0
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid amount or interest format.'}), 400
+
+        # --- 2. Get worksheet and data ---
         worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
-
-        if action == 'คืนต้น':
-            # --- LOGIC FOR UPDATING 'คืนต้น' ---
-            all_records = worksheet.get_all_records()
-            if not all_records:
-                return jsonify({'error': 'allpidjob sheet is empty, cannot apply "คืนต้น".'}), 404
-            
-            df = pd.DataFrame(all_records)
+        all_records = worksheet.get_all_records()
+        df = pd.DataFrame(all_records)
+        if not df.empty:
             df.columns = [c.strip() for c in df.columns]
 
+        # --- 3. Find if a record for today already exists ---
+        found_row = None
+        if not df.empty and 'Date' in df.columns:
             mask = (df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()) & \
-                   (df['CompanyName'].astype(str).str.strip() == str(company).strip())
-            
-            target_indices = df.index[mask].tolist()
-            if not target_indices:
-                return jsonify({'error': f'No previous record for Customer {customer_id} at Company {company} to apply "คืนต้น".'}), 404
+                   (df['CompanyName'].astype(str).str.strip() == str(company).strip()) & \
+                   (df['Date'].astype(str).str.strip() == str(approve_date).strip())
+            if mask.any():
+                found_row = df[mask].iloc[0]
 
-            last_row_df_index = target_indices[-1]
-            sheet_row_to_update = last_row_df_index + 2
+        # --- 4. Define Mappings ---
+        table_prefix_map = {'โต๊ะ1': 'Table1_', 'โต๊ะ2': 'Table2_', 'โต๊ะ3': 'Table3_'}
+        table_prefix = table_prefix_map.get(table)
+        if not table_prefix:
+            return jsonify({'error': f'Invalid table "{table}".'}), 400
 
-            column_map = {
-                'โต๊ะ1': 'Table1_PrincipalReturned',
-                'โต๊ะ2': 'Table2_PrincipalReturned',
-                'โต๊ะ3': 'Table3_PrincipalReturned'
-            }
-            column_to_update = column_map.get(table)
+        # --- 5. Apply logic based on action type ---
+        if found_row is not None:
+            # --- UPDATE an existing record for today ---
+            sheet_row_to_update = found_row.name + 2
 
-            if not column_to_update or column_to_update not in df.columns:
-                return jsonify({'error': f'Invalid table or column "{column_to_update}" not found.'}), 400
+            if action == 'คืนต้น':
+                # --- SPECIAL LOGIC: SUBTRACT from Opening/NetOpening ---
+                net_opening_col_name = f"{table_prefix}NetOpening"
+                opening_balance_col_name = f"{table_prefix}OpeningBalance"
 
-            sheet_col_to_update = df.columns.get_loc(column_to_update) + 1
+                if net_opening_col_name not in df.columns or opening_balance_col_name not in df.columns:
+                    return jsonify({'error': f'Columns for table {table} not found.'}), 400
 
-            current_value_str = worksheet.cell(sheet_row_to_update, sheet_col_to_update).value
-            current_value = float(str(current_value_str).replace(',', '')) if current_value_str else 0.0
-            amount_to_add = float(amount) if amount else 0.0
-            
-            new_value = current_value + amount_to_add
-            worksheet.update_cell(sheet_row_to_update, sheet_col_to_update, new_value)
-        
+                net_opening_col_idx = df.columns.get_loc(net_opening_col_name) + 1
+                opening_balance_col_idx = df.columns.get_loc(opening_balance_col_name) + 1
+
+                current_net_opening_str = worksheet.cell(sheet_row_to_update, net_opening_col_idx).value
+                current_opening_balance_str = worksheet.cell(sheet_row_to_update, opening_balance_col_idx).value
+                
+                current_net_opening = float(str(current_net_opening_str).replace(',', '')) if current_net_opening_str else 0.0
+                current_opening_balance = float(str(current_opening_balance_str).replace(',', '')) if current_opening_balance_str else 0.0
+
+                # Decide which column to subtract from. Prioritize NetOpening.
+                if current_net_opening != 0:
+                    new_value = current_net_opening - amount
+                    worksheet.update_cell(sheet_row_to_update, net_opening_col_idx, new_value)
+                else:
+                    new_value = current_opening_balance - amount
+                    worksheet.update_cell(sheet_row_to_update, opening_balance_col_idx, new_value)
+                
+                # Update Time and Interest as well
+                worksheet.update_cell(sheet_row_to_update, df.columns.get_loc('Time') + 1, datetime.now().strftime("%H:%M:%S"))
+                worksheet.update_cell(sheet_row_to_update, df.columns.get_loc('interest') + 1, interest)
+
+            else:
+                # --- REGULAR LOGIC: ADD to the specific column ---
+                action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
+                column_suffix = action_map.get(action)
+                if not column_suffix:
+                    return jsonify({'error': f'Invalid action "{action}" for update.'}), 400
+                
+                column_to_update = f"{table_prefix}{column_suffix}"
+                if column_to_update not in df.columns:
+                    return jsonify({'error': f'Column "{column_to_update}" not found.'}), 400
+                
+                sheet_col_to_update = df.columns.get_loc(column_to_update) + 1
+                current_value_str = worksheet.cell(sheet_row_to_update, sheet_col_to_update).value
+                current_value = float(str(current_value_str).replace(',', '')) if current_value_str else 0.0
+                new_value = current_value + amount
+                
+                updates_to_batch = [
+                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, sheet_col_to_update), 'values': [[new_value]]},
+                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('Time') + 1), 'values': [[datetime.now().strftime("%H:%M:%S")]]},
+                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('interest') + 1), 'values': [[interest]]}
+                ]
+                worksheet.batch_update(updates_to_batch)
+
         else:
-            # --- LOGIC FOR APPENDING A NEW ROW (เปิดยอด, เปิดสุทธิ, สูญเสีย) ---
+            # --- APPEND a new record for today ---
             time_str = datetime.now().strftime("%H:%M:%S")
-            table_columns = {
-                'โต๊ะ1': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
-                'โต๊ะ2': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
-                'โต๊ะ3': {'OpeningBalance': '', 'NetOpening': '', 'PrincipalReturned': '', 'LostAmount': ''},
-            }
+            table_data = {f"Table{t}_{c}": '' for t in [1,2,3] for c in ['OpeningBalance', 'NetOpening', 'PrincipalReturned', 'LostAmount']}
 
-            action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
-            column_key = action_map.get(action)
-            if table in table_columns and column_key:
-                table_columns[table][column_key] = amount
+            if action == 'คืนต้น':
+                # If it's a new row, subtract from NetOpening (resulting in a negative value)
+                column_to_update = f"{table_prefix}NetOpening"
+                table_data[column_to_update] = -amount
+            else:
+                # Regular append logic
+                action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
+                column_suffix = action_map.get(action)
+                if not column_suffix:
+                    return jsonify({'error': f'Invalid action "{action}" for new row.'}), 400
+                column_to_update = f"{table_prefix}{column_suffix}"
+                table_data[column_to_update] = amount
 
             row_data = [
                 approve_date, company, customer_id, time_str, fullname, interest,
-                table_columns['โต๊ะ1']['OpeningBalance'], table_columns['โต๊ะ1']['NetOpening'],
-                table_columns['โต๊ะ1']['PrincipalReturned'], table_columns['โต๊ะ1']['LostAmount'],
-                table_columns['โต๊ะ2']['OpeningBalance'], table_columns['โต๊ะ2']['NetOpening'],
-                table_columns['โต๊ะ2']['PrincipalReturned'], table_columns['โต๊ะ2']['LostAmount'],
-                table_columns['โต๊ะ3']['OpeningBalance'], table_columns['โต๊ะ3']['NetOpening'],
-                table_columns['โต๊ะ3']['PrincipalReturned'], table_columns['โต๊ะ3']['LostAmount'],
+                table_data['Table1_OpeningBalance'], table_data['Table1_NetOpening'], table_data['Table1_PrincipalReturned'], table_data['Table1_LostAmount'],
+                table_data['Table2_OpeningBalance'], table_data['Table2_NetOpening'], table_data['Table2_PrincipalReturned'], table_data['Table2_LostAmount'],
+                table_data['Table3_OpeningBalance'], table_data['Table3_NetOpening'], table_data['Table3_PrincipalReturned'], table_data['Table3_LostAmount'],
             ]
             worksheet.append_row(row_data)
 
-        # --- COMMON LOGIC: Update 'approove' sheet status ---
+        # --- 6. Update 'approove' sheet status (common logic) ---
         approove_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
         approove_data = approove_ws.get_all_values()
         if approove_data and len(approove_data) > 1:
@@ -897,7 +933,8 @@ def save_approved_data():
 
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error in save_approved_data: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
 
 
 # ... (โค้ดส่วนล่างของ app.py) ...
