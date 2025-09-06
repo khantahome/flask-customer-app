@@ -656,29 +656,32 @@
     margin-bottom: 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
-.report-record-card p {
-    margin: 0 0 10px 0;
-    font-size: 1.1rem; /* Use rem for better accessibility */
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 10px;
+/* --- NEW: Vertical Report Field Styles --- */
+.report-field {
+    padding-bottom: 12px;
+    margin-bottom: 12px;
     border-bottom: 1px dashed #e5e5e5;
 }
-.report-record-card p:last-child {
+/* Remove border from the last field in any container */
+.report-record-card > .report-field:last-of-type,
+.transaction-details > .report-field:last-of-type,
+.report-field-list > .report-field:last-of-type {
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
 }
-.report-record-card p strong {
-    color: #333;
+.report-field-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #6c757d; /* A muted grey for the label */
     font-weight: 600;
-    flex-shrink: 0; /* Prevent label from shrinking */
-    margin-right: 15px;
+    margin-bottom: 5px;
 }
-.report-record-card p span {
-    color: #555;
-    text-align: right;
+.report-field-value {
+    display: block;
+    font-size: 1.1rem;
+    color: #343a40; /* Darker text for the value */
+    font-weight: 500;
     word-break: break-all; /* Break long values */
 }
 .report-table-group {
@@ -1305,7 +1308,7 @@ if (firstDeleteBtn) {
             const createRowHTML = (label, value) => {
                 if (value !== null && value !== undefined && value.toString().trim() !== '' && value.toString().trim() !== '0') {
                     const formattedValue = !isNaN(parseFloat(value)) && isFinite(value) ? new Intl.NumberFormat('th-TH').format(value) : value;
-                    return `<p><strong>${label}</strong> <span>${formattedValue}</span></p>`;
+                    return `<div class="report-field"><strong class="report-field-label">${label}</strong><span class="report-field-value">${formattedValue}</span></div>`;
                 }
                 return '';
             };
@@ -1324,12 +1327,12 @@ if (firstDeleteBtn) {
                 for (const [label, value] of Object.entries(fields)) {
                     if (value !== null && value !== undefined && value.toString().trim() !== '' && value.toString().trim() !== '0') {
                         const formattedValue = !isNaN(parseFloat(value)) && isFinite(value) ? new Intl.NumberFormat('th-TH').format(value) : value;
-                        groupHTML += `<p><strong>${label}</strong> <span>${formattedValue}</span></p>`;
+                        groupHTML += `<div class="report-field"><strong class="report-field-label">${label}</strong><span class="report-field-value">${formattedValue}</span></div>`;
                     }
                 }
 
                 if (groupHTML) {
-                    return `<div class="report-table-group"><h4>โต๊ะ${tableNum}</h4>${groupHTML}</div>`;
+                    return `<div class="report-table-group"><h4>โต๊ะ${tableNum}</h4><div class="report-field-list">${groupHTML}</div></div>`;
                 }
                 return '';
             };
