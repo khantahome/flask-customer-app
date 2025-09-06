@@ -244,17 +244,21 @@ def get_customer_balance(customer_id):
                 'total_transactions_value': 0
             })
 
-        # --- NEW: Get only the latest record for the customer ---
-        # The save logic creates a running ledger, so only the last row has the correct cumulative balance.
-        latest_record_df = customer_df.iloc[[-1]]
+        # --- REVISED LOGIC ---
+        # Since each company has its own running balance, we must get the latest record
+        # for EACH company and then sum their balances together.
+        if 'CompanyName' not in customer_df.columns:
+            return jsonify({'error': 'CompanyName column not found in allpidjob sheet'}), 500
+        
+        latest_records_df = customer_df.groupby('CompanyName').tail(1)
 
-        # Define column groups based on the latest record's columns
-        opening_cols = [col for col in latest_record_df.columns if 
+        # Define column groups based on the latest records' columns
+        opening_cols = [col for col in latest_records_df.columns if 
                         'OpeningBalance' in col or 'NetOpening' in col or 
                         'ยอดเปิดโต๊ะ' in col or 'สุทธิ' in col]
         
-        principal_returned_cols = [col for col in latest_record_df.columns if 'PrincipalReturned' in col or 'คืนต้น' in col]
-        lost_amount_cols = [col for col in latest_record_df.columns if 'LostAmount' in col or 'เสีย' in col]
+        principal_returned_cols = [col for col in latest_records_df.columns if 'PrincipalReturned' in col or 'คืนต้น' in col]
+        lost_amount_cols = [col for col in latest_records_df.columns if 'LostAmount' in col or 'เสีย' in col]
 
         # ฟังก์ชันช่วยในการรวมยอดอย่างปลอดภัย
         def sum_columns(df, cols):
@@ -267,10 +271,10 @@ def get_customer_balance(customer_id):
                     total += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
             return total
 
-        # Calculate totals from the LATEST RECORD only
-        total_openings = sum_columns(latest_record_df, opening_cols)
-        total_principal_returned = sum_columns(latest_record_df, principal_returned_cols)
-        total_lost_amount = sum_columns(latest_record_df, lost_amount_cols)
+        # Calculate totals by summing across the latest record of EACH company
+        total_openings = sum_columns(latest_records_df, opening_cols)
+        total_principal_returned = sum_columns(latest_records_df, principal_returned_cols)
+        total_lost_amount = sum_columns(latest_records_df, lost_amount_cols)
 
         # "ยอดเงินที่ใช้อยู่" (Current balance in use) is calculated as:
         # All openings (OpeningBalance + NetOpening) + LostAmount from the latest record.
@@ -806,10 +810,11 @@ def save_approved_data():
         fullname = data.get('fullname')
         approve_date = data.get('approve_date')
         interest_str = data.get('interest', '0')
-        transactions = data.get('transactions', []) # NEW: Get array of transactions
+        transactions = data.get('transactions', [])
 
         try:
-            interest = float(str(interest_str).replace(',', '')) if interest_str else 0.0
+            # Interest is applied to each new record created in this batch
+            interest_per_trx = float(str(interest_str).replace(',', '')) if interest_str else 0.0
         except (ValueError, TypeError):
             return jsonify({'error': 'Invalid amount or interest format.'}), 400
 
@@ -820,53 +825,51 @@ def save_approved_data():
         if not df.empty:
             df.columns = [c.strip() for c in df.columns]
 
-        # --- 3. Find the LATEST record for this customer, REGARDLESS of company ---
-        latest_record = None
-        if not df.empty and 'CustomerID' in df.columns:
-            customer_df = df[df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()]
-            if not customer_df.empty:
-                latest_record = customer_df.iloc[-1].to_dict()
-
-        # --- 4. Prepare the NEW row data for today, inheriting from the latest record ---
-        all_table_cols = [f"Table{t}_{c}" for t in [1,2,3] for c in ['OpeningBalance', 'NetOpening', 'PrincipalReturned', 'LostAmount']]
-        new_row_data = {col: '' for col in all_table_cols}
-
-        if latest_record is not None:
-            for col in all_table_cols:
-                new_row_data[col] = latest_record.get(col, '')
-
         def to_float(val):
             return float(str(val).replace(',', '')) if val else 0.0
 
-        # --- 5. Loop through submitted transactions and apply them CUMULATIVELY ---
-        processed_companies = set()
+        # --- 3. Loop through each transaction to create a SEPARATE record ---
         for trx in transactions:
             company = trx.get('company', '')
             action = trx.get('action_type', '')
             table = trx.get('table_select', '')
             amount = to_float(trx.get('amount', '0'))
 
-            processed_companies.add(company)
+            # Find the LATEST record for this customer AND THIS SPECIFIC COMPANY
+            latest_record_for_company = None
+            if not df.empty and 'CustomerID' in df.columns and 'CompanyName' in df.columns:
+                customer_company_df = df[(df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()) & \
+                                         (df['CompanyName'].astype(str).str.strip() == str(company).strip())]
+                if not customer_company_df.empty:
+                    latest_record_for_company = customer_company_df.iloc[-1].to_dict()
+
+            # Prepare the NEW row data, inheriting from the company-specific latest record
+            all_table_cols = [f"Table{t}_{c}" for t in [1,2,3] for c in ['OpeningBalance', 'NetOpening', 'PrincipalReturned', 'LostAmount']]
+            new_row_data = {col: '' for col in all_table_cols}
+
+            if latest_record_for_company is not None:
+                for col in all_table_cols:
+                    new_row_data[col] = latest_record_for_company.get(col, '')
 
             table_prefix_map = {'โต๊ะ1': 'Table1_', 'โต๊ะ2': 'Table2_', 'โต๊ะ3': 'Table3_'}
             table_prefix = table_prefix_map.get(table)
             if not table_prefix:
-                return jsonify({'error': f'Invalid table "{table}" in transaction.'}), 400
+                return jsonify({'error': f'Invalid table "{table}" in transaction for company {company}.'}), 400
 
             if action == 'คืนต้น':
                 principal_returned_col = f"{table_prefix}PrincipalReturned"
                 net_opening_col = f"{table_prefix}NetOpening"
                 opening_balance_col = f"{table_prefix}OpeningBalance"
 
-                # --- VALIDATION: Check against the current state of new_row_data ---
-                pr_val = to_float(new_row_data.get(principal_returned_col))
-                no_val = to_float(new_row_data.get(net_opening_col))
-                ob_val = to_float(new_row_data.get(opening_balance_col))
-                lost_val = to_float(new_row_data.get(f"{table_prefix}LostAmount"))
+                # VALIDATION: Check against the inherited state
+                pr_val = to_float(new_row_data.get(principal_returned_col, 0))
+                no_val = to_float(new_row_data.get(net_opening_col, 0))
+                ob_val = to_float(new_row_data.get(opening_balance_col, 0))
+                lost_val = to_float(new_row_data.get(f"{table_prefix}LostAmount", 0))
                 table_balance = (ob_val + no_val) - (pr_val + lost_val)
 
                 if amount > table_balance:
-                    error_msg = f'ยอดคืนต้น ({amount:,.2f}) ของบริษัท {company} มากกว่ายอดคงเหลือ ({table_balance:,.2f})'
+                    error_msg = f'ยอดคืนต้น ({amount:,.2f}) ของบริษัท {company} โต๊ะ {table} มากกว่ายอดคงเหลือ ({table_balance:,.2f})'
                     return jsonify({'error': error_msg}), 400
 
                 new_row_data[principal_returned_col] = pr_val + amount
@@ -878,27 +881,22 @@ def save_approved_data():
                 action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
                 column_suffix = action_map.get(action)
                 if not column_suffix:
-                    return jsonify({'error': f'Invalid action "{action}" in transaction.'}), 400
+                    return jsonify({'error': f'Invalid action "{action}" in transaction for company {company}.'}), 400
 
                 column_to_update = f"{table_prefix}{column_suffix}"
                 current_val = to_float(new_row_data.get(column_to_update))
                 new_row_data[column_to_update] = current_val + amount
 
-        # --- 6. Construct the full row for appending ---
-        # For the 'CompanyName' column, we join all unique company names from the transaction list.
-        company_name_str = ', '.join(sorted(list(processed_companies)))
+            # Construct and append the row for THIS transaction
+            final_row_list = [
+                approve_date, company, customer_id, datetime.now().strftime("%H:%M:%S"), fullname, interest_per_trx,
+                new_row_data['Table1_OpeningBalance'], new_row_data['Table1_NetOpening'], new_row_data['Table1_PrincipalReturned'], new_row_data['Table1_LostAmount'],
+                new_row_data['Table2_OpeningBalance'], new_row_data['Table2_NetOpening'], new_row_data['Table2_PrincipalReturned'], new_row_data['Table2_LostAmount'],
+                new_row_data['Table3_OpeningBalance'], new_row_data['Table3_NetOpening'], new_row_data['Table3_PrincipalReturned'], new_row_data['Table3_LostAmount'],
+            ]
+            worksheet.append_row(final_row_list)
 
-        final_row_list = [
-            approve_date, company_name_str, customer_id, datetime.now().strftime("%H:%M:%S"), fullname, interest,
-            new_row_data['Table1_OpeningBalance'], new_row_data['Table1_NetOpening'], new_row_data['Table1_PrincipalReturned'], new_row_data['Table1_LostAmount'],
-            new_row_data['Table2_OpeningBalance'], new_row_data['Table2_NetOpening'], new_row_data['Table2_PrincipalReturned'], new_row_data['Table2_LostAmount'],
-            new_row_data['Table3_OpeningBalance'], new_row_data['Table3_NetOpening'], new_row_data['Table3_PrincipalReturned'], new_row_data['Table3_LostAmount'],
-        ]
-
-        # --- 7. Append the new row ---
-        worksheet.append_row(final_row_list)
-
-        # --- 8. Update 'approove' sheet status (common logic) ---
+        # --- After loop: Update 'approove' sheet status (common logic) ---
         approove_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
         approove_data = approove_ws.get_all_values()
         if approove_data and len(approove_data) > 1:
