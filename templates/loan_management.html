@@ -646,6 +646,56 @@
     background-color: #fff !important; /* Override dark theme styles */
     color: #333 !important;
 }
+/* --- NEW: Report Record Card Styles --- */
+.report-record-card {
+    background: #fdfdff; /* A very light off-white */
+    border: 1px solid #e0e0e0;
+    border-left: 5px solid var(--primary-color); /* Accent border */
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.report-record-card p {
+    margin: 0 0 10px 0;
+    font-size: 1.1rem; /* Use rem for better accessibility */
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #e5e5e5;
+}
+.report-record-card p:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.report-record-card p strong {
+    color: #333;
+    font-weight: 600;
+    flex-shrink: 0; /* Prevent label from shrinking */
+    margin-right: 15px;
+}
+.report-record-card p span {
+    color: #555;
+    text-align: right;
+    word-break: break-all; /* Break long values */
+}
+.report-table-group {
+    margin-top: 20px;
+    padding: 15px;
+    border-top: 1px solid #ddd;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+}
+.report-table-group h4 {
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid var(--primary-color);
+    display: inline-block;
+}
 /* ----------------------------------------------------------------สิ้นสุดcss--------------------------------------------------------------- */
 
   </style>
@@ -1206,6 +1256,7 @@ if (firstDeleteBtn) {
 
   // [ปรับปรุง] ประกาศตัวแปร allRows ใน scope ที่สูงขึ้นเพื่อให้ฟังก์ชันอื่นเข้าถึงได้
   let allRows = [];
+  let dailyJobData = [];
 
   // --- NEW: Report Popup Logic ---
   const reportPopup = document.getElementById('report-popup');
@@ -1214,14 +1265,70 @@ if (firstDeleteBtn) {
   const reportContentContainer = document.getElementById('report-content-container');
 
   if (viewReportBtn) {
-      viewReportBtn.addEventListener('click', () => {
-          const dailyJobSection = document.querySelector('.daily-job-table-section');
-          const reportTitle = dailyJobSection.querySelector('h3').outerHTML;
-          const reportTable = dailyJobSection.querySelector('.closejob-table').outerHTML;
+    viewReportBtn.addEventListener('click', () => {
+        const dailyJobSection = document.querySelector('.daily-job-table-section');
+        const reportTitleHTML = dailyJobSection.querySelector('h3').outerHTML;
+        
+        let reportContentHTML = reportTitleHTML;
 
-          reportContentContainer.innerHTML = reportTitle + reportTable;
-          reportPopup.classList.add('visible');
-      });
+        if (dailyJobData && dailyJobData.length > 0) {
+            dailyJobData.forEach(record => {
+                let cardContent = '';
+
+                // Helper to format and add a row if value exists
+                const addRow = (label, value) => {
+                    if (value !== null && value !== undefined && value.toString().trim() !== '' && value.toString().trim() !== '0') {
+                        const formattedValue = !isNaN(parseFloat(value)) && isFinite(value) ? new Intl.NumberFormat('th-TH').format(value) : value;
+                        cardContent += `<p><strong>${label}</strong> <span>${formattedValue}</span></p>`;
+                    }
+                };
+                
+                // Helper to group table data
+                const addTableGroup = (tableNum, recordData) => {
+                    const prefix = `Table${tableNum}_`;
+                    const fields = {
+                        'ยอดเปิดโต๊ะ': recordData[prefix + 'OpeningBalance'],
+                        'สุทธิ': recordData[prefix + 'NetOpening'],
+                        'คืนต้น': recordData[prefix + 'PrincipalReturned'],
+                        'เสีย': recordData[prefix + 'LostAmount']
+                    };
+
+                    let groupHTML = '';
+                    for (const [label, value] of Object.entries(fields)) {
+                         if (value !== null && value !== undefined && value.toString().trim() !== '' && value.toString().trim() !== '0') {
+                            const formattedValue = !isNaN(parseFloat(value)) && isFinite(value) ? new Intl.NumberFormat('th-TH').format(value) : value;
+                            groupHTML += `<p><strong>${label}</strong> <span>${formattedValue}</span></p>`;
+                         }
+                    }
+
+                    if (groupHTML) {
+                        return `<div class="report-table-group"><h4>โต๊ะ${tableNum}</h4>${groupHTML}</div>`;
+                    }
+                    return '';
+                };
+
+                addRow('บริษัท', record.CompanyName);
+                addRow('รหัสลูกค้า', record.CustomerID);
+                addRow('ชื่อลูกค้า', record.CustomerName);
+                addRow('วันที่', record.Date);
+                addRow('เวลา', record.Time);
+                addRow('ดอกเบี้ย %', record.interest);
+
+                cardContent += addTableGroup(1, record);
+                cardContent += addTableGroup(2, record);
+                cardContent += addTableGroup(3, record);
+
+                if (cardContent) {
+                    reportContentHTML += `<div class="report-record-card">${cardContent}</div>`;
+                }
+            });
+        } else {
+            reportContentHTML += '<p style="text-align:center; color:#888; margin-top:20px;">ไม่พบข้อมูลสำหรับแสดงในรายงาน</p>';
+        }
+
+        reportContentContainer.innerHTML = reportContentHTML;
+        reportPopup.classList.add('visible');
+    });
   }
 
   function closeReportPopup() {
@@ -1383,6 +1490,7 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
     // เรียก backend เพื่อค้นหา
     const res = await fetch('/api/daily-jobs?' + params.toString());
     const data = await res.json();
+    dailyJobData = Array.isArray(data) ? data : [];
     console.log('data from backend:', data);
 
     const tbody = document.querySelector('#daily-job-table tbody');
