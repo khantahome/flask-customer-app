@@ -1157,22 +1157,28 @@ if (approveForm) {
     const companies = formData.getAll('company[]');
     const actions = formData.getAll('action_type[]');
     const tables = formData.getAll('table_select[]');
-        const amounts = formData.getAll('amount[]');
+    const amounts = formData.getAll('amount[]');
 
     // ดึง input ของบริษัทอื่นๆ (ต้องตรงกับชื่อ element จริง)
     const otherCompanyInput = document.getElementById('other_company'); 
 
+    // --- [REFACTORED] Build a single payload with all transactions ---
+    const transactions = [];
     for (let i = 0; i < companies.length; i++) {
-      // ถ้าเลือก "อื่นๆ" ใช้ค่าที่กรอก
-      const companyValue = companies[i] === 'อื่นๆ' ? otherCompanyInput.value.trim() : companies[i];
-
-      // ถ้าเลือก "อื่นๆ" แต่ไม่กรอก ให้แจ้งเตือน
-      if (companies[i] === 'อื่นๆ' && !companyValue) {
-        alert('กรุณากรอกชื่อบริษัทอื่นๆ');
-        return;
+        const companyValue = companies[i] === 'อื่นๆ' ? otherCompanyInput.value.trim() : companies[i];
+        if (companies[i] === 'อื่นๆ' && !companyValue) {
+            alert('กรุณากรอกชื่อบริษัทอื่นๆ');
+            return;
         }
-      const interest = formData.get('interest');
-      const singleRecord = {
+        transactions.push({
+            company: companyValue,
+            action_type: actions[i],
+            table_select: tables[i],
+            amount: amounts[i]
+        });
+    }
+
+    const payload = {
         status: formData.get('status'),
         customer_id: formData.get('customer_id'),
         fullname: formData.get('fullname'),
@@ -1180,25 +1186,28 @@ if (approveForm) {
         approve_date: formData.get('approve_date'),
         approved_amount: formData.get('approved_amount'),
         open_balance: formData.get('open_balance'),
-        interest: interest,
+        interest: formData.get('interest'),
         registrar: formData.get('registrar'),
-        company: companyValue, // ใช้ค่าที่ปรับแล้ว
-        action_type: actions[i],
-        table_select: tables[i],
-        amount: amounts[i]
-        };
+        transactions: transactions // Array of all transactions
+    };
 
-      const res = await fetch('/save-approved-data', {
+    try {
+        const res = await fetch('/save-approved-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(singleRecord)
+        body: JSON.stringify(payload)
         });
 
-      if (!res.ok) {
-        alert('เกิดข้อผิดพลาดในการบันทึก record: ' + (i+1));
-        return;
+        if (!res.ok) {
+            const errorData = await res.json();
+            alert('เกิดข้อผิดพลาดในการบันทึก: ' + (errorData.error || 'ไม่ทราบสาเหตุ'));
+            return;
         }
-      }
+    } catch (error) {
+        console.error('Fetch error:', error);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+        return;
+    }
 
     const customerId = formData.get('customer_id');
 

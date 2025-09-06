@@ -805,14 +805,10 @@ def save_approved_data():
         customer_id = data.get('customer_id')
         fullname = data.get('fullname')
         approve_date = data.get('approve_date')
-        company = data.get('company', '')
-        action = data.get('action_type', '')
-        table = data.get('table_select', '')
-        amount_str = data.get('amount', '0')
         interest_str = data.get('interest', '0')
+        transactions = data.get('transactions', []) # NEW: Get array of transactions
 
         try:
-            amount = float(str(amount_str).replace(',', '')) if amount_str else 0.0
             interest = float(str(interest_str).replace(',', '')) if interest_str else 0.0
         except (ValueError, TypeError):
             return jsonify({'error': 'Invalid amount or interest format.'}), 400
@@ -824,13 +820,12 @@ def save_approved_data():
         if not df.empty:
             df.columns = [c.strip() for c in df.columns]
 
-        # --- 3. Find the LATEST record for this customer and company ---
+        # --- 3. Find the LATEST record for this customer, REGARDLESS of company ---
         latest_record = None
-        if not df.empty and 'CustomerID' in df.columns and 'CompanyName' in df.columns:
-            customer_company_df = df[(df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()) & \
-                                     (df['CompanyName'].astype(str).str.strip() == str(company).strip())]
-            if not customer_company_df.empty:
-                latest_record = customer_company_df.iloc[-1].to_dict()
+        if not df.empty and 'CustomerID' in df.columns:
+            customer_df = df[df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()]
+            if not customer_df.empty:
+                latest_record = customer_df.iloc[-1].to_dict()
 
         # --- 4. Prepare the NEW row data for today, inheriting from the latest record ---
         all_table_cols = [f"Table{t}_{c}" for t in [1,2,3] for c in ['OpeningBalance', 'NetOpening', 'PrincipalReturned', 'LostAmount']]
@@ -840,57 +835,61 @@ def save_approved_data():
             for col in all_table_cols:
                 new_row_data[col] = latest_record.get(col, '')
 
-        # --- 5. Apply the new transaction to the new_row_data ---
-        table_prefix_map = {'โต๊ะ1': 'Table1_', 'โต๊ะ2': 'Table2_', 'โต๊ะ3': 'Table3_'}
-        table_prefix = table_prefix_map.get(table)
-        if not table_prefix:
-            return jsonify({'error': f'Invalid table "{table}".'}), 400
-
         def to_float(val):
             return float(str(val).replace(',', '')) if val else 0.0
 
-        if action == 'คืนต้น':
-            principal_returned_col = f"{table_prefix}PrincipalReturned"
-            net_opening_col = f"{table_prefix}NetOpening"
-            opening_balance_col = f"{table_prefix}OpeningBalance"
+        # --- 5. Loop through submitted transactions and apply them CUMULATIVELY ---
+        processed_companies = set()
+        for trx in transactions:
+            company = trx.get('company', '')
+            action = trx.get('action_type', '')
+            table = trx.get('table_select', '')
+            amount = to_float(trx.get('amount', '0'))
 
-            # --- VALIDATION: Check if return amount exceeds table balance ---
-            if latest_record:
-                principal_returned_col_val = to_float(latest_record.get(principal_returned_col))
-                net_opening_col_val = to_float(latest_record.get(net_opening_col))
-                opening_balance_col_val = to_float(latest_record.get(opening_balance_col))
-                lost_amount_col_val = to_float(latest_record.get(f"{table_prefix}LostAmount"))
+            processed_companies.add(company)
 
-                table_balance = (opening_balance_col_val + net_opening_col_val) - (principal_returned_col_val + lost_amount_col_val)
+            table_prefix_map = {'โต๊ะ1': 'Table1_', 'โต๊ะ2': 'Table2_', 'โต๊ะ3': 'Table3_'}
+            table_prefix = table_prefix_map.get(table)
+            if not table_prefix:
+                return jsonify({'error': f'Invalid table "{table}" in transaction.'}), 400
+
+            if action == 'คืนต้น':
+                principal_returned_col = f"{table_prefix}PrincipalReturned"
+                net_opening_col = f"{table_prefix}NetOpening"
+                opening_balance_col = f"{table_prefix}OpeningBalance"
+
+                # --- VALIDATION: Check against the current state of new_row_data ---
+                pr_val = to_float(new_row_data.get(principal_returned_col))
+                no_val = to_float(new_row_data.get(net_opening_col))
+                ob_val = to_float(new_row_data.get(opening_balance_col))
+                lost_val = to_float(new_row_data.get(f"{table_prefix}LostAmount"))
+                table_balance = (ob_val + no_val) - (pr_val + lost_val)
 
                 if amount > table_balance:
-                    error_message = f'จำนวนเงินคืนต้น ({amount:,.2f}) มากกว่ายอดคงเหลือของโต๊ะ ({table_balance:,.2f})'
-                    # We print the error for server logs and return a user-friendly message
-                    print(f"Validation Error: {error_message}")
-                    return jsonify({'error': error_message}), 400
+                    error_msg = f'ยอดคืนต้น ({amount:,.2f}) ของบริษัท {company} มากกว่ายอดคงเหลือ ({table_balance:,.2f})'
+                    return jsonify({'error': error_msg}), 400
 
-            current_pr = to_float(new_row_data.get(principal_returned_col))
-            current_no = to_float(new_row_data.get(net_opening_col))
-            current_ob = to_float(new_row_data.get(opening_balance_col))
-
-            new_row_data[principal_returned_col] = current_pr + amount
-            if current_no != 0:
-                new_row_data[net_opening_col] = current_no - amount
+                new_row_data[principal_returned_col] = pr_val + amount
+                if no_val != 0:
+                    new_row_data[net_opening_col] = no_val - amount
+                else:
+                    new_row_data[opening_balance_col] = ob_val - amount
             else:
-                new_row_data[opening_balance_col] = current_ob - amount
-        else:
-            action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
-            column_suffix = action_map.get(action)
-            if not column_suffix:
-                return jsonify({'error': f'Invalid action "{action}".'}), 400
+                action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
+                column_suffix = action_map.get(action)
+                if not column_suffix:
+                    return jsonify({'error': f'Invalid action "{action}" in transaction.'}), 400
 
-            column_to_update = f"{table_prefix}{column_suffix}"
-            current_val = to_float(new_row_data.get(column_to_update))
-            new_row_data[column_to_update] = current_val + amount
+                column_to_update = f"{table_prefix}{column_suffix}"
+                current_val = to_float(new_row_data.get(column_to_update))
+                new_row_data[column_to_update] = current_val + amount
 
         # --- 6. Construct the full row for appending ---
+        # For the 'CompanyName' column, we join all unique company names from the transaction list.
+        company_name_str = ', '.join(sorted(list(processed_companies)))
+
         final_row_list = [
-            approve_date, company, customer_id, datetime.now().strftime("%H:%M:%S"), fullname, interest,
+            approve_date, company_name_str, customer_id, datetime.now().strftime("%H:%M:%S"), fullname, interest,
             new_row_data['Table1_OpeningBalance'], new_row_data['Table1_NetOpening'], new_row_data['Table1_PrincipalReturned'], new_row_data['Table1_LostAmount'],
             new_row_data['Table2_OpeningBalance'], new_row_data['Table2_NetOpening'], new_row_data['Table2_PrincipalReturned'], new_row_data['Table2_LostAmount'],
             new_row_data['Table3_OpeningBalance'], new_row_data['Table3_NetOpening'], new_row_data['Table3_PrincipalReturned'], new_row_data['Table3_LostAmount'],
