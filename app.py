@@ -767,9 +767,17 @@ def api_daily_jobs():
         # Sort values to ensure correct order for diff()
         df = df.sort_values(by=['CustomerID', 'CompanyName', 'DateTime'])
 
+        # --- CORRECTED DELTA CALCULATION ---
         # Calculate the difference (transactional value) for each group
         # .fillna(df[numeric_cols]) ensures the first transaction of a group keeps its original value
-        df[numeric_cols] = df.groupby(['CustomerID', 'CompanyName'])[numeric_cols].diff().fillna(df[numeric_cols])
+        transaction_df = df.groupby(['CustomerID', 'CompanyName'])[numeric_cols].diff().fillna(df[numeric_cols])
+
+        # Set negative values to 0, as they represent the "debit" side of an internal transfer (like 'คืนต้น')
+        # The user only wants to see the positive "credit" side of the transaction.
+        transaction_df[transaction_df < 0] = 0
+        
+        # Assign the calculated transactional values back to the main dataframe
+        df[numeric_cols] = transaction_df
 
         # Now filter by the requested date
         try:
