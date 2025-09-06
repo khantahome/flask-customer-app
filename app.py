@@ -744,22 +744,53 @@ def api_daily_jobs():
         df = pd.DataFrame(all_records)
         df.columns = [c.strip() for c in df.columns]
 
-        # Ensure required columns exist to avoid errors
-        if 'Date' not in df.columns or 'CompanyName' not in df.columns:
-            return jsonify({"error": "Required columns 'Date' or 'CompanyName' not found in sheet."}), 500
+        # Define numeric columns for delta calculation
+        numeric_cols = [
+            "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
+            "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
+            "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
+        ]
+        # Ensure numeric columns exist and convert them to numbers safely
+        for col in numeric_cols:
+            if col in df.columns:
+                # Convert to string, replace comma, then to numeric. Fill errors with 0.
+                df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+            else:
+                # If column doesn't exist, create it with zeros
+                df[col] = 0
 
-        # Filter by date (direct string comparison is efficient if formats match)
-        filtered_df = df[df['Date'].astype(str).str.strip() == date_q]
+        # Create a proper datetime column for sorting
+        df['DateTime'] = pd.to_datetime(df['Date'] + ' ' + df['Time'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        # Fallback for rows where the above format might fail
+        df.loc[df['DateTime'].isna(), 'DateTime'] = pd.to_datetime(df.loc[df['DateTime'].isna(), 'Date'], errors='coerce')
+        
+        # Sort values to ensure correct order for diff()
+        df = df.sort_values(by=['CustomerID', 'CompanyName', 'DateTime'])
 
-        # Optionally, filter by company
+        # Calculate the difference (transactional value) for each group
+        # .fillna(df[numeric_cols]) ensures the first transaction of a group keeps its original value
+        df[numeric_cols] = df.groupby(['CustomerID', 'CompanyName'])[numeric_cols].diff().fillna(df[numeric_cols])
+
+        # Now filter by the requested date
+        try:
+            date_obj = pd.to_datetime(date_q).date()
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid 'date' format"}), 400
+
+        df['DateOnly'] = df['DateTime'].dt.date
+        daily_records_df = df[df['DateOnly'] == date_obj].copy()
+
         if company_q:
-            # Use .str.contains() for partial matching, case-insensitive
-            filtered_df = filtered_df[filtered_df['CompanyName'].astype(str).str.contains(company_q, case=False, na=False)]
+            mask = daily_records_df['CompanyName'].astype(str).str.contains(company_q, case=False, na=False)
+            daily_records_df = daily_records_df[mask]
 
-        if filtered_df.empty:
+        # Filter out rows where all transaction values are zero.
+        daily_records_df = daily_records_df[daily_records_df[numeric_cols].any(axis=1)]
+
+        if daily_records_df.empty:
             return jsonify([])
 
-        # Define the columns to be returned to ensure order and presence
+        # Prepare for output
         display_columns = [
             "Date", "CompanyName", "CustomerID", "Time", "CustomerName", "interest",
             "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
@@ -767,11 +798,7 @@ def api_daily_jobs():
             "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
         ]
         
-        # Reindex to ensure all columns are present, fill missing with empty string
-        final_df = filtered_df.reindex(columns=display_columns, fill_value="")
-        
-        # Replace NaN/NaT with empty strings for cleaner JSON output
-        final_df = final_df.fillna("")
+        final_df = daily_records_df.reindex(columns=display_columns, fill_value="").fillna("")
 
         return jsonify(final_df.to_dict(orient='records'))
 
