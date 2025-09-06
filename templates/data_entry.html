@@ -243,29 +243,58 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             text-align: center;
         }
-        .sidebar-button:hover {
+        .action-button:hover {
             background-color: #6A1B9A;
             transform: translateY(-3px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
         /* Style for the active sidebar button */
-        .sidebar-button.active {
-            background-color: #01e5d6; /* A darker shade of purple for the active state */
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3); /* Inner shadow for depth */
+        .action-button.active {
+            background-color: var(--secondary-color); /* Use secondary color for active state */
+            color: var(--card-background); /* Dark text on active button */
+            box-shadow: 0 4px 10px rgba(0, 189, 212, 0.4); /* Stronger shadow for active */
             cursor: default; /* Change cursor to default for active button */
             transform: translateY(0); /* Prevent active button from moving on hover */
         }
-        .sidebar-button.active:hover {
-            background-color: #5A168E; /* Keep same color on hover for active button */
+        .action-button.active:hover {
+            background-color: #008C9E; /* Darker secondary on hover for active */
             transform: translateY(0);
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
         }
-        .sidebar-button.logout {
+        .action-button.logout {
             background-color: var(--error-bg);
             margin-top: 40px;
         }
-        .sidebar-button.logout:hover {
+        .action-button.logout:hover {
             background-color: #B02A37;
+        }
+
+        /* Styles for the form buttons */
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+
+        .form-button { /* Renamed from action-button to avoid conflict */
+            background-color: var(--primary-color);
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex: 1;
+            min-width: 150px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         /* Styles for flash messages */
@@ -440,12 +469,14 @@
     <div class="dashboard-layout">
         <div class="sidebar">
             <h3 class="sidebar-title">เมนู</h3>
-            <div class="sidebar-button-group">
-                <a href="{{ url_for('enter_customer_data') }}" class="sidebar-button active">กรอกข้อมูลลูกค้าใหม่</a>
-                <a href="{{ url_for('search_customer_data') }}" class="sidebar-button">ค้นหาข้อมูลลูกค้า</a>
-                <a href="{{ url_for('loan_management') }}" class="sidebar-button">จัดการสินเชื่อ</a>
+            <div class="action-button-group">
+                <a href="{{ url_for('dashboard') }}" class="action-button {% if request.endpoint == 'dashboard' %}active{% endif %}">หน้าหลัก</a>
+                <a href="{{ url_for('enter_customer_data') }}" class="action-button {% if request.endpoint == 'enter_customer_data' %}active{% endif %}">กรอกข้อมูลลูกค้าใหม่</a>
+                <a href="{{ url_for('search_customer_data') }}" class="action-button {% if request.endpoint == 'search_customer_data' %}active{% endif %}">ค้นหาข้อมูลลูกค้า</a>
+                <a href="{{ url_for('loan_management') }}" class="action-button {% if request.endpoint == 'loan_management' %}active{% endif %}">จัดการสินเชื่อ</a>
             </div>
-            <a href="{{ url_for('logout') }}" class="sidebar-button logout">ออกจากระบบ</a>
+            <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
+            <p class="logged-in-user" style="margin-top: 25px; text-align: center;">สวัสดี, {{ username }}</p>
         </div>
         <div class="main-content-area">
             <div class="form-container">
@@ -600,9 +631,9 @@
                     </div>
 
                     <div class="button-group">
-                        <button type="submit" class="action-button">บันทึกข้อมูล</button>
-                        <button type="button" class="action-button clear" id="clearFormButton">ล้างข้อมูล</button>
-                        <a href="{{ url_for('dashboard') }}" class="action-button back">กลับสู่เมนูหลัก</a>
+                        <button type="submit" class="form-button">บันทึกข้อมูล</button>
+                        <button type="button" class="form-button clear" id="clearFormButton">ล้างข้อมูล</button>
+                        <a href="{{ url_for('dashboard') }}" class="form-button back">หน้าหลัก</a>
                     </div>
                 </form>
             </div>

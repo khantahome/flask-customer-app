@@ -254,6 +254,18 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
 
+        /* Active state for navigation buttons */
+        .action-button.active {
+            background-color: var(--secondary-color); /* Use secondary color for active state */
+            color: var(--card-background); /* Dark text on active button */
+            box-shadow: 0 4px 10px rgba(0, 189, 212, 0.4); /* Stronger shadow for active */
+        }
+        .action-button.active:hover {
+            background-color: #008C9E; /* Darker secondary on hover for active */
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 189, 212, 0.5);
+        }
+
         /* Logout button specific style (for sidebar) */
         .action-button.logout {
             background-color: var(--error-bg); /* Red for logout */
@@ -539,10 +551,6 @@
             body {
                 padding: 0; /* Remove body padding, dashboard-layout handles margin */
             }
-            .dashboard-layout {
-                margin: 10px; /* Reduced margin for mobile */
-                border-radius: 10px;
-            }
             .main-container, .results-container {
                 padding: 25px;
             }
@@ -613,12 +621,6 @@
                 font-size: 0.9em;
                 width: 100%;
             }
-            .action-button.active {
-                background-color: #50e3c2 !important; /* ฟ้าอมเขียว */
-                color: #1F283E !important;           /* ตัวหนังสือเข้มอ่านง่าย */
-                box-shadow: 0 0 0 2px #00e6c3;
-                font-weight: 600;
-            }
             /* Remove back-to-main-menu button's specific mobile styles as it's removed */
             /* .back-to-main-menu { ... } */
         }
@@ -630,11 +632,13 @@
         <div class="sidebar">
             <h3 class="sidebar-title">เมนู</h3>
             <div class="action-button-group">
-                <a href="{{ url_for('enter_customer_data') }}" class="action-button">กรอกข้อมูลลูกค้าใหม่</a>
-                <a href="{{ url_for('search_customer_data') }}" class="action-button active">ค้นหาข้อมูลลูกค้า</a>
-                <a href="{{ url_for('loan_management') }}" class="action-button">จัดการสินเชื่อ</a>
+                <a href="{{ url_for('dashboard') }}" class="action-button {% if request.endpoint == 'dashboard' %}active{% endif %}">หน้าหลัก</a>
+                <a href="{{ url_for('enter_customer_data') }}" class="action-button {% if request.endpoint == 'enter_customer_data' %}active{% endif %}">กรอกข้อมูลลูกค้าใหม่</a>
+                <a href="{{ url_for('search_customer_data') }}" class="action-button {% if request.endpoint == 'search_customer_data' %}active{% endif %}">ค้นหาข้อมูลลูกค้า</a>
+                <a href="{{ url_for('loan_management') }}" class="action-button {% if request.endpoint == 'loan_management' %}active{% endif %}">จัดการสินเชื่อ</a>
             </div>
             <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
+            <p class="logged-in-user" style="margin-top: 25px; text-align: center;">สวัสดี, {{ username }}</p>
         </div>
         <div class="main-content-area">
             <div class="main-container">
