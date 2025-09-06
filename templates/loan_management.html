@@ -652,14 +652,14 @@
     border: 1px solid #e0e0e0;
     border-left: 5px solid var(--primary-color); /* Accent border */
     border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 15px;
+    margin-bottom: 15px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 /* --- NEW: Vertical Report Field Styles --- */
 .report-field {
-    padding-bottom: 12px;
-    margin-bottom: 12px;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
     border-bottom: 1px dashed #e5e5e5;
     text-align: center; /* Center align the label and value */
 }
@@ -673,21 +673,21 @@
 }
 .report-field-label {
     display: block;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: #6c757d; /* A muted grey for the label */
     font-weight: 600;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 .report-field-value {
     display: block;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: #343a40; /* Darker text for the value */
     font-weight: 500;
     word-break: break-all; /* Break long values */
 }
 .report-table-group {
-    margin-top: 20px;
-    padding: 15px;
+    margin-top: 15px;
+    padding: 10px;
     border-top: 1px solid #ddd;
     background-color: #f9f9f9;
     border-radius: 6px;
@@ -695,16 +695,17 @@
 }
 .report-table-group h4 {
     font-size: 1.2rem;
+    font-size: 1.1rem;
     color: var(--primary-color);
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     padding-bottom: 5px;
     border-bottom: 2px solid var(--primary-color);
     display: inline-block;
 }
 /* --- NEW: Grouped Report Styles --- */
 .report-customer-section {
-    margin-bottom: 25px;
-    padding-bottom: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
     border-bottom: 2px solid #e0e0e0;
 }
 .report-customer-section:last-of-type {
@@ -1326,15 +1327,18 @@ if (firstDeleteBtn) {
                 };
 
                 let groupHTML = '';
+                let hasTransaction = false;
                 for (const [label, value] of Object.entries(fields)) {
                     if (value !== null && value !== undefined && value.toString().trim() !== '' && value.toString().trim() !== '0') {
+                        hasTransaction = true;
                         const formattedValue = !isNaN(parseFloat(value)) && isFinite(value) ? new Intl.NumberFormat('th-TH').format(value) : value;
                         groupHTML += `<div class="report-field"><strong class="report-field-label">${label}</strong><span class="report-field-value">${formattedValue}</span></div>`;
                     }
                 }
 
-                if (groupHTML) {
-                    return `<div class="report-table-group"><h4>โต๊ะ${tableNum}</h4><div class="report-field-list">${groupHTML}</div></div>`;
+                if (hasTransaction) {
+                    const timeHTML = createRowHTML('เวลา', recordData.Time);
+                    return `<div class="report-table-group"><h4>โต๊ะ${tableNum}</h4><div class="report-field-list">${timeHTML}${groupHTML}</div></div>`;
                 }
                 return '';
             };
@@ -1362,8 +1366,7 @@ if (firstDeleteBtn) {
                 // --- 2. Add each transaction as a subsequent card ---
                 records.forEach(record => {
                     let transactionHTML = '';
-                    // Only add Time and table data for each transaction
-                    transactionHTML += createRowHTML('เวลา', record.Time);
+                    // Time is now handled inside createTableGroupHTML
                     transactionHTML += createTableGroupHTML(1, record);
                     transactionHTML += createTableGroupHTML(2, record);
                     transactionHTML += createTableGroupHTML(3, record);
