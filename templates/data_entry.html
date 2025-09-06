@@ -199,50 +199,6 @@
             justify-content: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-
-        .action-button.clear {
-            background-color: #FFC107;
-            color: #333;
-        }
-        .action-button.back {
-            background-color: #6c757d;
-        }
-        .action-button:hover {
-            background-color: #6A1B9A;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
-        .action-button.clear:hover {
-            background-color: #e0a800;
-        }
-        .action-button.back:hover {
-            background-color: #5a6268;
-        }
-        .action-button:active {
-            transform: translateY(0);
-        }
-
-        /* New button group for sidebar navigation */
-        .sidebar-button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 100%;
-            margin-top: 0;
-        }
-        .sidebar-button {
-            display: block;
-            padding: 15px 25px;
-            background-color: var(--primary-color);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 1.1em;
-            font-weight: 500;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            text-align: center;
-        }
         .action-button:hover {
             background-color: #6A1B9A;
             transform: translateY(-3px);
@@ -296,6 +252,21 @@
             justify-content: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+        .form-button.clear {
+            background-color: #FFC107;
+            color: #333;
+        }
+        .form-button.back {
+            background-color: #6c757d;
+        }
+        .form-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        .form-button.clear:hover {
+            background-color: #e0a800;
+        }
+
 
         /* Styles for flash messages */
         .flash-message {
@@ -631,9 +602,8 @@
                     </div>
 
                     <div class="button-group">
-                        <button type="submit" class="form-button">บันทึกข้อมูล</button>
-                        <button type="button" class="form-button clear" id="clearFormButton">ล้างข้อมูล</button>
-                        <a href="{{ url_for('dashboard') }}" class="form-button back">หน้าหลัก</a>
+                        <button type="submit" class="action-button">บันทึกข้อมูล</button>
+                        <button type="button" class="action-button clear" id="clearFormButton">ล้างข้อมูล</button>
                     </div>
                 </form>
             </div>
