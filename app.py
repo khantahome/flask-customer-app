@@ -244,39 +244,44 @@ def get_customer_balance(customer_id):
                 'total_transactions_value': 0
             })
 
-        # [ปรับปรุง] แยกประเภทคอลัมน์เพื่อคำนวณ "ยอดเงินที่ใช้อยู่" ใหม่
-        opening_cols = [col for col in customer_df.columns if 
+        # --- NEW: Get only the latest record for the customer ---
+        # The save logic creates a running ledger, so only the last row has the correct cumulative balance.
+        latest_record_df = customer_df.iloc[[-1]]
+
+        # Define column groups based on the latest record's columns
+        opening_cols = [col for col in latest_record_df.columns if 
                         'OpeningBalance' in col or 'NetOpening' in col or 
                         'ยอดเปิดโต๊ะ' in col or 'สุทธิ' in col]
         
-        principal_returned_cols = [col for col in customer_df.columns if 'PrincipalReturned' in col or 'คืนต้น' in col]
-        lost_amount_cols = [col for col in customer_df.columns if 'LostAmount' in col or 'เสีย' in col]
+        principal_returned_cols = [col for col in latest_record_df.columns if 'PrincipalReturned' in col or 'คืนต้น' in col]
+        lost_amount_cols = [col for col in latest_record_df.columns if 'LostAmount' in col or 'เสีย' in col]
 
         # ฟังก์ชันช่วยในการรวมยอดอย่างปลอดภัย
         def sum_columns(df, cols):
             total = 0
             for col in cols:
                 if col in df.columns:
-                    # ทำความสะอาดข้อมูล: ลบตัวอักษร, แทนที่ค่าว่างด้วย '0'
+                    # Clean data: remove non-numeric characters, replace empty with '0'
                     cleaned_series = df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
                     series_with_zeros = cleaned_series.replace('', '0')
                     total += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
             return total
 
-        # คำนวณยอดแต่ละประเภท
-        total_openings = sum_columns(customer_df, opening_cols)
-        total_principal_returned = sum_columns(customer_df, principal_returned_cols)
-        total_lost_amount = sum_columns(customer_df, lost_amount_cols)
+        # Calculate totals from the LATEST RECORD only
+        total_openings = sum_columns(latest_record_df, opening_cols)
+        total_principal_returned = sum_columns(latest_record_df, principal_returned_cols)
+        total_lost_amount = sum_columns(latest_record_df, lost_amount_cols)
 
-        # [แก้ไข] คำนวณ "ยอดเงินที่ใช้อยู่" ใหม่ โดยไม่รวม "คืนต้น"
-        # ยอดเงินที่ใช้อยู่ = ยอดเปิด + ยอดเปิดสุทธิ + ยอดเสีย
+        # "ยอดเงินที่ใช้อยู่" (Current balance in use) is calculated as:
+        # All openings (OpeningBalance + NetOpening) + LostAmount from the latest record.
+        # This reflects the total liability before accounting for repayments.
         total_transactions_value = total_openings + total_lost_amount
 
-        # ยอดคงเหลือสุทธิ (สำหรับใช้อ้างอิงอื่นๆ)
+        # Net balance (for other references) is the actual remaining debt.
         total_balance = total_openings - (total_principal_returned + total_lost_amount)
 
-        # [แก้ไข] แปลงค่าตัวเลขทั้งหมดเป็น float ของ Python ก่อนส่งกลับเป็น JSON
-        # เพื่อป้องกันข้อผิดพลาด "Object of type int64 is not JSON serializable"
+        # Convert all numeric values to Python's float before returning as JSON
+        # to prevent "Object of type int64 is not JSON serializable" error.
         return jsonify({
             'total_balance': float(total_balance),
             'total_openings': float(total_openings),
@@ -819,94 +824,67 @@ def save_approved_data():
         if not df.empty:
             df.columns = [c.strip() for c in df.columns]
 
-        # --- 3. Find if a record for today already exists ---
-        found_row = None
-        if not df.empty and 'Date' in df.columns:
-            mask = (df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()) & \
-                   (df['CompanyName'].astype(str).str.strip() == str(company).strip()) & \
-                   (df['Date'].astype(str).str.strip() == str(approve_date).strip())
-            if mask.any():
-                found_row = df[mask].iloc[0]
+        # --- 3. Find the LATEST record for this customer and company ---
+        latest_record = None
+        if not df.empty and 'CustomerID' in df.columns and 'CompanyName' in df.columns:
+            customer_company_df = df[(df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()) & \
+                                     (df['CompanyName'].astype(str).str.strip() == str(company).strip())]
+            if not customer_company_df.empty:
+                latest_record = customer_company_df.iloc[-1].to_dict()
 
-        # --- 4. Define Mappings ---
+        # --- 4. Prepare the NEW row data for today, inheriting from the latest record ---
+        all_table_cols = [f"Table{t}_{c}" for t in [1,2,3] for c in ['OpeningBalance', 'NetOpening', 'PrincipalReturned', 'LostAmount']]
+        new_row_data = {col: '' for col in all_table_cols}
+
+        if latest_record is not None:
+            for col in all_table_cols:
+                new_row_data[col] = latest_record.get(col, '')
+
+        # --- 5. Apply the new transaction to the new_row_data ---
         table_prefix_map = {'โต๊ะ1': 'Table1_', 'โต๊ะ2': 'Table2_', 'โต๊ะ3': 'Table3_'}
         table_prefix = table_prefix_map.get(table)
         if not table_prefix:
             return jsonify({'error': f'Invalid table "{table}".'}), 400
 
-        if found_row is not None:
-            # --- UPDATE an existing record for today ---
-            sheet_row_to_update = found_row.name + 2
+        def to_float(val):
+            return float(str(val).replace(',', '')) if val else 0.0
 
-            if action == 'คืนต้น':
-                # --- SPECIAL LOGIC: Subtract from Opening/NetOpening AND Add to PrincipalReturned ---
-                net_opening_col = f"{table_prefix}NetOpening"
-                opening_balance_col = f"{table_prefix}OpeningBalance"
-                principal_returned_col = f"{table_prefix}PrincipalReturned"
+        if action == 'คืนต้น':
+            principal_returned_col = f"{table_prefix}PrincipalReturned"
+            net_opening_col = f"{table_prefix}NetOpening"
+            opening_balance_col = f"{table_prefix}OpeningBalance"
 
-                # Get current values
-                current_net_opening = float(str(worksheet.cell(sheet_row_to_update, df.columns.get_loc(net_opening_col) + 1).value).replace(',', '') or 0)
-                current_opening_balance = float(str(worksheet.cell(sheet_row_to_update, df.columns.get_loc(opening_balance_col) + 1).value).replace(',', '') or 0)
-                current_principal_returned = float(str(worksheet.cell(sheet_row_to_update, df.columns.get_loc(principal_returned_col) + 1).value).replace(',', '') or 0)
+            current_pr = to_float(new_row_data.get(principal_returned_col))
+            current_no = to_float(new_row_data.get(net_opening_col))
+            current_ob = to_float(new_row_data.get(opening_balance_col))
 
-                # Prepare updates
-                updates_to_batch = [
-                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc(principal_returned_col) + 1), 'values': [[current_principal_returned + amount]]},
-                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('Time') + 1), 'values': [[datetime.now().strftime("%H:%M:%S")]]},
-                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('interest') + 1), 'values': [[interest]]}
-                ]
-
-                # Decide which column to subtract from and add to batch
-                if current_net_opening != 0:
-                    new_value = current_net_opening - amount
-                    updates_to_batch.append({'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc(net_opening_col) + 1), 'values': [[new_value]]})
-                else:
-                    new_value = current_opening_balance - amount
-                    updates_to_batch.append({'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc(opening_balance_col) + 1), 'values': [[new_value]]})
-                
-                worksheet.batch_update(updates_to_batch)
+            new_row_data[principal_returned_col] = current_pr + amount
+            if current_no != 0:
+                new_row_data[net_opening_col] = current_no - amount
             else:
-                # --- REGULAR LOGIC for "เปิดยอด", "เปิดสุทธิ", "สูญเสีย" ---
-                action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
-                column_suffix = action_map.get(action)
-                if not column_suffix: return jsonify({'error': f'Invalid action "{action}" for update.'}), 400
-                
-                column_to_update = f"{table_prefix}{column_suffix}"
-                if column_to_update not in df.columns: return jsonify({'error': f'Column "{column_to_update}" not found.'}), 400
-                
-                sheet_col_to_update = df.columns.get_loc(column_to_update) + 1
-                current_value_str = worksheet.cell(sheet_row_to_update, sheet_col_to_update).value
-                current_value = float(str(current_value_str).replace(',', '')) if current_value_str else 0.0
-                new_value = current_value + amount
-                
-                updates_to_batch = [
-                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, sheet_col_to_update), 'values': [[new_value]]},
-                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('Time') + 1), 'values': [[datetime.now().strftime("%H:%M:%S")]]},
-                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('interest') + 1), 'values': [[interest]]}
-                ]
-                worksheet.batch_update(updates_to_batch)
+                new_row_data[opening_balance_col] = current_ob - amount
         else:
-            # --- APPEND a new record for today (Unified logic is correct here) ---
-            time_str = datetime.now().strftime("%H:%M:%S")
-            table_data = {f"Table{t}_{c}": '' for t in [1,2,3] for c in ['OpeningBalance', 'NetOpening', 'PrincipalReturned', 'LostAmount']}
-
-            action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'คืนต้น': 'PrincipalReturned', 'สูญเสีย': 'LostAmount'}
+            action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
             column_suffix = action_map.get(action)
-            if not column_suffix: return jsonify({'error': f'Invalid action "{action}" for new row.'}), 400
-            
+            if not column_suffix:
+                return jsonify({'error': f'Invalid action "{action}".'}), 400
+
             column_to_update = f"{table_prefix}{column_suffix}"
-            # Set the value for the specific column based on the action
-            table_data[column_to_update] = amount
+            current_val = to_float(new_row_data.get(column_to_update))
+            new_row_data[column_to_update] = current_val + amount
 
-            row_data = [
-                approve_date, company, customer_id, time_str, fullname, interest,
-                table_data['Table1_OpeningBalance'], table_data['Table1_NetOpening'], table_data['Table1_PrincipalReturned'], table_data['Table1_LostAmount'],
-                table_data['Table2_OpeningBalance'], table_data['Table2_NetOpening'], table_data['Table2_PrincipalReturned'], table_data['Table2_LostAmount'],
-                table_data['Table3_OpeningBalance'], table_data['Table3_NetOpening'], table_data['Table3_PrincipalReturned'], table_data['Table3_LostAmount'],
-            ]
-            worksheet.append_row(row_data)
+        # --- 6. Construct the full row for appending ---
+        final_row_list = [
+            approve_date, company, customer_id, datetime.now().strftime("%H:%M:%S"), fullname, interest,
+            new_row_data['Table1_OpeningBalance'], new_row_data['Table1_NetOpening'], new_row_data['Table1_PrincipalReturned'], new_row_data['Table1_LostAmount'],
+            new_row_data['Table2_OpeningBalance'], new_row_data['Table2_NetOpening'], new_row_data['Table2_PrincipalReturned'], new_row_data['Table2_LostAmount'],
+            new_row_data['Table3_OpeningBalance'], new_row_data['Table3_NetOpening'], new_row_data['Table3_PrincipalReturned'], new_row_data['Table3_LostAmount'],
+        ]
 
-        # --- 6. Update 'approove' sheet status (common logic) ---
+        # --- 7. Append the new row ---
+        worksheet.append_row(final_row_list)
+
+        # --- 8. Update 'approove' sheet status (common logic) ---
         approove_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
         approove_data = approove_ws.get_all_values()
         if approove_data and len(approove_data) > 1:
