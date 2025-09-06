@@ -585,59 +585,66 @@
     width: auto;
     min-width: 120px;
 }
-
-/* --- Print-Specific Styles --- */
-@media print {
-    /* ซ่อนองค์ประกอบที่ไม่จำเป็นทั้งหมด */
-    .sidebar,
-    .main-content-area > .container, /* ซ่อนคอนเทนเนอร์บนสุดที่มีหัวข้อและปุ่มฟังก์ชัน */
-    #approve-popup,
-    #daily-job-search-form {
-        display: none !important;
-    }
-
-    /* รีเซ็ต layout หลักสำหรับหน้าพิมพ์ */
-    body, .dashboard-layout, .main-content-area {
-        display: block !important;
-        width: 100% !important;
-        height: auto !important;
-        overflow: visible !important;
-        background: #ffffff !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        color: #000000 !important;
-    }
-
-    /* จัดการแสดงผลของส่วนรายงาน */
-    .daily-job-table-section {
-        display: block !important;
-        box-shadow: none !important;
-        border: none !important;
-        padding: 1.5cm !important; /* เพิ่มระยะขอบกระดาษมาตรฐาน */
-        margin: 0 !important;
-    }
-
-    .daily-job-table-section h3 {
-        text-align: center;
-        font-size: 16pt;
-        margin-bottom: 20px;
-        color: #000 !important;
-    }
-
-    /* ปรับสไตล์ตารางสำหรับพิมพ์ */
-    .closejob-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 9pt; /* ลดขนาดฟอนต์เพื่อให้พอดีกับกระดาษ */
-    }
-
-    .closejob-table th, .closejob-table td {
-        border: 1px solid #333333;
-        padding: 5px;
-        background-color: #ffffff !important;
-        color: #000000 !important;
-    }
+/* --- Report Popup Modal Styles --- */
+.report-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 3000; /* Above other content */
+    padding: 20px;
+    box-sizing: border-box;
+}
+.report-modal-overlay.visible {
+    display: flex;
+}
+.report-modal-content {
+    background: #fff;
+    color: #333;
+    padding: 30px;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 800px; /* A4-like width */
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+.report-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 2em;
+    font-weight: bold;
+    cursor: pointer;
+    color: #888;
+}
+.report-modal-close:hover {
+    color: #000;
+}
+#report-content-container h3 {
+    text-align: center;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    color: #000;
+}
+#report-content-container .closejob-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    color: #333;
+}
+#report-content-container .closejob-table th,
+#report-content-container .closejob-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    background-color: #fff !important; /* Override dark theme styles */
+    color: #333 !important;
 }
 /* ----------------------------------------------------------------สิ้นสุดcss--------------------------------------------------------------- */
 
@@ -871,6 +878,15 @@
   </div>
 </div>
 
+<!-- NEW: Report Popup Modal -->
+<div id="report-popup" class="report-modal-overlay">
+    <div class="report-modal-content">
+        <span id="report-modal-close" class="report-modal-close">&times;</span>
+        <div id="report-content-container">
+            <!-- Report title and table will be injected here by JavaScript -->
+        </div>
+    </div>
+</div>
 
 <div id="approve-popup" class="modal">
   <div class="modal-content closejob-modal-content">
@@ -1193,6 +1209,30 @@ if (firstDeleteBtn) {
   // [ปรับปรุง] ประกาศตัวแปร allRows ใน scope ที่สูงขึ้นเพื่อให้ฟังก์ชันอื่นเข้าถึงได้
   let allRows = [];
 
+  // --- NEW: Report Popup Logic ---
+  const reportPopup = document.getElementById('report-popup');
+  const viewReportBtn = document.getElementById('view-report-btn');
+  const reportModalClose = document.getElementById('report-modal-close');
+  const reportContentContainer = document.getElementById('report-content-container');
+
+  if (viewReportBtn) {
+      viewReportBtn.addEventListener('click', () => {
+          const dailyJobSection = document.querySelector('.daily-job-table-section');
+          const reportTitle = dailyJobSection.querySelector('h3').outerHTML;
+          const reportTable = dailyJobSection.querySelector('.closejob-table').outerHTML;
+
+          reportContentContainer.innerHTML = reportTitle + reportTable;
+          reportPopup.classList.add('visible');
+      });
+  }
+
+  function closeReportPopup() {
+      reportPopup.classList.remove('visible');
+  }
+  if (reportModalClose) reportModalClose.addEventListener('click', closeReportPopup);
+  if (reportPopup) reportPopup.addEventListener('click', (e) => { if (e.target === reportPopup) closeReportPopup(); });
+  // --- End of Report Popup Logic ---
+
   // ปุ่มยกเลิก Popup
   const cancelBtn = document.getElementById('cancel-btn');
   if (cancelBtn) {
@@ -1327,12 +1367,6 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
         const companySelectValue = dailyJobSearchForm.querySelector('select[name="company"]').value;
         const otherCompanyValue = dailyJobSearchForm.querySelector('input[name="other_company_search"]').value.trim();
 
-        // อัปเดตหัวข้อของตารางสำหรับหน้าพิมพ์
-        const dailyJobSection = document.querySelector('.daily-job-table-section');
-        if (dailyJobSection) {
-            dailyJobSection.querySelector('h3').textContent = `สรุปธุรกรรมรายวัน ประจำวันที่ ${dateValue}`;
-        }
-
         const params = new URLSearchParams();
         params.append('date', dateValue);
 
@@ -1356,8 +1390,23 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
     const tbody = document.querySelector('#daily-job-table tbody');
     tbody.innerHTML = '';
     if (!Array.isArray(data)) {
+  // ปิดการใช้งานปุ่มดูรายงานเมื่อเกิดข้อผิดพลาด
+  const viewReportBtn = document.getElementById('view-report-btn');
+  if (viewReportBtn) {
+      viewReportBtn.disabled = true;
+  }
   tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">${data.error || 'เกิดข้อผิดพลาด'}</td></tr>`;
 } else if (data.length === 0) {
+  // ปิดการใช้งานปุ่มดูรายงานเมื่อไม่พบข้อมูล
+  const viewReportBtn = document.getElementById('view-report-btn');
+  if (viewReportBtn) {
+      viewReportBtn.disabled = true;
+  }
+  // อัปเดตหัวข้อของตาราง
+  const dailyJobSection = document.querySelector('.daily-job-table-section');
+  if (dailyJobSection) {
+      dailyJobSection.querySelector('h3').textContent = `ไม่พบธุรกรรมในวันที่ ${dateValue}`;
+  }
   tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
 } else {
   data.forEach(row => {
@@ -1384,6 +1433,17 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
       </tr>
     `;
   });
+
+  // เปิดการใช้งานปุ่มดูรายงานเมื่อมีข้อมูล
+  const viewReportBtn = document.getElementById('view-report-btn');
+  if (viewReportBtn) {
+      viewReportBtn.disabled = false;
+  }
+  // อัปเดตหัวข้อของตาราง
+  const dailyJobSection = document.querySelector('.daily-job-table-section');
+  if (dailyJobSection) {
+      dailyJobSection.querySelector('h3').textContent = `สรุปธุรกรรมรายวัน ประจำวันที่ ${dateValue}`;
+  }
 }
 
     
