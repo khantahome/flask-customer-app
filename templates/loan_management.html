@@ -585,6 +585,60 @@
     width: auto;
     min-width: 120px;
 }
+
+/* --- Print-Specific Styles --- */
+@media print {
+    /* ซ่อนองค์ประกอบที่ไม่จำเป็นทั้งหมด */
+    .sidebar,
+    .main-content-area > .container, /* ซ่อนคอนเทนเนอร์บนสุดที่มีหัวข้อและปุ่มฟังก์ชัน */
+    #approve-popup,
+    #daily-job-search-form {
+        display: none !important;
+    }
+
+    /* รีเซ็ต layout หลักสำหรับหน้าพิมพ์ */
+    body, .dashboard-layout, .main-content-area {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        color: #000000 !important;
+    }
+
+    /* จัดการแสดงผลของส่วนรายงาน */
+    .daily-job-table-section {
+        display: block !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 1.5cm !important; /* เพิ่มระยะขอบกระดาษมาตรฐาน */
+        margin: 0 !important;
+    }
+
+    .daily-job-table-section h3 {
+        text-align: center;
+        font-size: 16pt;
+        margin-bottom: 20px;
+        color: #000 !important;
+    }
+
+    /* ปรับสไตล์ตารางสำหรับพิมพ์ */
+    .closejob-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9pt; /* ลดขนาดฟอนต์เพื่อให้พอดีกับกระดาษ */
+    }
+
+    .closejob-table th, .closejob-table td {
+        border: 1px solid #333333;
+        padding: 5px;
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+}
 /* ----------------------------------------------------------------สิ้นสุดcss--------------------------------------------------------------- */
 
   </style>
@@ -775,9 +829,9 @@
 </div>
 <div style="flex:0 0 90px; max-width:90px;">
   <button type="button" class="btn btn-primary search-btn" 
-          style="height:32px; min-width:70px; font-size:0.95em; padding:4px 10px; margin-top:0; width:100%;" 
+          style="height:45px; min-width:70px; font-size:0.95em; padding:4px 10px; margin-top:0; width:100%;" 
           onclick="window.print()">
-    พิมพ์รายงาน
+    ดูรายงาน
   </button>
 </div>
 </form>
@@ -1272,6 +1326,12 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
         const dateValue = dailyJobSearchForm.querySelector('input[name="date"]').value;
         const companySelectValue = dailyJobSearchForm.querySelector('select[name="company"]').value;
         const otherCompanyValue = dailyJobSearchForm.querySelector('input[name="other_company_search"]').value.trim();
+
+        // อัปเดตหัวข้อของตารางสำหรับหน้าพิมพ์
+        const dailyJobSection = document.querySelector('.daily-job-table-section');
+        if (dailyJobSection) {
+            dailyJobSection.querySelector('h3').textContent = `สรุปธุรกรรมรายวัน ประจำวันที่ ${dateValue}`;
+        }
 
         const params = new URLSearchParams();
         params.append('date', dateValue);
