@@ -854,6 +854,21 @@ def save_approved_data():
             net_opening_col = f"{table_prefix}NetOpening"
             opening_balance_col = f"{table_prefix}OpeningBalance"
 
+            # --- VALIDATION: Check if return amount exceeds table balance ---
+            if latest_record:
+                principal_returned_col_val = to_float(latest_record.get(principal_returned_col))
+                net_opening_col_val = to_float(latest_record.get(net_opening_col))
+                opening_balance_col_val = to_float(latest_record.get(opening_balance_col))
+                lost_amount_col_val = to_float(latest_record.get(f"{table_prefix}LostAmount"))
+
+                table_balance = (opening_balance_col_val + net_opening_col_val) - (principal_returned_col_val + lost_amount_col_val)
+
+                if amount > table_balance:
+                    error_message = f'จำนวนเงินคืนต้น ({amount:,.2f}) มากกว่ายอดคงเหลือของโต๊ะ ({table_balance:,.2f})'
+                    # We print the error for server logs and return a user-friendly message
+                    print(f"Validation Error: {error_message}")
+                    return jsonify({'error': error_message}), 400
+
             current_pr = to_float(new_row_data.get(principal_returned_col))
             current_no = to_float(new_row_data.get(net_opening_col))
             current_ob = to_float(new_row_data.get(opening_balance_col))
