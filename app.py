@@ -834,38 +834,67 @@ def save_approved_data():
         if not table_prefix:
             return jsonify({'error': f'Invalid table "{table}".'}), 400
 
-        # --- 5. [REFACTORED] Unified logic for all actions ---
-        action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'คืนต้น': 'PrincipalReturned', 'สูญเสีย': 'LostAmount'}
-        column_suffix = action_map.get(action)
-        if not column_suffix:
-            return jsonify({'error': f'Invalid action "{action}".'}), 400
-
-        column_to_update = f"{table_prefix}{column_suffix}"
-
         if found_row is not None:
-            # --- UPDATE an existing record for today (Unified for all actions) ---
+            # --- UPDATE an existing record for today ---
             sheet_row_to_update = found_row.name + 2
 
-            if column_to_update not in df.columns:
-                return jsonify({'error': f'Column "{column_to_update}" not found.'}), 400
+            if action == 'คืนต้น':
+                # --- SPECIAL LOGIC: Subtract from Opening/NetOpening AND Add to PrincipalReturned ---
+                net_opening_col = f"{table_prefix}NetOpening"
+                opening_balance_col = f"{table_prefix}OpeningBalance"
+                principal_returned_col = f"{table_prefix}PrincipalReturned"
 
-            sheet_col_to_update = df.columns.get_loc(column_to_update) + 1
-            current_value_str = worksheet.cell(sheet_row_to_update, sheet_col_to_update).value
-            current_value = float(str(current_value_str).replace(',', '')) if current_value_str else 0.0
-            new_value = current_value + amount
+                # Get current values
+                current_net_opening = float(str(worksheet.cell(sheet_row_to_update, df.columns.get_loc(net_opening_col) + 1).value).replace(',', '') or 0)
+                current_opening_balance = float(str(worksheet.cell(sheet_row_to_update, df.columns.get_loc(opening_balance_col) + 1).value).replace(',', '') or 0)
+                current_principal_returned = float(str(worksheet.cell(sheet_row_to_update, df.columns.get_loc(principal_returned_col) + 1).value).replace(',', '') or 0)
 
-            updates_to_batch = [
-                {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, sheet_col_to_update), 'values': [[new_value]]},
-                {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('Time') + 1), 'values': [[datetime.now().strftime("%H:%M:%S")]]},
-                {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('interest') + 1), 'values': [[interest]]}
-            ]
-            worksheet.batch_update(updates_to_batch)
+                # Prepare updates
+                updates_to_batch = [
+                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc(principal_returned_col) + 1), 'values': [[current_principal_returned + amount]]},
+                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('Time') + 1), 'values': [[datetime.now().strftime("%H:%M:%S")]]},
+                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('interest') + 1), 'values': [[interest]]}
+                ]
 
+                # Decide which column to subtract from and add to batch
+                if current_net_opening != 0:
+                    new_value = current_net_opening - amount
+                    updates_to_batch.append({'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc(net_opening_col) + 1), 'values': [[new_value]]})
+                else:
+                    new_value = current_opening_balance - amount
+                    updates_to_batch.append({'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc(opening_balance_col) + 1), 'values': [[new_value]]})
+                
+                worksheet.batch_update(updates_to_batch)
+            else:
+                # --- REGULAR LOGIC for "เปิดยอด", "เปิดสุทธิ", "สูญเสีย" ---
+                action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
+                column_suffix = action_map.get(action)
+                if not column_suffix: return jsonify({'error': f'Invalid action "{action}" for update.'}), 400
+                
+                column_to_update = f"{table_prefix}{column_suffix}"
+                if column_to_update not in df.columns: return jsonify({'error': f'Column "{column_to_update}" not found.'}), 400
+                
+                sheet_col_to_update = df.columns.get_loc(column_to_update) + 1
+                current_value_str = worksheet.cell(sheet_row_to_update, sheet_col_to_update).value
+                current_value = float(str(current_value_str).replace(',', '')) if current_value_str else 0.0
+                new_value = current_value + amount
+                
+                updates_to_batch = [
+                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, sheet_col_to_update), 'values': [[new_value]]},
+                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('Time') + 1), 'values': [[datetime.now().strftime("%H:%M:%S")]]},
+                    {'range': gspread.utils.rowcol_to_a1(sheet_row_to_update, df.columns.get_loc('interest') + 1), 'values': [[interest]]}
+                ]
+                worksheet.batch_update(updates_to_batch)
         else:
-            # --- APPEND a new record for today (Unified for all actions) ---
+            # --- APPEND a new record for today (Unified logic is correct here) ---
             time_str = datetime.now().strftime("%H:%M:%S")
             table_data = {f"Table{t}_{c}": '' for t in [1,2,3] for c in ['OpeningBalance', 'NetOpening', 'PrincipalReturned', 'LostAmount']}
 
+            action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'คืนต้น': 'PrincipalReturned', 'สูญเสีย': 'LostAmount'}
+            column_suffix = action_map.get(action)
+            if not column_suffix: return jsonify({'error': f'Invalid action "{action}" for new row.'}), 400
+            
+            column_to_update = f"{table_prefix}{column_suffix}"
             # Set the value for the specific column based on the action
             table_data[column_to_update] = amount
 

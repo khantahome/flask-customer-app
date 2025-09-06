@@ -1200,11 +1200,24 @@ if (approveForm) {
         }
       }
 
+    const customerId = formData.get('customer_id');
+
     alert('บันทึกข้อมูลเรียบร้อย');
     document.getElementById('approve-popup').style.display = 'none';
 
-    // --- [ปรับปรุง] อัปเดตสถานะในตารางโดยไม่รีเฟรชหน้าจอ ---
-    const customerId = formData.get('customer_id');
+    // --- [เพิ่มใหม่] ดึงข้อมูลยอดเงินล่าสุดมาแสดงผลหลังบันทึกสำเร็จ ---
+    try {
+        const newBalanceRes = await fetch(`/api/customer-balance/${customerId}`);
+        if (newBalanceRes.ok) {
+            const newBalanceData = await newBalanceRes.json();
+            const newTotalTransactions = parseFloat(newBalanceData.total_transactions_value || 0);
+            const openBalanceInput = document.getElementById('open_balance');
+            // อัปเดตค่าใน input ที่แสดงผล
+            openBalanceInput.value = newTotalTransactions > 0 ? new Intl.NumberFormat('th-TH').format(newTotalTransactions) : '';
+        }
+    } catch (error) {
+        console.error('Error re-fetching balance after save:', error);
+    }
     
     // 1. หาแถวเป้าหมายใน Array ข้อมูลหลัก (allRows)
     const targetRow = allRows.find(row => (row.dataset.customerId || '').trim() === customerId);
