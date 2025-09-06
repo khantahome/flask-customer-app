@@ -696,6 +696,25 @@
     border-bottom: 2px solid var(--primary-color);
     display: inline-block;
 }
+/* --- NEW: Grouped Report Styles --- */
+.report-customer-section {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
+}
+.report-customer-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.transaction-details {
+    margin-top: -10px;
+    border-top: 1px dashed #d5d5d5;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    background-color: #f7f7f9;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
 /* ----------------------------------------------------------------สิ้นสุดcss--------------------------------------------------------------- */
 
   </style>
@@ -1272,56 +1291,88 @@ if (firstDeleteBtn) {
         let reportContentHTML = reportTitleHTML;
 
         if (dailyJobData && dailyJobData.length > 0) {
-            dailyJobData.forEach(record => {
-                let cardContent = '';
+            // Group transactions by CustomerID to avoid repeating common info
+            const groupedByCustomer = dailyJobData.reduce((acc, record) => {
+                const key = record.CustomerID;
+                if (!acc[key]) {
+                    acc[key] = [];
+                }
+                acc[key].push(record);
+                return acc;
+            }, {});
 
-                // Helper to format and add a row if value exists
-                const addRow = (label, value) => {
+            // Helper to create a <p> tag string
+            const createRowHTML = (label, value) => {
+                if (value !== null && value !== undefined && value.toString().trim() !== '' && value.toString().trim() !== '0') {
+                    const formattedValue = !isNaN(parseFloat(value)) && isFinite(value) ? new Intl.NumberFormat('th-TH').format(value) : value;
+                    return `<p><strong>${label}</strong> <span>${formattedValue}</span></p>`;
+                }
+                return '';
+            };
+
+            // Helper to create table group HTML
+            const createTableGroupHTML = (tableNum, recordData) => {
+                const prefix = `Table${tableNum}_`;
+                const fields = {
+                    'ยอดเปิดโต๊ะ': recordData[prefix + 'OpeningBalance'],
+                    'สุทธิ': recordData[prefix + 'NetOpening'],
+                    'คืนต้น': recordData[prefix + 'PrincipalReturned'],
+                    'เสีย': recordData[prefix + 'LostAmount']
+                };
+
+                let groupHTML = '';
+                for (const [label, value] of Object.entries(fields)) {
                     if (value !== null && value !== undefined && value.toString().trim() !== '' && value.toString().trim() !== '0') {
                         const formattedValue = !isNaN(parseFloat(value)) && isFinite(value) ? new Intl.NumberFormat('th-TH').format(value) : value;
-                        cardContent += `<p><strong>${label}</strong> <span>${formattedValue}</span></p>`;
+                        groupHTML += `<p><strong>${label}</strong> <span>${formattedValue}</span></p>`;
                     }
-                };
-                
-                // Helper to group table data
-                const addTableGroup = (tableNum, recordData) => {
-                    const prefix = `Table${tableNum}_`;
-                    const fields = {
-                        'ยอดเปิดโต๊ะ': recordData[prefix + 'OpeningBalance'],
-                        'สุทธิ': recordData[prefix + 'NetOpening'],
-                        'คืนต้น': recordData[prefix + 'PrincipalReturned'],
-                        'เสีย': recordData[prefix + 'LostAmount']
-                    };
-
-                    let groupHTML = '';
-                    for (const [label, value] of Object.entries(fields)) {
-                         if (value !== null && value !== undefined && value.toString().trim() !== '' && value.toString().trim() !== '0') {
-                            const formattedValue = !isNaN(parseFloat(value)) && isFinite(value) ? new Intl.NumberFormat('th-TH').format(value) : value;
-                            groupHTML += `<p><strong>${label}</strong> <span>${formattedValue}</span></p>`;
-                         }
-                    }
-
-                    if (groupHTML) {
-                        return `<div class="report-table-group"><h4>โต๊ะ${tableNum}</h4>${groupHTML}</div>`;
-                    }
-                    return '';
-                };
-
-                addRow('บริษัท', record.CompanyName);
-                addRow('รหัสลูกค้า', record.CustomerID);
-                addRow('ชื่อลูกค้า', record.CustomerName);
-                addRow('วันที่', record.Date);
-                addRow('เวลา', record.Time);
-                addRow('ดอกเบี้ย %', record.interest);
-
-                cardContent += addTableGroup(1, record);
-                cardContent += addTableGroup(2, record);
-                cardContent += addTableGroup(3, record);
-
-                if (cardContent) {
-                    reportContentHTML += `<div class="report-record-card">${cardContent}</div>`;
                 }
-            });
+
+                if (groupHTML) {
+                    return `<div class="report-table-group"><h4>โต๊ะ${tableNum}</h4>${groupHTML}</div>`;
+                }
+                return '';
+            };
+
+            // Iterate over each customer group
+            for (const customerId in groupedByCustomer) {
+                const records = groupedByCustomer[customerId];
+                const firstRecord = records[0]; // Use the first record for common data
+
+                // Create a container for this customer's entire report section
+                let customerReportHTML = '<div class="report-customer-section">';
+
+                // --- 1. Add the common information card ---
+                let commonInfoHTML = '';
+                commonInfoHTML += createRowHTML('บริษัท', firstRecord.CompanyName);
+                commonInfoHTML += createRowHTML('รหัสลูกค้า', firstRecord.CustomerID);
+                commonInfoHTML += createRowHTML('ชื่อลูกค้า', firstRecord.CustomerName);
+                commonInfoHTML += createRowHTML('วันที่', firstRecord.Date);
+                commonInfoHTML += createRowHTML('ดอกเบี้ย %', firstRecord.interest);
+                
+                if (commonInfoHTML) {
+                    customerReportHTML += `<div class="report-record-card">${commonInfoHTML}</div>`;
+                }
+
+                // --- 2. Add each transaction as a subsequent card ---
+                records.forEach(record => {
+                    let transactionHTML = '';
+                    // Only add Time and table data for each transaction
+                    transactionHTML += createRowHTML('เวลา', record.Time);
+                    transactionHTML += createTableGroupHTML(1, record);
+                    transactionHTML += createTableGroupHTML(2, record);
+                    transactionHTML += createTableGroupHTML(3, record);
+
+                    if (transactionHTML) {
+                        // Add a different class to style transaction cards distinctly
+                        customerReportHTML += `<div class="report-record-card transaction-details">${transactionHTML}</div>`;
+                    }
+                });
+
+                customerReportHTML += '</div>'; // Close .report-customer-section
+                reportContentHTML += customerReportHTML;
+            }
+
         } else {
             reportContentHTML += '<p style="text-align:center; color:#888; margin-top:20px;">ไม่พบข้อมูลสำหรับแสดงในรายงาน</p>';
         }
