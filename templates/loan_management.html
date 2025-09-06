@@ -1390,61 +1390,61 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
     const tbody = document.querySelector('#daily-job-table tbody');
     tbody.innerHTML = '';
     if (!Array.isArray(data)) {
-  // ปิดการใช้งานปุ่มดูรายงานเมื่อเกิดข้อผิดพลาด
-  const viewReportBtn = document.getElementById('view-report-btn');
-  if (viewReportBtn) {
-      viewReportBtn.disabled = true;
-  }
-  tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">${data.error || 'เกิดข้อผิดพลาด'}</td></tr>`;
-} else if (data.length === 0) {
-  // ปิดการใช้งานปุ่มดูรายงานเมื่อไม่พบข้อมูล
-  const viewReportBtn = document.getElementById('view-report-btn');
-  if (viewReportBtn) {
-      viewReportBtn.disabled = true;
-  }
-  // อัปเดตหัวข้อของตาราง
-  const dailyJobSection = document.querySelector('.daily-job-table-section');
-  if (dailyJobSection) {
-      dailyJobSection.querySelector('h3').textContent = `ไม่พบธุรกรรมในวันที่ ${dateValue}`;
-  }
-  tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
-} else {
-  data.forEach(row => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${row.Date || ''}</td>
-        <td>${row.CompanyName || ''}</td>
-        <td>${row.CustomerID || ''}</td>
-        <td>${row.Time || ''}</td>
-        <td>${row.CustomerName || ''}</td>
-        <td>${row.interest || ''}</td>
-        <td>${row.Table1_OpeningBalance || ''}</td>
-        <td>${row.Table1_NetOpening || ''}</td>
-        <td>${row.Table1_PrincipalReturned || ''}</td>
-        <td>${row.Table1_LostAmount || ''}</td>
-        <td>${row.Table2_OpeningBalance || ''}</td>
-        <td>${row.Table2_NetOpening || ''}</td>
-        <td>${row.Table2_PrincipalReturned || ''}</td>
-        <td>${row.Table2_LostAmount || ''}</td>
-        <td>${row.Table3_OpeningBalance || ''}</td>
-        <td>${row.Table3_NetOpening || ''}</td>
-        <td>${row.Table3_PrincipalReturned || ''}</td>
-        <td>${row.Table3_LostAmount || ''}</td>
-      </tr>
-    `;
-  });
+        // ปิดการใช้งานปุ่มดูรายงานเมื่อเกิดข้อผิดพลาด
+        const viewReportBtn = document.getElementById('view-report-btn');
+        if (viewReportBtn) {
+            viewReportBtn.disabled = true;
+        }
+        tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">${data.error || 'เกิดข้อผิดพลาด'}</td></tr>`;
+    } else if (data.length === 0) {
+        // ปิดการใช้งานปุ่มดูรายงานเมื่อไม่พบข้อมูล
+        const viewReportBtn = document.getElementById('view-report-btn');
+        if (viewReportBtn) {
+            viewReportBtn.disabled = true;
+        }
+        // อัปเดตหัวข้อของตาราง
+        const dailyJobSection = document.querySelector('.daily-job-table-section');
+        if (dailyJobSection) {
+            dailyJobSection.querySelector('h3').textContent = `ไม่พบธุรกรรมในวันที่ ${dateValue}`;
+        }
+        tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
+    } else {
+        data.forEach(row => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${row.Date || ''}</td>
+                <td>${row.CompanyName || ''}</td>
+                <td>${row.CustomerID || ''}</td>
+                <td>${row.Time || ''}</td>
+                <td>${row.CustomerName || ''}</td>
+                <td>${row.interest || ''}</td>
+                <td>${row.Table1_OpeningBalance || ''}</td>
+                <td>${row.Table1_NetOpening || ''}</td>
+                <td>${row.Table1_PrincipalReturned || ''}</td>
+                <td>${row.Table1_LostAmount || ''}</td>
+                <td>${row.Table2_OpeningBalance || ''}</td>
+                <td>${row.Table2_NetOpening || ''}</td>
+                <td>${row.Table2_PrincipalReturned || ''}</td>
+                <td>${row.Table2_LostAmount || ''}</td>
+                <td>${row.Table3_OpeningBalance || ''}</td>
+                <td>${row.Table3_NetOpening || ''}</td>
+                <td>${row.Table3_PrincipalReturned || ''}</td>
+                <td>${row.Table3_LostAmount || ''}</td>
+            </tr>
+            `;
+        });
 
-  // เปิดการใช้งานปุ่มดูรายงานเมื่อมีข้อมูล
-  const viewReportBtn = document.getElementById('view-report-btn');
-  if (viewReportBtn) {
-      viewReportBtn.disabled = false;
-  }
-  // อัปเดตหัวข้อของตาราง
-  const dailyJobSection = document.querySelector('.daily-job-table-section');
-  if (dailyJobSection) {
-      dailyJobSection.querySelector('h3').textContent = `สรุปธุรกรรมรายวัน ประจำวันที่ ${dateValue}`;
-  }
-}
+        // เปิดการใช้งานปุ่มดูรายงานเมื่อมีข้อมูล
+        const viewReportBtn = document.getElementById('view-report-btn');
+        if (viewReportBtn) {
+            viewReportBtn.disabled = false;
+        }
+        // อัปเดตหัวข้อของตาราง
+        const dailyJobSection = document.querySelector('.daily-job-table-section');
+        if (dailyJobSection) {
+            dailyJobSection.querySelector('h3').textContent = `สรุปธุรกรรมรายวัน ประจำวันที่ ${dateValue}`;
+        }
+    }
 
     
     // แสดงตารางค้นหา/ปิดจ๊อบรายวัน
