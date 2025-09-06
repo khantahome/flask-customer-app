@@ -732,40 +732,52 @@ def api_daily_jobs():
     date_q = request.args.get('date', '').strip()
     company_q = request.args.get('company', '').strip()
 
-    # ...existing code...
+    if not date_q:
+        return jsonify({"error": "Date parameter is required"}), 400
 
-    sheet = GSPREAD_CLIENT.open("data1").worksheet("allpidjob")
-    data = sheet.get_all_records()
-    df = pd.DataFrame(data)
+    try:
+        sheet = GSPREAD_CLIENT.open("data1").worksheet("allpidjob")
+        all_records = sheet.get_all_records()
+        if not all_records:
+            return jsonify([])
 
-    columns = [
-        "Date", "CompanyName", "CustomerID", "Time", "CustomerName", "interest",
-        "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
-        "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
-        "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
-    ]
-    missing_cols = [col for col in columns if col not in df.columns]
-    if missing_cols:
-        return jsonify({"error": f"Missing columns: {missing_cols}"}), 500
+        df = pd.DataFrame(all_records)
+        df.columns = [c.strip() for c in df.columns]
 
-    df['DateParsed'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True).dt.date
+        # Ensure required columns exist to avoid errors
+        if 'Date' not in df.columns or 'CompanyName' not in df.columns:
+            return jsonify({"error": "Required columns 'Date' or 'CompanyName' not found in sheet."}), 500
 
-    date_try = pd.to_datetime(date_q, errors='coerce', dayfirst=True)
-    if pd.isna(date_try):
-        date_try = pd.to_datetime(date_q, errors='coerce', dayfirst=False)
-    if pd.isna(date_try):
-        return jsonify({"error": "Invalid 'date' format"}), 400
-    date_obj = date_try.date()
+        # Filter by date (direct string comparison is efficient if formats match)
+        filtered_df = df[df['Date'].astype(str).str.strip() == date_q]
 
-    filtered = df[df['DateParsed'] == date_obj]
+        # Optionally, filter by company
+        if company_q:
+            # Use .str.contains() for partial matching, case-insensitive
+            filtered_df = filtered_df[filtered_df['CompanyName'].astype(str).str.contains(company_q, case=False, na=False)]
 
-    if company_q:
-        mask = filtered['CompanyName'].astype(str).str.contains(company_q, case=False, na=False)
-        filtered = filtered[mask]
+        if filtered_df.empty:
+            return jsonify([])
 
-    # ...existing code...
-    filtered = filtered.reindex(columns=columns, fill_value="").fillna("")
-    return jsonify(filtered.to_dict(orient='records'))
+        # Define the columns to be returned to ensure order and presence
+        display_columns = [
+            "Date", "CompanyName", "CustomerID", "Time", "CustomerName", "interest",
+            "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
+            "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
+            "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
+        ]
+        
+        # Reindex to ensure all columns are present, fill missing with empty string
+        final_df = filtered_df.reindex(columns=display_columns, fill_value="")
+        
+        # Replace NaN/NaT with empty strings for cleaner JSON output
+        final_df = final_df.fillna("")
+
+        return jsonify(final_df.to_dict(orient='records'))
+
+    except Exception as e:
+        print(f"Error in api_daily_jobs: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
 
 
 # . . .เรียกตารางอนุมัติยอด(appove)มาโชว์

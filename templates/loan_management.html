@@ -1268,12 +1268,25 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
       dailyJobSearchForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-    // ดึงค่าจากฟอร์ม
-    const formData = new FormData(dailyJobSearchForm);
-    const params = new URLSearchParams();
-    for (const pair of formData.entries()) {
-      params.append(pair[0], pair[1]);
-    }
+        // --- [REVISED] Build search parameters correctly ---
+        const dateValue = dailyJobSearchForm.querySelector('input[name="date"]').value;
+        const companySelectValue = dailyJobSearchForm.querySelector('select[name="company"]').value;
+        const otherCompanyValue = dailyJobSearchForm.querySelector('input[name="other_company_search"]').value.trim();
+
+        const params = new URLSearchParams();
+        params.append('date', dateValue);
+
+        let companyToSearch = '';
+        if (companySelectValue === 'อื่นๆ') {
+            companyToSearch = otherCompanyValue;
+        } else {
+            companyToSearch = companySelectValue;
+        }
+
+        if (companyToSearch) {
+            params.append('company', companyToSearch);
+        }
+        // --- End of revision ---
 
     // เรียก backend เพื่อค้นหา
     const res = await fetch('/api/daily-jobs?' + params.toString());
