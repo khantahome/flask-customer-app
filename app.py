@@ -73,6 +73,18 @@ BAD_DEBT_WORKSHEET_HEADERS = [
     'ApprovedAmount', 'OutstandingBalance', 'MarkedBy', 'Notes'
 ]
 
+PULL_PLUG_WORKSHEET_NAME = 'pull_plug_records'
+PULL_PLUG_WORKSHEET_HEADERS = [
+    'Timestamp', 'CustomerID', 'CustomerName', 'Phone', 
+    'PullPlugAmount', 'MarkedBy', 'Notes'
+]
+
+RETURN_PRINCIPAL_WORKSHEET_NAME = 'return_principal_records'
+RETURN_PRINCIPAL_WORKSHEET_HEADERS = [
+    'Timestamp', 'CustomerID', 'CustomerName', 'Phone', 
+    'ReturnAmount', 'MarkedBy', 'Notes'
+]
+
 # Original Customer Records Sheet (uses เลขบัตรประชาชน)
 WORKSHEET_NAME = 'customer_records'
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
@@ -984,6 +996,8 @@ def mark_as_bad_debt():
         data = request.get_json()
         customer_id = data.get('customer_id')
         notes = data.get('notes', '')
+        phone_from_form = data.get('phone', None)
+        balance_from_form = data.get('outstanding_balance', None)
         logged_in_user = session['username']
 
         if not customer_id:
@@ -997,24 +1011,33 @@ def mark_as_bad_debt():
         if not customer_info:
             return jsonify({'error': 'Customer not found in approval list'}), 404
 
-        customer_name = customer_info.get('ชื่อลูกค้า', '-')
-        phone = customer_info.get('เบอร์มือถือ', '-')
+        # Use form data if provided, otherwise fall back to sheet data
+        customer_name = customer_info.get('ชื่อลูกค้า', '-') # Name is not editable on this form
+        phone_from_sheet = customer_info.get('เบอร์มือถือ', '-')
         approved_amount = customer_info.get('วงเงินที่อนุมัติ', '0')
 
+        final_phone = phone_from_form if phone_from_form is not None and phone_from_form != '' else phone_from_sheet
+
         # 2. Calculate outstanding balance
-        balance_data = _calculate_customer_balance(customer_id)
-        outstanding_balance = 0
-        if 'error' in balance_data:
-            print(f"Warning: Could not calculate balance for bad debt record {customer_id}. Error: {balance_data['error']}")
+        if balance_from_form is not None and balance_from_form != '':
+            try:
+                final_balance = float(str(balance_from_form).replace(',', ''))
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid balance format provided.'}), 400
         else:
-            outstanding_balance = balance_data.get('total_transactions_value', 0)
+            balance_data = _calculate_customer_balance(customer_id)
+            if 'error' in balance_data:
+                print(f"Warning: Could not calculate balance for bad debt record {customer_id}. Error: {balance_data['error']}")
+                final_balance = 0 # Default to 0 if calculation fails and no value is provided
+            else:
+                final_balance = balance_data.get('total_transactions_value', 0)
 
         # 3. Append to bad_debt_records sheet
         bad_debt_ws = get_worksheet(SPREADSHEET_NAME, BAD_DEBT_WORKSHEET_NAME, BAD_DEBT_WORKSHEET_HEADERS)
         if not bad_debt_ws:
              return jsonify({'error': 'Could not access the bad debt records sheet.'}), 500
         
-        bad_debt_row = [datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, customer_name, phone, approved_amount, outstanding_balance, logged_in_user, notes]
+        bad_debt_row = [datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, customer_name, final_phone, approved_amount, final_balance, logged_in_user, notes]
         bad_debt_ws.append_row(bad_debt_row)
 
         # 4. Update status in 'approove' sheet
@@ -1048,6 +1071,142 @@ def get_bad_debt_records():
         print(f"Error fetching bad debt records: {traceback.format_exc()}")
         return jsonify({'error': 'An internal server error occurred.'}), 500
 
+@app.route('/mark_as_pull_plug', methods=['POST'])
+def mark_as_pull_plug():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        customer_id = data.get('customer_id')
+        notes = data.get('notes', '')
+        phone = data.get('phone', '')
+        pull_plug_amount_str = data.get('pull_plug_amount', '0')
+        logged_in_user = session['username']
+
+        if not customer_id:
+            return jsonify({'error': 'Customer ID is required'}), 400
+        
+        try:
+            pull_plug_amount = float(str(pull_plug_amount_str).replace(',', ''))
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid amount format provided.'}), 400
+
+        # 1. Get customer info from 'approove' sheet
+        approve_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        approve_records = approve_ws.get_all_records()
+        customer_info = next((r for r in approve_records if str(r.get('Customer ID')).strip() == str(customer_id).strip()), None)
+
+        if not customer_info:
+            return jsonify({'error': 'Customer not found in approval list'}), 404
+
+        customer_name = customer_info.get('ชื่อลูกค้า', '-')
+
+        # 2. Append to pull_plug_records sheet
+        pull_plug_ws = get_worksheet(SPREADSHEET_NAME, PULL_PLUG_WORKSHEET_NAME, PULL_PLUG_WORKSHEET_HEADERS)
+        if not pull_plug_ws:
+             return jsonify({'error': 'Could not access the pull plug records sheet.'}), 500
+        
+        pull_plug_row = [datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, customer_name, phone, pull_plug_amount, logged_in_user, notes]
+        pull_plug_ws.append_row(pull_plug_row)
+
+        # 3. Update status in 'approove' sheet
+        all_approve_data = approve_ws.get_all_values()
+        headers = all_approve_data[0]
+        id_col_index = headers.index('Customer ID')
+        status_col_index = headers.index('สถานะ')
+        for i, row in enumerate(all_approve_data[1:], start=2):
+            if str(row[id_col_index]).strip() == str(customer_id).strip():
+                approve_ws.update_cell(i, status_col_index + 1, 'ชั๊กปลั๊ก')
+                break
+        return jsonify({'success': True, 'message': f'Customer {customer_id} has been marked as "Pull Plug".'})
+    except Exception as e:
+        print(f"Error in mark_as_pull_plug: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
+
+@app.route('/api/pull-plug-records')
+def get_pull_plug_records():
+    """
+    API endpoint to fetch all records from the pull_plug_records worksheet.
+    """
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        worksheet = get_worksheet(SPREADSHEET_NAME, PULL_PLUG_WORKSHEET_NAME, PULL_PLUG_WORKSHEET_HEADERS)
+        if not worksheet:
+            return jsonify([]), 404 # Return empty list if not found
+        records = worksheet.get_all_records()
+        return jsonify(records)
+    except Exception as e:
+        print(f"Error fetching pull plug records: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
+
+@app.route('/mark_as_return_principal', methods=['POST'])
+def mark_as_return_principal():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        customer_id = data.get('customer_id')
+        notes = data.get('notes', '')
+        phone = data.get('phone', '')
+        return_amount_str = data.get('return_amount', '0')
+        logged_in_user = session['username']
+
+        if not customer_id:
+            return jsonify({'error': 'Customer ID is required'}), 400
+        
+        try:
+            return_amount = float(str(return_amount_str).replace(',', ''))
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid amount format provided.'}), 400
+
+        # 1. Get customer info from 'approove' sheet
+        approve_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        approve_records = approve_ws.get_all_records()
+        customer_info = next((r for r in approve_records if str(r.get('Customer ID')).strip() == str(customer_id).strip()), None)
+
+        if not customer_info:
+            return jsonify({'error': 'Customer not found in approval list'}), 404
+
+        customer_name = customer_info.get('ชื่อลูกค้า', '-')
+
+        # 2. Append to return_principal_records sheet
+        return_principal_ws = get_worksheet(SPREADSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_HEADERS)
+        if not return_principal_ws:
+             return jsonify({'error': 'Could not access the return principal records sheet.'}), 500
+        
+        return_principal_row = [datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, customer_name, phone, return_amount, logged_in_user, notes]
+        return_principal_ws.append_row(return_principal_row)
+
+        # 3. Update status in 'approove' sheet
+        all_approve_data = approve_ws.get_all_values()
+        headers = all_approve_data[0]
+        id_col_index = headers.index('Customer ID')
+        status_col_index = headers.index('สถานะ')
+        for i, row in enumerate(all_approve_data[1:], start=2):
+            if str(row[id_col_index]).strip() == str(customer_id).strip():
+                approve_ws.update_cell(i, status_col_index + 1, 'คืนต้น')
+                break
+        return jsonify({'success': True, 'message': f'Customer {customer_id} has been marked as "Return Principal".'})
+    except Exception as e:
+        print(f"Error in mark_as_return_principal: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
+
+@app.route('/api/return-principal-records')
+def get_return_principal_records():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        worksheet = get_worksheet(SPREADSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_HEADERS)
+        if not worksheet:
+            return jsonify([]), 404
+        records = worksheet.get_all_records()
+        return jsonify(records)
+    except Exception as e:
+        print(f"Error fetching return principal records: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
 # ... (โค้ดส่วนล่างของ app.py) ...
 
 

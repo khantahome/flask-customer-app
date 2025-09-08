@@ -531,6 +531,22 @@
     background-color: #c82333; /* A darker red */
     color: var(--error-text);
 }
+.action-table-btn.btn-warning {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+}
+.action-table-btn.btn-warning:hover {
+    background-color: #e0a800; /* A darker yellow */
+    color: var(--warning-text);
+}
+.action-table-btn.btn-return-principal {
+    background-color: var(--info-bg);
+    color: var(--info-text);
+}
+.action-table-btn.btn-return-principal:hover {
+    background-color: #138496; /* A darker cyan */
+    color: var(--info-text);
+}
 .closejob-modal-content {
             background: var(--card-background);
             border-radius: 16px;
@@ -882,7 +898,6 @@
                 <i class="fas fa-plug"></i> ชั๊กปลั๊ก
                 </button>
                 <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">ตารางชั๊กปลั๊ก</a></li>
                 <li><a class="dropdown-item" href="#" data-table="pullplug-table-section">ตารางชั๊กปลั๊ก</a></li>
                 </ul>
             </div>
@@ -926,6 +941,18 @@
                     data-name="{{ record['ชื่อลูกค้า'] }}"
                     data-phone="{{ record['เบอร์มือถือ'] }}">
                 หนี้เสีย
+            </button>
+            <button class="action-table-btn btn-warning pull-plug-btn" 
+                    data-id="{{ record['Customer ID'] }}" 
+                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-phone="{{ record['เบอร์มือถือ'] }}">
+                ชั๊กปลั๊ก
+            </button>
+            <button class="action-table-btn btn-return-principal return-principal-btn" 
+                    data-id="{{ record['Customer ID'] }}" 
+                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-phone="{{ record['เบอร์มือถือ'] }}">
+                คืนต้น
             </button>
         </td>
       </tr>
@@ -977,6 +1004,18 @@
                     data-phone="{{ record['เบอร์มือถือ'] }}">
                 หนี้เสีย
             </button>
+            <button class="action-table-btn btn-warning pull-plug-btn" 
+                    data-id="{{ record['Customer ID'] }}" 
+                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-phone="{{ record['เบอร์มือถือ'] }}">
+                ชั๊กปลั๊ก
+            </button>
+            <button class="action-table-btn btn-return-principal return-principal-btn" 
+                    data-id="{{ record['Customer ID'] }}" 
+                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-phone="{{ record['เบอร์มือถือ'] }}">
+                คืนต้น
+            </button>
           </td>
         </tr>
         {% endfor %}
@@ -1010,6 +1049,28 @@
   </div>
 </div>
 
+<!-- ตารางคืนต้น -->
+<div class="returnprincipal-table-section" style="display:none;">
+  <h3>ตารางลูกค้าคืนต้น</h3>
+  <div style="overflow-x:auto;">
+    <table class="approove-table">
+      <thead>
+        <tr>
+          <th>วันที่บันทึก</th>
+          <th>รหัสลูกค้า</th>
+          <th>ชื่อ-นามสกุล</th>
+          <th>เบอร์โทรศัพท์</th>
+          <th>ยอดเงินที่คืน</th>
+          <th>ผู้บันทึก</th>
+          <th>หมายเหตุ</th>
+        </tr>
+      </thead>
+      <tbody id="returnprincipal-tbody">
+        <!-- Data will be populated by JavaScript -->
+      </tbody>
+    </table>
+  </div>
+</div>
 <!-- ตารางค้นหา/ปิดจ๊อบรายวัน -->
 <div class="daily-job-table-section" style="display:none;">
   <h3>ค้นหา/ปิดจ๊อบรายวัน</h3>
@@ -1196,11 +1257,11 @@
         </div>
         <div class="form-group">
             <label class="form-label" for="bad-debt-phone">เบอร์โทรศัพท์:</label>
-            <input type="text" id="bad-debt-phone" class="form-input" readonly>
+            <input type="text" id="bad-debt-phone" name="phone" class="form-input" placeholder="กรอกเบอร์โทรศัพท์">
         </div>
         <div class="form-group">
             <label class="form-label" for="bad-debt-balance">ยอดเงินคงค้างชำระ:</label>
-            <input type="text" id="bad-debt-balance" class="form-input" readonly placeholder="กำลังคำนวณ...">
+            <input type="number" id="bad-debt-balance" name="balance" class="form-input" placeholder="กรอกยอดเงิน หรือรอคำนวณ" step="any">
         </div>
         <div class="form-group">
             <label class="form-label" for="bad-debt-notes">หมายเหตุ (จำเป็น):</label>
@@ -1209,6 +1270,64 @@
       <div class="form-actions">
           <button type="submit" class="btn btn-approve" style="flex: 1;">ยืนยัน</button>
           <button type="button" id="cancel-bad-debt-btn" class="btn btn-danger" style="flex: 1;">ยกเลิก</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- NEW: Pull Plug Confirmation Modal -->
+<div id="pull-plug-popup" class="modal">
+  <div class="modal-content closejob-modal-content">
+    <h3>ยืนยันการชั๊กปลั๊ก</h3>
+    <form id="pull-plug-form" autocomplete="off">
+        <input type="hidden" id="pull-plug-customer-id" name="customer_id">
+        <div class="form-group">
+            <p>คุณแน่ใจหรือไม่ที่จะบันทึกการชั๊กปลั๊กลูกค้า <strong id="pull-plug-customer-name" style="color: var(--primary-color);"></strong>?</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="pull-plug-phone">เบอร์โทรศัพท์:</label>
+            <input type="text" id="pull-plug-phone" name="phone" class="form-input" placeholder="กรอกเบอร์โทรศัพท์">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="pull-plug-amount">ยอดเงินที่ชั๊กปลั๊ก:</label>
+            <input type="number" id="pull-plug-amount" name="amount" class="form-input" placeholder="กรอกยอดเงิน" step="any" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="pull-plug-notes">หมายเหตุ (จำเป็น):</label>
+            <textarea id="pull-plug-notes" name="notes" class="form-input" rows="3" placeholder="กรอกเหตุผลการเจรจา" required></textarea>
+        </div>
+      <div class="form-actions">
+          <button type="submit" class="btn btn-approve" style="flex: 1;">ยืนยัน</button>
+          <button type="button" id="cancel-pull-plug-btn" class="btn btn-danger" style="flex: 1;">ยกเลิก</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- NEW: Return Principal Confirmation Modal -->
+<div id="return-principal-popup" class="modal">
+  <div class="modal-content closejob-modal-content">
+    <h3>ยืนยันการทำคืนต้น</h3>
+    <form id="return-principal-form" autocomplete="off">
+        <input type="hidden" id="return-principal-customer-id" name="customer_id">
+        <div class="form-group">
+            <p>คุณแน่ใจหรือไม่ที่จะบันทึกการคืนต้นของลูกค้า <strong id="return-principal-customer-name" style="color: var(--primary-color);"></strong>?</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="return-principal-phone">เบอร์โทรศัพท์:</label>
+            <input type="text" id="return-principal-phone" name="phone" class="form-input" placeholder="กรอกเบอร์โทรศัพท์">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="return-principal-amount">ยอดเงินที่คืนต้น:</label>
+            <input type="number" id="return-principal-amount" name="amount" class="form-input" placeholder="กรอกยอดเงิน" step="any" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="return-principal-notes">หมายเหตุ (จำเป็น):</label>
+            <textarea id="return-principal-notes" name="notes" class="form-input" rows="3" placeholder="กรอกรายละเอียด" required></textarea>
+        </div>
+      <div class="form-actions">
+          <button type="submit" class="btn btn-approve" style="flex: 1;">ยืนยัน</button>
+          <button type="button" id="cancel-return-principal-btn" class="btn btn-danger" style="flex: 1;">ยกเลิก</button>
       </div>
     </form>
   </div>
@@ -1378,7 +1497,7 @@ if (badDebtModal) {
                 if (balanceRes.ok) {
                     const balanceData = await balanceRes.json();
                     const outstandingBalance = parseFloat(balanceData.total_transactions_value || 0);
-                    balanceInput.value = new Intl.NumberFormat('th-TH').format(outstandingBalance);
+                    balanceInput.value = outstandingBalance;
                 } else {
                     balanceInput.placeholder = 'ไม่สามารถคำนวณได้';
                 }
@@ -1397,6 +1516,8 @@ if (badDebtModal) {
         e.preventDefault();
         const customerId = badDebtCustomerIdInput.value;
         const notes = badDebtNotesTextarea.value.trim();
+        const phone = document.getElementById('bad-debt-phone').value.trim();
+        const outstandingBalance = document.getElementById('bad-debt-balance').value.trim();
 
         if (!notes) {
             alert('กรุณากรอกหมายเหตุ');
@@ -1411,7 +1532,12 @@ if (badDebtModal) {
             const response = await fetch('/mark_as_bad_debt', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ customer_id: customerId, notes: notes })
+            body: JSON.stringify({ 
+                customer_id: customerId, 
+                notes: notes,
+                phone: phone,
+                outstanding_balance: outstandingBalance
+            })
             });
             const result = await response.json();
             if (response.ok && result.success) {
@@ -1428,6 +1554,150 @@ if (badDebtModal) {
             }
         } catch (error) {
             console.error('Error marking as bad debt:', error);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'ยืนยัน';
+        }
+    });
+}
+
+// --- NEW: Pull Plug Logic ---
+const pullPlugModal = document.getElementById('pull-plug-popup');
+if (pullPlugModal) {
+    const pullPlugForm = document.getElementById('pull-plug-form');
+    const cancelPullPlugBtn = document.getElementById('cancel-pull-plug-btn');
+    const pullPlugCustomerIdInput = document.getElementById('pull-plug-customer-id');
+    const pullPlugCustomerNameSpan = document.getElementById('pull-plug-customer-name');
+    const pullPlugPhoneInput = document.getElementById('pull-plug-phone');
+    const pullPlugAmountInput = document.getElementById('pull-plug-amount');
+    const pullPlugNotesTextarea = document.getElementById('pull-plug-notes');
+
+    document.querySelector('.main-content-area').addEventListener('click', (event) => {
+        if (event.target.matches('.pull-plug-btn')) {
+            const button = event.target;
+            pullPlugCustomerIdInput.value = button.dataset.id;
+            pullPlugCustomerNameSpan.textContent = button.dataset.name;
+            pullPlugPhoneInput.value = button.dataset.phone;
+            pullPlugAmountInput.value = ''; // Clear previous amount
+            pullPlugNotesTextarea.value = ''; // Clear previous notes
+            pullPlugModal.style.display = 'block';
+        }
+    });
+
+    cancelPullPlugBtn.addEventListener('click', () => {
+        pullPlugModal.style.display = 'none';
+    });
+
+    pullPlugForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const customerId = pullPlugCustomerIdInput.value;
+        const notes = pullPlugNotesTextarea.value.trim();
+        const phone = pullPlugPhoneInput.value.trim();
+        const pullPlugAmount = pullPlugAmountInput.value.trim();
+
+        if (!notes || !pullPlugAmount) {
+            alert('กรุณากรอกยอดเงินและหมายเหตุ');
+            return;
+        }
+
+        const confirmBtn = pullPlugForm.querySelector('button[type="submit"]');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'กำลังบันทึก...';
+
+        try {
+            const response = await fetch('/mark_as_pull_plug', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customer_id: customerId, notes: notes, phone: phone, pull_plug_amount: pullPlugAmount })
+            });
+            const result = await response.json();
+            if (response.ok && result.success) {
+                alert('บันทึกการชั๊กปลั๊กเรียบร้อยแล้ว');
+                pullPlugModal.style.display = 'none';
+                document.querySelectorAll(`tr[data-customer-id="${customerId}"]`).forEach(row => {
+                    if (row.cells[0]) row.cells[0].textContent = 'ชั๊กปลั๊ก';
+                    row.dataset.status = 'ชั๊กปลั๊ก';
+                    const actionCell = row.querySelector('td:last-child');
+                    if (actionCell) actionCell.innerHTML = '<span style="color: var(--warning-bg);">ชั๊กปลั๊ก</span>';
+                });
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + (result.error || 'ไม่สามารถบันทึกได้'));
+            }
+        } catch (error) {
+            console.error('Error marking as pull plug:', error);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'ยืนยัน';
+        }
+    });
+}
+
+// --- NEW: Return Principal Logic ---
+const returnPrincipalModal = document.getElementById('return-principal-popup');
+if (returnPrincipalModal) {
+    const returnPrincipalForm = document.getElementById('return-principal-form');
+    const cancelReturnPrincipalBtn = document.getElementById('cancel-return-principal-btn');
+    const returnPrincipalCustomerIdInput = document.getElementById('return-principal-customer-id');
+    const returnPrincipalCustomerNameSpan = document.getElementById('return-principal-customer-name');
+    const returnPrincipalPhoneInput = document.getElementById('return-principal-phone');
+    const returnPrincipalAmountInput = document.getElementById('return-principal-amount');
+    const returnPrincipalNotesTextarea = document.getElementById('return-principal-notes');
+
+    document.querySelector('.main-content-area').addEventListener('click', (event) => {
+        if (event.target.matches('.return-principal-btn')) {
+            const button = event.target;
+            returnPrincipalCustomerIdInput.value = button.dataset.id;
+            returnPrincipalCustomerNameSpan.textContent = button.dataset.name;
+            returnPrincipalPhoneInput.value = button.dataset.phone;
+            returnPrincipalAmountInput.value = ''; // Clear previous amount
+            returnPrincipalNotesTextarea.value = ''; // Clear previous notes
+            returnPrincipalModal.style.display = 'block';
+        }
+    });
+
+    cancelReturnPrincipalBtn.addEventListener('click', () => {
+        returnPrincipalModal.style.display = 'none';
+    });
+
+    returnPrincipalForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const customerId = returnPrincipalCustomerIdInput.value;
+        const notes = returnPrincipalNotesTextarea.value.trim();
+        const phone = returnPrincipalPhoneInput.value.trim();
+        const returnAmount = returnPrincipalAmountInput.value.trim();
+
+        if (!notes || !returnAmount) {
+            alert('กรุณากรอกยอดเงินและหมายเหตุ');
+            return;
+        }
+
+        const confirmBtn = returnPrincipalForm.querySelector('button[type="submit"]');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'กำลังบันทึก...';
+
+        try {
+            const response = await fetch('/mark_as_return_principal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customer_id: customerId, notes: notes, phone: phone, return_amount: returnAmount })
+            });
+            const result = await response.json();
+            if (response.ok && result.success) {
+                alert('บันทึกการคืนต้นเรียบร้อยแล้ว');
+                returnPrincipalModal.style.display = 'none';
+                document.querySelectorAll(`tr[data-customer-id="${customerId}"]`).forEach(row => {
+                    if (row.cells[0]) row.cells[0].textContent = 'คืนต้น';
+                    row.dataset.status = 'คืนต้น';
+                    const actionCell = row.querySelector('td:last-child');
+                    if (actionCell) actionCell.innerHTML = '<span style="color: var(--info-bg);">คืนต้น</span>';
+                });
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + (result.error || 'ไม่สามารถบันทึกได้'));
+            }
+        } catch (error) {
+            console.error('Error marking as return principal:', error);
             alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
         } finally {
             confirmBtn.disabled = false;
@@ -1834,6 +2104,44 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
         } catch (error) {
             console.error('Error fetching bad debt records:', error);
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+        }
+    }
+
+    // --- NEW: Fetch data if it's the return principal table ---
+    if (tableClass === 'returnprincipal-table-section') {
+        const tbody = document.getElementById('returnprincipal-tbody');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>';
+
+        try {
+            const response = await fetch('/api/return-principal-records');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const records = await response.json();
+
+            tbody.innerHTML = ''; // Clear loading message
+
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">ไม่พบข้อมูลลูกค้าคืนต้น</td></tr>';
+            } else {
+                records.forEach(record => {
+                    const row = `
+                        <tr>
+                            <td>${record.Timestamp || '-'}</td>
+                            <td>${record.CustomerID || '-'}</td>
+                            <td>${record.CustomerName || '-'}</td>
+                            <td>${record.Phone || '-'}</td>
+                            <td>${new Intl.NumberFormat('th-TH').format(record.ReturnAmount || 0)}</td>
+                            <td>${record.MarkedBy || '-'}</td>
+                            <td>${record.Notes || '-'}</td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching return principal records:', error);
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
         }
     }
   });
