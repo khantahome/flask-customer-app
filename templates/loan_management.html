@@ -923,7 +923,8 @@
             <button class="action-table-btn view-info-btn" data-id="{{ record['Customer ID'] }}">ดูข้อมูล</button>
             <button class="action-table-btn btn-danger bad-debt-btn" 
                     data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อ-นามสกุล'] }}">
+                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-phone="{{ record['เบอร์มือถือ'] }}">
                 หนี้เสีย
             </button>
         </td>
@@ -963,7 +964,7 @@
         <tr 
           data-status="{{ record['สถานะ'] }}" 
           data-customer-id="{{ record['Customer ID'] }}" 
-          data-customer-name="{{ record['ชื่อ-นามสกุล'] }}"
+          data-customer-name="{{ record['ชื่อลูกค้า'] }}"
         >
           {% for value in record.values() %}
             <td>{{ value }}</td>
@@ -972,7 +973,8 @@
             <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
             <button class="action-table-btn btn-danger bad-debt-btn" 
                     data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อ-นามสกุล'] }}">
+                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-phone="{{ record['เบอร์มือถือ'] }}">
                 หนี้เสีย
             </button>
           </td>
@@ -991,14 +993,14 @@
     <table class="approove-table"> <!-- Re-using the same table style -->
       <thead>
         <tr>
-          <th>Timestamp</th>
-          <th>CustomerID</th>
-          <th>CustomerName</th>
-          <th>Phone</th>
-          <th>ApprovedAmount</th>
-          <th>OutstandingBalance</th>
-          <th>MarkedBy</th>
-          <th>Notes</th>
+          <th>วันที่บันทึก</th>
+          <th>รหัสลูกค้า</th>
+          <th>ชื่อ-นามสกุล</th>
+          <th>เบอร์โทรศัพท์</th>
+          <th>วงเงินที่อนุมัติ</th>
+          <th>ยอดคงค้าง</th>
+          <th>ผู้บันทึก</th>
+          <th>หมายเหตุ</th>
         </tr>
       </thead>
       <tbody id="baddebt-tbody">
@@ -1190,15 +1192,23 @@
     <form id="bad-debt-form" autocomplete="off">
         <input type="hidden" id="bad-debt-customer-id" name="customer_id">
         <div class="form-group">
-            <p>คุณแน่ใจหรือไม่ที่จะบันทึกลูกค้า <strong id="bad-debt-customer-name"></strong> เป็นหนี้เสีย? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+            <p>คุณแน่ใจหรือไม่ที่จะบันทึกลูกค้า <strong id="bad-debt-customer-name" style="color: var(--primary-color);"></strong> เป็นหนี้เสีย? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="bad-debt-phone">เบอร์โทรศัพท์:</label>
+            <input type="text" id="bad-debt-phone" class="form-input" readonly>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="bad-debt-balance">ยอดเงินคงค้างชำระ:</label>
+            <input type="text" id="bad-debt-balance" class="form-input" readonly placeholder="กำลังคำนวณ...">
         </div>
         <div class="form-group">
             <label class="form-label" for="bad-debt-notes">หมายเหตุ (จำเป็น):</label>
             <textarea id="bad-debt-notes" name="notes" class="form-input" rows="3" placeholder="กรอกเหตุผล เช่น ขาดการติดต่อ, ลูกค้าปฏิเสธการชำระ" required></textarea>
         </div>
       <div class="form-actions">
-          <button type="submit" class="btn btn-danger" style="flex: 1;">ยืนยัน</button>
-          <button type="button" id="cancel-bad-debt-btn" class="btn btn-secondary" style="flex: 1;">ยกเลิก</button>
+          <button type="submit" class="btn btn-approve" style="flex: 1;">ยืนยัน</button>
+          <button type="button" id="cancel-bad-debt-btn" class="btn btn-danger" style="flex: 1;">ยกเลิก</button>
       </div>
     </form>
   </div>
@@ -1342,19 +1352,40 @@ const cancelBadDebtBtn = document.getElementById('cancel-bad-debt-btn');
 const badDebtCustomerIdInput = document.getElementById('bad-debt-customer-id');
 const badDebtCustomerNameSpan = document.getElementById('bad-debt-customer-name');
 const badDebtNotesTextarea = document.getElementById('bad-debt-notes');
+const badDebtPhoneInput = document.getElementById('bad-debt-phone');
 
 if (badDebtModal) {
-    // Use event delegation on a parent container
-    document.querySelector('.main-content-area').addEventListener('click', (event) => {
+    // Use event delegation on a parent container. Make the handler async.
+    document.querySelector('.main-content-area').addEventListener('click', async (event) => {
         if (event.target.matches('.bad-debt-btn')) {
             const button = event.target;
             const customerId = button.dataset.id;
             const customerName = button.dataset.name;
+            const customerPhone = button.dataset.phone;
+            const balanceInput = document.getElementById('bad-debt-balance');
 
             badDebtCustomerIdInput.value = customerId;
             badDebtCustomerNameSpan.textContent = customerName;
+            badDebtPhoneInput.value = customerPhone;
             badDebtNotesTextarea.value = ''; // Clear previous notes
+            balanceInput.value = ''; // Clear previous balance
+            balanceInput.placeholder = 'กำลังคำนวณ...';
             badDebtModal.style.display = 'block';
+
+            // Fetch the outstanding balance
+            try {
+                const balanceRes = await fetch(`/api/customer-balance/${customerId}`);
+                if (balanceRes.ok) {
+                    const balanceData = await balanceRes.json();
+                    const outstandingBalance = parseFloat(balanceData.total_transactions_value || 0);
+                    balanceInput.value = new Intl.NumberFormat('th-TH').format(outstandingBalance);
+                } else {
+                    balanceInput.placeholder = 'ไม่สามารถคำนวณได้';
+                }
+            } catch (error) {
+                console.error('Error fetching balance for bad debt:', error);
+                balanceInput.placeholder = 'เกิดข้อผิดพลาด';
+            }
         }
     });
 

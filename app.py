@@ -997,8 +997,8 @@ def mark_as_bad_debt():
         if not customer_info:
             return jsonify({'error': 'Customer not found in approval list'}), 404
 
-        customer_name = customer_info.get('ชื่อ-นามสกุล', '-')
-        phone = customer_info.get('หมายเลขโทรศัพท์', '-')
+        customer_name = customer_info.get('ชื่อลูกค้า', '-')
+        phone = customer_info.get('เบอร์มือถือ', '-')
         approved_amount = customer_info.get('วงเงินที่อนุมัติ', '0')
 
         # 2. Calculate outstanding balance
