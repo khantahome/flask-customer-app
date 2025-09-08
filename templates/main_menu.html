@@ -672,9 +672,10 @@
             // ฟังก์ชันสำหรับอัปเดตกราฟ (แก้ไขบรรทัดนี้)
             function updateChart() { // *** ไม่รับ parameter ตรงนี้แล้ว ***
                 // --- [สำคัญ] ดึงค่าสีล่าสุดทุกครั้งที่อัปเดตกราฟ ---
-                const rootStyles = getComputedStyle(document.documentElement);
-                const textColor = rootStyles.getPropertyValue('--text-color').trim();
-                // ----------------------------------------------------
+                const isLightMode = document.body.classList.contains('light-mode');
+                const textColor = isLightMode ? '#212529' : '#E0E0E0'; // สีตัวอักษร: ดำในโหมดสว่าง, ขาวในโหมดมืด
+                const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.15)' : '#3A3A5A'; // สีเส้นตาราง: เข้มในโหมดสว่าง, อ่อนในโหมดมืด
+                // -----------------------------------------------------------------
 
                 // เพิ่มการตรวจสอบว่า rawChartData (global) มีข้อมูลหรือไม่
                 if (!rawChartData || Object.keys(rawChartData).length === 0) {
@@ -728,6 +729,9 @@
                         scales: {
                             x: {
                                 stacked: customerGroupSelect.value === '' && (chartYearSelect.value === '' || chartMonthSelect.value === ''),
+                                grid: {
+                                    color: gridColor // กำหนดสีเส้นตารางแกน X
+                                },
                                 title: {
                                     display: true,
                                     text: chartYearSelect.value && !chartMonthSelect.value ? 'เดือน' : (chartYearSelect.value ? 'วันที่/เดือน/ปี' : 'ปี'),
@@ -747,6 +751,9 @@
                             y: {
                                 stacked: customerGroupSelect.value === '' && (chartYearSelect.value === '' || chartMonthSelect.value === ''),
                                 beginAtZero: true,
+                                grid: {
+                                    color: gridColor // กำหนดสีเส้นตารางแกน Y
+                                },
                                 title: {
                                     display: true,
                                     text: 'จำนวนลูกค้า',
