@@ -26,6 +26,23 @@
             --record-bg-even: #1F283E; /* Background for even records in dark mode */
         }
 
+        /* --- Light Mode Theme --- */
+        body.light-mode {
+            --primary-color: #8A2BE2;
+            --secondary-color: #00BCD4;
+            --background-color: #F4F6F8; /* Light grey background */
+            --card-background: #FFFFFF; /* White cards */
+            --text-color: #212529; /* Dark text */
+            --light-text-color: #6c757d; /* Medium grey text */
+            --border-color: #DEE2E6; /* Light grey border */
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.1); /* Lighter shadow */
+            --record-bg-odd: #FFFFFF;
+            --record-bg-even: #F8F9FA;
+        }
+        body.light-mode .input-group input[type="text"] {
+            background-color: #FFFFFF;
+        }
+        
         /* Basic styles for the body to center content and set font */
         body {
             font-family: 'Kanit', sans-serif; /* Use Kanit font */
@@ -636,6 +653,7 @@
                 <a href="{{ url_for('enter_customer_data') }}" class="action-button {% if request.endpoint == 'enter_customer_data' %}active{% endif %}">กรอกข้อมูลลูกค้าใหม่</a>
                 <a href="{{ url_for('search_customer_data') }}" class="action-button {% if request.endpoint == 'search_customer_data' %}active{% endif %}">ค้นหาข้อมูลลูกค้า</a>
                 <a href="{{ url_for('loan_management') }}" class="action-button {% if request.endpoint == 'loan_management' %}active{% endif %}">จัดการสินเชื่อ</a>
+                <button id="theme-toggle" class="action-button" style="margin-top: 20px;">โหมดสว่าง</button>
             </div>
             <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
             <p class="logged-in-user" style="margin-top: 25px; text-align: center;">สวัสดี, {{ username }}</p>
@@ -743,6 +761,34 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const body = document.body;
+
+            // Function to apply the theme
+            const applyTheme = (theme) => {
+                if (theme === 'light') {
+                    body.classList.add('light-mode');
+                    if (themeToggleBtn) themeToggleBtn.textContent = 'โหมดมืด';
+                } else {
+                    body.classList.remove('light-mode');
+                    if (themeToggleBtn) themeToggleBtn.textContent = 'โหมดสว่าง';
+                }
+            };
+
+            // Load saved theme from localStorage, default to 'dark'
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+
+            // Add event listener to the button
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+                    localStorage.setItem('theme', newTheme);
+                    applyTheme(newTheme);
+                });
+            }
+        });
         document.addEventListener('DOMContentLoaded', function() {
             const clearSearchButton = document.getElementById('clearSearchButton');
             const searchForm = document.querySelector('.search-form');

@@ -22,6 +22,24 @@
     --error-text: #FFFFFF;
 }
 
+/* --- Light Mode Theme --- */
+body.light-mode {
+    --primary-color: #8A2BE2;
+    --secondary-color: #00BCD4;
+    --background-color: #F4F6F8; /* Light grey background */
+    --card-background: #FFFFFF; /* White cards */
+    --text-color: #212529; /* Dark text */
+    --light-text-color: #6c757d; /* Medium grey text */
+    --border-color: #DEE2E6; /* Light grey border */
+    --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.1); /* Lighter shadow */
+}
+body.light-mode .input-group input[type="text"],
+body.light-mode .input-group input[type="tel"],
+body.light-mode .input-group input[type="number"],
+body.light-mode .input-group input[type="date"],
+body.light-mode .input-group textarea,
+body.light-mode .input-group select { background-color: #FFFFFF; }
+
 /* Basic styles for the body to center content and set font */
 body {
     font-family: 'Kanit', sans-serif; /* Use Kanit font */
@@ -647,6 +665,31 @@ body {
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // This page doesn't have a button, but it needs to respect the theme
+            const body = document.body;
+
+            // Function to apply the theme
+            const applyTheme = (theme) => {
+                if (theme === 'light') {
+                    body.classList.add('light-mode');
+                } else {
+                    body.classList.remove('light-mode');
+                }
+            };
+
+            // Load saved theme from localStorage, default to 'dark'
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+
+            // We need a way to listen for changes from other tabs
+            window.addEventListener('storage', (event) => {
+                if (event.key === 'theme') {
+                    applyTheme(event.newValue);
+                }
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             const editCustomerForm = document.getElementById('editCustomerForm');
             const newCustomerImageInput = document.getElementById('new_customer_images');
