@@ -46,63 +46,6 @@
         body.light-mode .input-group textarea,
         body.light-mode .input-group select { background-color: #FFFFFF; }
 
-        /* --- Theme Switch Styles --- */
-        .theme-switch-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-top: 20px;
-            justify-content: center;
-            width: 100%;
-            padding: 10px 0;
-        }
-        .theme-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 28px;
-            flex-shrink: 0;
-        }
-        .theme-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #4A5568; /* Dark grey for off state */
-            transition: .4s;
-            border-radius: 28px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 4px;
-            background-color: var(--light-text-color); /* Greyish knob */
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: var(--secondary-color); /* Use secondary color for "on" */
-        }
-        input:checked + .slider:before {
-            transform: translateX(22px);
-            background-color: white;
-        }
-        .theme-switch-label {
-            color: var(--text-color);
-            font-size: 1em;
-            font-weight: 500;
-        }
-
         /* Basic styles for the body to center content and set font */
         body {
             font-family: 'Kanit', sans-serif;
@@ -547,142 +490,119 @@
                     {% endif %}
                 {% endwith %}
                 <form id="customerForm" method="post" enctype="multipart/form-data">
-                    <div class="form-grid">
-                        <!-- Column 1: Personal & Loan Info -->
-                        <div class="form-column">
-                            <fieldset>
-                                <legend>ข้อมูลส่วนตัวลูกค้า</legend>
-                                <div class="input-group">
-                                    <label for="customer_name">ชื่อ</label>
-                                    <input type="text" id="customer_name" name="customer_name" placeholder="กรอกชื่อลูกค้า" required>
-                                </div>
-                                <div class="input-group">
-                                    <label for="last_name">นามสกุล</label>
-                                    <input type="text" id="last_name" name="last_name" placeholder="กรอกนามสกุลลูกค้า" required>
-                                </div>
-                                <div class="input-group">
-                                    <label for="id_card_number">เลขบัตรประชาชน</label>
-                                    <input type="text" id="id_card_number" name="id_card_number" placeholder="กรอกเลขบัตรประชาชน" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก">
-                                </div>
-                                <div class="input-group">
-                                    <label for="mobile_phone_number">เบอร์มือถือ</label>
-                                    <input type="tel" id="mobile_phone_number" name="mobile_phone_number" placeholder="กรอกเบอร์มือถือ" required pattern="\d{10}" title="กรุณากรอกเบอร์มือถือ 10 หลัก">
-                                </div>
-                                <div class="input-group">
-                                    <label for="line_id">LINE : ID</label>
-                                    <input type="text" id="line_id" name="line_id" placeholder="กรอก LINE ID">
-                                </div>
-                                <div class="input-group">
-                                    <label for="home_location_link">ลิงค์โลเคชั่นบ้าน</label>
-                                    <input type="text" id="home_location_link" name="home_location_link" placeholder="วางลิงค์ Google Maps บ้าน">
-                                </div>
-                            </fieldset>
-
-                            <fieldset>
-                                <legend>ข้อมูลการขอสินเชื่อ</legend>
-                                <div class="input-group">
-                                    <label for="status">สถานะ</label>
-                                    <input type="text" id="status" name="status" value="รอดำเนินการ" readonly>
-                                </div>
-                                <div class="input-group">
-                                    <label for="desired_credit_limit">วงเงินที่ต้องการ</label>
-                                    <input type="number" id="desired_credit_limit" name="desired_credit_limit" placeholder="กรอกวงเงินที่ต้องการ" min="0">
-                                </div>
-                                <div class="input-group">
-                                    <label for="approved_credit_limit">วงเงินที่อนุมัติ</label>
-                                    <input type="number" id="approved_credit_limit" name="approved_credit_limit" placeholder="กรอกวงเงินที่อนุมัติ" min="0">
-                                </div>
-                                <div class="input-group">
-                                    <label for="application_date">วันที่ขอเข้ามา</label>
-                                    <input type="date" id="application_date" name="application_date" required>
-                                </div>
-                                <div class="input-group">
-                                    <label for="how_applied">ขอเข้ามาทางไหน</label>
-                                    <input type="text" id="how_applied" name="how_applied" placeholder="เช่น เว็บไซต์, โทรศัพท์">
-                                </div>
-                                <div class="input-group">
-                                    <label for="applied_before">เคยขอเข้ามาในเครือหรือยัง</label>
-                                    <input type="text" id="applied_before" name="applied_before" placeholder="เช่น ใช่ / ไม่ใช่">
-                                </div>
-                                <div class="input-group">
-                                    <label for="check_field">เช็ค</label>
-                                    <input type="text" id="check_field" name="check" placeholder="ข้อมูลเช็ค">
-                                </div>
-                                <div class="input-group">
-                                    <label for="upfront_interest">หักดอกหัวท้าย</label>
-                                    <input type="number" id="upfront_interest" name="upfront_interest" placeholder="กรอกจำนวนเงิน" min="0">
-                                </div>
-                                <div class="input-group">
-                                    <label for="processing_fee">ค่าดำเนินการ</label>
-                                    <input type="number" id="processing_fee" name="processing_fee" placeholder="กรอกจำนวนเงิน" min="0">
-                                </div>
-                            </fieldset>
-                        </div>
-
-                        <!-- Column 2: Business & Additional Info -->
-                        <div class="form-column">
-                            <fieldset>
-                                <legend>ข้อมูลธุรกิจและอาชีพ</legend>
-                                <div class="input-group">
-                                    <label for="main_customer_group">กลุ่มลูกค้าหลัก</label>
-                                    <select id="main_customer_group" name="main_customer_group" required>
-                                        <option value="">--- เลือกกลุ่มลูกค้าหลัก ---</option>
-                                        <option value="ค้าปลีก-ค้าส่ง / ร้านค้า">1. กลุ่มค้าปลีก-ค้าส่ง / ร้านค้า</option>
-                                        <option value="ธุรกิจบริการ / ร้านอาหาร">2. กลุ่มธุรกิจบริการ / ร้านอาหาร</option>
-                                        <option value="ผู้รับเหมาก่อสร้าง / งานโยธา">3. กลุ่มผู้รับเหมาก่อสร้าง / งานโยธา</option>
-                                        <option value="โลจิสติกส์ / ขนส่ง / ยานยนต์">4. กลุ่มโลจิสติกส์ / ขนส่ง / ยานยนต์</option>
-                                        <option value="เทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล">5. กลุ่มเทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล</option>
-                                        <option value="โรงงาน / การผลิต">6. กลุ่มโรงงาน / การผลิต</option>
-                                        <option value="อสังหาริมทรัพย์ / บริหารทรัพย์สิน">7. กลุ่มอสังหาริมทรัพย์ / บริหารทรัพย์สิน</option>
-                                        <option value="นำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ">8. กลุ่มนำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ</option>
-                                        <option value="อื่นๆ">9. อื่นๆ</option>
-                                    </select>
-                                </div>
-                                <div class="input-group">
-                                    <label for="sub_profession_group">กลุ่มอาชีพย่อย</label>
-                                    <select id="sub_profession_group" name="sub_profession_group" required disabled>
-                                        <option value="">--- กรุณาเลือกกลุ่มลูกค้าหลักก่อน ---</option>
-                                    </select>
-                                </div>
-                                <div class="input-group" id="otherSubProfessionInputGroup" style="display: none;">
-                                    <label for="other_sub_profession">ระบุกลุ่มอาชีพย่อยอื่นๆ</label>
-                                    <input type="text" id="other_sub_profession" name="other_sub_profession" placeholder="กรอกกลุ่มอาชีพย่อยอื่นๆ">
-                                </div>
-                                <div class="input-group">
-                                    <label for="business_name">ชื่อกิจการ</label>
-                                    <input type="text" id="business_name" name="business_name" placeholder="กรอกชื่อกิจการ">
-                                </div>
-                                <div class="input-group">
-                                    <label for="business_type">ประเภทธุรกิจ (เกี่ยวกับอะไร)</label>
-                                    <input type="text" id="business_type" name="business_type" placeholder="เช่น ร้านอาหาร, บริการ">
-                                </div>
-                                <div class="input-group">
-                                    <label for="registered">จดทะเบียน</label>
-                                    <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่">
-                                </div>
-                                <div class="input-group">
-                                    <label for="registered_address">ที่อยู่จดทะเบียน</label>
-                                    <textarea id="registered_address" name="registered_address" placeholder="กรอกที่อยู่จดทะเบียน" rows="3"></textarea>
-                                </div>
-                                <div class="input-group">
-                                    <label for="work_location_link">ลิงค์โลเคชั่นที่ทำงาน</label>
-                                    <input type="text" id="work_location_link" name="work_location_link" placeholder="วางลิงค์ Google Maps ที่ทำงาน">
-                                </div>
-                            </fieldset>
-
-                            <fieldset>
-                                <legend>ข้อมูลเพิ่มเติมและเอกสาร</legend>
-                                <div class="input-group">
-                                    <label for="remarks">หมายเหตุ</label>
-                                    <textarea id="remarks" name="remarks" placeholder="บันทึกหมายเหตุเพิ่มเติม" rows="3"></textarea>
-                                </div>
-                                <div class="input-group">
-                                    <label for="customer_images">รูปภาพลูกค้า (เลือกหลายรูปได้)</label>
-                                    <input type="file" id="customer_images" name="customer_images" accept="image/*" multiple>
-                                    <div id="imagePreviewsContainer"></div>
-                                </div>
-                            </fieldset>
-                        </div>
+                    <div class="input-group">
+                        <label for="customer_name">ชื่อ</label>
+                        <input type="text" id="customer_name" name="customer_name" placeholder="กรอกชื่อลูกค้า" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="last_name">นามสกุล</label>
+                        <input type="text" id="last_name" name="last_name" placeholder="กรอกนามสกุลลูกค้า" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="id_card_number">เลขบัตรประชาชน</label>
+                        <input type="text" id="id_card_number" name="id_card_number" placeholder="กรอกเลขบัตรประชาชน" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก">
+                    </div>
+                    <div class="input-group">
+                        <label for="mobile_phone_number">เบอร์มือถือ</label>
+                        <input type="tel" id="mobile_phone_number" name="mobile_phone_number" placeholder="กรอกเบอร์มือถือ" required pattern="\d{10}" title="กรุณากรอกเบอร์มือถือ 10 หลัก">
+                    </div>
+                    <div class="input-group">
+                        <label for="main_customer_group">กลุ่มลูกค้าหลัก</label>
+                        <select id="main_customer_group" name="main_customer_group" required>
+                            <option value="">--- เลือกกลุ่มลูกค้าหลัก ---</option>
+                            <option value="ค้าปลีก-ค้าส่ง / ร้านค้า">1. กลุ่มค้าปลีก-ค้าส่ง / ร้านค้า</option>
+                            <option value="ธุรกิจบริการ / ร้านอาหาร">2. กลุ่มธุรกิจบริการ / ร้านอาหาร</option>
+                            <option value="ผู้รับเหมาก่อสร้าง / งานโยธา">3. กลุ่มผู้รับเหมาก่อสร้าง / งานโยธา</option>
+                            <option value="โลจิสติกส์ / ขนส่ง / ยานยนต์">4. กลุ่มโลจิสติกส์ / ขนส่ง / ยานยนต์</option>
+                            <option value="เทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล">5. กลุ่มเทคโนโลยี / ครีเอทีฟ / บริการดิจิทัล</option>
+                            <option value="โรงงาน / การผลิต">6. กลุ่มโรงงาน / การผลิต</option>
+                            <option value="อสังหาริมทรัพย์ / บริหารทรัพย์สิน">7. กลุ่มอสังหาริมทรัพย์ / บริหารทรัพย์สิน</option>
+                            <option value="นำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ">8. กลุ่มนำเข้า-ส่งออก / ซื้อขายระหว่างประเทศ</option>
+                            <option value="อื่นๆ">9. อื่นๆ</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="sub_profession_group">กลุ่มอาชีพย่อย</label>
+                        <select id="sub_profession_group" name="sub_profession_group" required disabled>
+                            <option value="">--- กรุณาเลือกกลุ่มลูกค้าหลักก่อน ---</option>
+                        </select>
+                    </div>
+                    <div class="input-group" id="otherSubProfessionInputGroup" style="display: none;">
+                        <label for="other_sub_profession">ระบุกลุ่มอาชีพย่อยอื่นๆ</label>
+                        <input type="text" id="other_sub_profession" name="other_sub_profession" placeholder="กรอกกลุ่มอาชีพย่อยอื่นๆ">
+                    </div>
+                    <div class="input-group">
+                        <label for="registered">จดทะเบียน</label>
+                        <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่">
+                    </div>
+                    <div class="input-group">
+                        <label for="business_name">ชื่อกิจการ</label>
+                        <input type="text" id="business_name" name="business_name" placeholder="กรอกชื่อกิจการ">
+                    </div>
+                    <div class="input-group">
+                        <label for="business_type">ประเภทธุรกิจ (เกี่ยวกับอะไร)</label>
+                        <input type="text" id="business_type" name="business_type" placeholder="เช่น ร้านอาหาร, บริการ">
+                    </div>
+                    <div class="input-group">
+                        <label for="registered_address">ที่อยู่จดทะเบียน</label>
+                        <textarea id="registered_address" name="registered_address" placeholder="กรอกที่อยู่จดทะเบียน" rows="3"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label for="status">สถานะ</label>
+                        <input type="text" id="status" name="status" value="รอดำเนินการ" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label for="desired_credit_limit">วงเงินที่ต้องการ</label>
+                        <input type="number" id="desired_credit_limit" name="desired_credit_limit" placeholder="กรอกวงเงินที่ต้องการ" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="approved_credit_limit">วงเงินที่อนุมัติ</label>
+                        <input type="number" id="approved_credit_limit" name="approved_credit_limit" placeholder="กรอกวงเงินที่อนุมัติ" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="applied_before">เคยขอเข้ามาในเครือหรือยัง</label>
+                        <input type="text" id="applied_before" name="applied_before" placeholder="เช่น ใช่ / ไม่ใช่">
+                    </div>
+                    <div class="input-group">
+                        <label for="check_field">เช็ค</label>
+                        <input type="text" id="check_field" name="check" placeholder="ข้อมูลเช็ค">
+                    </div>
+                    <div class="input-group">
+                        <label for="how_applied">ขอเข้ามาทางไหน</label>
+                        <input type="text" id="how_applied" name="how_applied" placeholder="เช่น เว็บไซต์, โทรศัพท์">
+                    </div>
+                    <div class="input-group">
+                        <label for="line_id">LINE : ID</label>
+                        <input type="text" id="line_id" name="line_id" placeholder="กรอก LINE ID">
+                    </div>
+                    <div class="input-group">
+                        <label for="upfront_interest">หักดอกหัวท้าย</label>
+                        <input type="number" id="upfront_interest" name="upfront_interest" placeholder="กรอกจำนวนเงิน" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="processing_fee">ค่าดำเนินการ</label>
+                        <input type="number" id="processing_fee" name="processing_fee" placeholder="กรอกจำนวนเงิน" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="application_date">วันที่ขอเข้ามา</label>
+                        <input type="date" id="application_date" name="application_date" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="home_location_link">ลิงค์โลเคชั่นบ้าน</label>
+                        <input type="text" id="home_location_link" name="home_location_link" placeholder="วางลิงค์ Google Maps บ้าน">
+                    </div>
+                    <div class="input-group">
+                        <label for="work_location_link">ลิงค์โลเคชั่นที่ทำงาน</label>
+                        <input type="text" id="work_location_link" name="work_location_link" placeholder="วางลิงค์ Google Maps ที่ทำงาน">
+                    </div>
+                    <div class="input-group">
+                        <label for="remarks">หมายเหตุ</label>
+                        <textarea id="remarks" name="remarks" placeholder="บันทึกหมายเหตุเพิ่มเติม" rows="3"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label for="customer_images">รูปภาพลูกค้า (เลือกหลายรูปได้)</label>
+                        <input type="file" id="customer_images" name="customer_images" accept="image/*" multiple>
+                        <div id="imagePreviewsContainer"></div>
                     </div>
                     <div class="button-group">
                         <button type="submit" class="form-button">บันทึกข้อมูล</button>
