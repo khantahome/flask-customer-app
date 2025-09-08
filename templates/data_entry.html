@@ -45,6 +45,64 @@
         body.light-mode .input-group input[type="date"],
         body.light-mode .input-group textarea,
         body.light-mode .input-group select { background-color: #FFFFFF; }
+
+        /* --- Theme Switch Styles --- */
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+            width: 100%;
+            padding: 10px 0;
+        }
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4A5568; /* Dark grey for off state */
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: var(--light-text-color); /* Greyish knob */
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--secondary-color); /* Use secondary color for "on" */
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+            background-color: white;
+        }
+        .theme-switch-label {
+            color: var(--text-color);
+            font-size: 1em;
+            font-weight: 500;
+        }
+
         /* Basic styles for the body to center content and set font */
         body {
             font-family: 'Kanit', sans-serif;
@@ -465,7 +523,13 @@
                 <a href="{{ url_for('enter_customer_data') }}" class="action-button {% if request.endpoint == 'enter_customer_data' %}active{% endif %}">กรอกข้อมูลลูกค้าใหม่</a>
                 <a href="{{ url_for('search_customer_data') }}" class="action-button {% if request.endpoint == 'search_customer_data' %}active{% endif %}">ค้นหาข้อมูลลูกค้า</a>
                 <a href="{{ url_for('loan_management') }}" class="action-button {% if request.endpoint == 'loan_management' %}active{% endif %}">จัดการสินเชื่อ</a>
-                <button id="theme-toggle" class="action-button" style="margin-top: 20px;">โหมดสว่าง</button>
+                <div class="theme-switch-wrapper">
+                    <label class="theme-switch" for="theme-checkbox">
+                        <input type="checkbox" id="theme-checkbox" />
+                        <div class="slider round"></div>
+                    </label>
+                    <span class="theme-switch-label">โหมดมืด</span>
+                </div>
             </div>
             <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
             <p class="logged-in-user" style="margin-top: 25px; text-align: center;">สวัสดี, {{ username }}</p>
@@ -630,17 +694,20 @@
     </div>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleCheckbox = document.getElementById('theme-checkbox');
         const body = document.body;
+        const themeLabel = document.querySelector('.theme-switch-label');
 
         // Function to apply the theme
         const applyTheme = (theme) => {
             if (theme === 'light') {
                 body.classList.add('light-mode');
-                if (themeToggleBtn) themeToggleBtn.textContent = 'โหมดมืด';
+                if (themeToggleCheckbox) themeToggleCheckbox.checked = true;
+                if (themeLabel) themeLabel.textContent = 'โหมดสว่าง';
             } else {
                 body.classList.remove('light-mode');
-                if (themeToggleBtn) themeToggleBtn.textContent = 'โหมดสว่าง';
+                if (themeToggleCheckbox) themeToggleCheckbox.checked = false;
+                if (themeLabel) themeLabel.textContent = 'โหมดมืด';
             }
         };
 
@@ -649,9 +716,9 @@
         applyTheme(savedTheme);
 
         // Add event listener to the button
-        if (themeToggleBtn) {
-            themeToggleBtn.addEventListener('click', () => {
-                const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+        if (themeToggleCheckbox) {
+            themeToggleCheckbox.addEventListener('change', () => {
+                const newTheme = themeToggleCheckbox.checked ? 'light' : 'dark';
                 localStorage.setItem('theme', newTheme);
                 applyTheme(newTheme);
             });
