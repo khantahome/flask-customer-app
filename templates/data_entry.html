@@ -180,24 +180,27 @@
             justify-content: center;
         }
 
+        /* Action button group (for sidebar) */
+        .action-button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Space between buttons */
+            width: 100%; /* Make buttons take full width of sidebar */
+        }
+
+        /* Individual action button style (for sidebar) */
         .action-button {
+            display: block; /* Make buttons take full width */
+            padding: 15px 25px;
             background-color: var(--primary-color);
             color: white;
-            padding: 14px 25px;
-            border: none;
+            text-decoration: none;
             border-radius: 8px;
             font-size: 1.1em;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            flex: 1;
-            min-width: 150px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
         }
         .action-button:hover {
             background-color: #6A1B9A;
@@ -600,8 +603,8 @@
                         </div>
                     </div>
                     <div class="button-group">
-                        <button type="submit" class="action-button">บันทึกข้อมูล</button>
-                        <button type="button" class="action-button clear" id="clearFormButton">ล้างข้อมูล</button>
+                        <button type="submit" class="form-button">บันทึกข้อมูล</button>
+                        <button type="button" class="form-button clear" id="clearFormButton">ล้างข้อมูล</button>
                     </div>
                 </form>
             </div>
