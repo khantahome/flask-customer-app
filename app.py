@@ -67,6 +67,12 @@ APPROVE_WORKSHEET_HEADERS = [
     'ผู้บันทึก'
 ]
 
+BAD_DEBT_WORKSHEET_NAME = 'bad_debt_records'
+BAD_DEBT_WORKSHEET_HEADERS = [
+    'Timestamp', 'CustomerID', 'CustomerName', 'Phone', 
+    'ApprovedAmount', 'OutstandingBalance', 'MarkedBy', 'Notes'
+]
+
 # Original Customer Records Sheet (uses เลขบัตรประชาชน)
 WORKSHEET_NAME = 'customer_records'
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
@@ -148,9 +154,10 @@ def get_worksheet(spreadsheet_name, worksheet_name, headers=None):
     except Exception as e:
         print(f"Error accessing/creating worksheet '{worksheet_name}': {e}")
         return None
-
+    
 def get_user_worksheet():
     return get_worksheet(USER_LOGIN_SPREADSHEET_NAME, USER_LOGIN_WORKSHEET_NAME)
+
 
 def get_customer_data_worksheet():
     """Returns the original customer_records worksheet and force-updates header row."""
@@ -164,7 +171,6 @@ def get_customer_data_worksheet():
             print(f"ERROR: Failed to update header for 'customer_records': {e}")
     
     return worksheet
-
 
 
 @app.route('/get-customer-info/<customer_id>')
@@ -190,34 +196,28 @@ def get_customer_info(customer_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/customer-balance/<customer_id>')
-def get_customer_balance(customer_id):
+def _calculate_customer_balance(customer_id):
     """
-    คำนวณและส่งคืนยอดต่างๆ ของลูกค้า
-    - total_balance: ยอดคงเหลือสุทธิ (ยอดเปิด - ยอดปิด)
-    - total_openings: ผลรวมของยอดเปิดทั้งหมด
-    - total_transactions_value: ผลรวมของทุกรายการยกเว้น 'คืนต้น' สำหรับแสดงในช่อง 'ยอดเงินที่ใช้อยู่'
+    Internal helper to calculate customer balance.
+    Returns a dictionary with balance details or an error dict.
     """
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
     try:
         worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
         all_records = worksheet.get_all_records()
         
         if not all_records:
-            return jsonify({
+            return {
                 'total_balance': 0,
                 'total_openings': 0,
                 'total_transactions_value': 0
-            })
+            }
 
         df = pd.DataFrame(all_records)
 
         # ป้องกันปัญหาช่องว่างที่มองไม่เห็นในชื่อคอลัมน์
         df.columns = [col.strip() for col in df.columns]
         if 'CustomerID' not in df.columns:
-            return jsonify({'error': 'CustomerID column not found in allpidjob sheet'}), 500
+            return {'error': 'CustomerID column not found in allpidjob sheet'}
 
         # --- NEW: Robust Customer ID Matching ---
         # Convert both sides to string and strip whitespace for reliable comparison
@@ -238,17 +238,17 @@ def get_customer_balance(customer_id):
 
         if customer_df.empty:
             # If still no match after all attempts, return 0 balance
-            return jsonify({
+            return {
                 'total_balance': 0,
                 'total_openings': 0,
                 'total_transactions_value': 0
-            })
+            }
 
         # --- REVISED LOGIC ---
         # Since each company has its own running balance, we must get the latest record
         # for EACH company and then sum their balances together.
         if 'CompanyName' not in customer_df.columns:
-            return jsonify({'error': 'CompanyName column not found in allpidjob sheet'}), 500
+            return {'error': 'CompanyName column not found in allpidjob sheet'}
         
         latest_records_df = customer_df.groupby('CompanyName').tail(1)
 
@@ -286,16 +286,28 @@ def get_customer_balance(customer_id):
 
         # Convert all numeric values to Python's float before returning as JSON
         # to prevent "Object of type int64 is not JSON serializable" error.
-        return jsonify({
+        return {
             'total_balance': float(total_balance),
             'total_openings': float(total_openings),
             'total_transactions_value': float(total_transactions_value)
-        })
+        }
 
     except Exception as e:
         print(f"Error in get_customer_balance for ID {customer_id}: {e}")
-        return jsonify({'error': str(e)}), 500
+        return {'error': str(e)}
 
+@app.route('/api/customer-balance/<customer_id>')
+def get_customer_balance(customer_id):
+    """
+    API route to get customer balance. Calls the internal helper function.
+    """
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    balance_data = _calculate_customer_balance(customer_id)
+    if 'error' in balance_data:
+        return jsonify(balance_data), 500
+    return jsonify(balance_data)
 @cache.cached(timeout=20, key_prefix='all_customer_records')
 def get_all_customer_records():
     """
@@ -960,6 +972,63 @@ def save_approved_data():
         return jsonify({'success': True})
     except Exception as e:
         print(f"Error in save_approved_data: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
+
+
+@app.route('/mark_as_bad_debt', methods=['POST'])
+def mark_as_bad_debt():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        customer_id = data.get('customer_id')
+        notes = data.get('notes', '')
+        logged_in_user = session['username']
+
+        if not customer_id:
+            return jsonify({'error': 'Customer ID is required'}), 400
+
+        # 1. Get customer info from 'approove' sheet
+        approve_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        approve_records = approve_ws.get_all_records()
+        customer_info = next((r for r in approve_records if str(r.get('Customer ID')).strip() == str(customer_id).strip()), None)
+
+        if not customer_info:
+            return jsonify({'error': 'Customer not found in approval list'}), 404
+
+        customer_name = customer_info.get('ชื่อ-นามสกุล', '-')
+        phone = customer_info.get('หมายเลขโทรศัพท์', '-')
+        approved_amount = customer_info.get('วงเงินที่อนุมัติ', '0')
+
+        # 2. Calculate outstanding balance
+        balance_data = _calculate_customer_balance(customer_id)
+        outstanding_balance = 0
+        if 'error' in balance_data:
+            print(f"Warning: Could not calculate balance for bad debt record {customer_id}. Error: {balance_data['error']}")
+        else:
+            outstanding_balance = balance_data.get('total_transactions_value', 0)
+
+        # 3. Append to bad_debt_records sheet
+        bad_debt_ws = get_worksheet(SPREADSHEET_NAME, BAD_DEBT_WORKSHEET_NAME, BAD_DEBT_WORKSHEET_HEADERS)
+        if not bad_debt_ws:
+             return jsonify({'error': 'Could not access the bad debt records sheet.'}), 500
+        
+        bad_debt_row = [datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, customer_name, phone, approved_amount, outstanding_balance, logged_in_user, notes]
+        bad_debt_ws.append_row(bad_debt_row)
+
+        # 4. Update status in 'approove' sheet
+        all_approve_data = approve_ws.get_all_values()
+        headers = all_approve_data[0]
+        id_col_index = headers.index('Customer ID')
+        status_col_index = headers.index('สถานะ')
+        for i, row in enumerate(all_approve_data[1:], start=2):
+            if str(row[id_col_index]).strip() == str(customer_id).strip():
+                approve_ws.update_cell(i, status_col_index + 1, 'หนี้เสีย')
+                break
+        return jsonify({'success': True, 'message': f'Customer {customer_id} has been marked as bad debt.'})
+    except Exception as e:
+        print(f"Error in mark_as_bad_debt: {traceback.format_exc()}")
         return jsonify({'error': 'An internal server error occurred.'}), 500
 
 

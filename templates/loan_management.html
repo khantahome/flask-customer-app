@@ -523,6 +523,14 @@
     background-color: #6A1B9A;
     color: #fff;
 }
+.action-table-btn.btn-danger {
+    background-color: var(--error-bg);
+    color: var(--error-text);
+}
+.action-table-btn.btn-danger:hover {
+    background-color: #c82333; /* A darker red */
+    color: var(--error-text);
+}
 .closejob-modal-content {
             background: var(--card-background);
             border-radius: 16px;
@@ -914,6 +922,11 @@
         <td>
             <button class="action-table-btn add-doc-btn" data-id="{{ record['Customer ID'] }}">เพิ่มเอกสาร</button>
             <button class="action-table-btn view-info-btn" data-id="{{ record['Customer ID'] }}">ดูข้อมูล</button>
+            <button class="action-table-btn btn-danger bad-debt-btn" 
+                    data-id="{{ record['Customer ID'] }}" 
+                    data-name="{{ record['ชื่อ-นามสกุล'] }}">
+                หนี้เสีย
+            </button>
         </td>
       </tr>
       {% endfor %}
@@ -958,6 +971,11 @@
           {% endfor %}
           <td>
             <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
+            <button class="action-table-btn btn-danger bad-debt-btn" 
+                    data-id="{{ record['Customer ID'] }}" 
+                    data-name="{{ record['ชื่อ-นามสกุล'] }}">
+                หนี้เสีย
+            </button>
           </td>
         </tr>
         {% endfor %}
@@ -1143,6 +1161,26 @@
   </div>
 </div>
 
+<!-- NEW: Bad Debt Confirmation Modal -->
+<div id="bad-debt-popup" class="modal">
+  <div class="modal-content closejob-modal-content">
+    <h3>ยืนยันการบันทึกหนี้เสีย</h3>
+    <form id="bad-debt-form" autocomplete="off">
+        <input type="hidden" id="bad-debt-customer-id" name="customer_id">
+        <div class="form-group">
+            <p>คุณแน่ใจหรือไม่ที่จะบันทึกลูกค้า <strong id="bad-debt-customer-name"></strong> เป็นหนี้เสีย? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="bad-debt-notes">หมายเหตุ (จำเป็น):</label>
+            <textarea id="bad-debt-notes" name="notes" class="form-input" rows="3" placeholder="กรอกเหตุผล เช่น ขาดการติดต่อ, ลูกค้าปฏิเสธการชำระ" required></textarea>
+        </div>
+      <div class="form-actions">
+          <button type="submit" class="btn btn-danger" style="flex: 1;">ยืนยัน</button>
+          <button type="button" id="cancel-bad-debt-btn" class="btn btn-secondary" style="flex: 1;">ยกเลิก</button>
+      </div>
+    </form>
+  </div>
+</div>
             </div> {# End of .container #}
         </div> {# End of .main-content-area #}
     </div> {# End of .dashboard-layout #}
