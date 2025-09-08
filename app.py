@@ -1031,6 +1031,22 @@ def mark_as_bad_debt():
         print(f"Error in mark_as_bad_debt: {traceback.format_exc()}")
         return jsonify({'error': 'An internal server error occurred.'}), 500
 
+@app.route('/api/bad-debt-records')
+def get_bad_debt_records():
+    """
+    API endpoint to fetch all records from the bad_debt_records worksheet.
+    """
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        worksheet = get_worksheet(SPREADSHEET_NAME, BAD_DEBT_WORKSHEET_NAME, BAD_DEBT_WORKSHEET_HEADERS)
+        if not worksheet:
+            return jsonify([]), 404 # Return empty list if not found
+        records = worksheet.get_all_records()
+        return jsonify(records)
+    except Exception as e:
+        print(f"Error fetching bad debt records: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
 
 # ... (โค้ดส่วนล่างของ app.py) ...
 

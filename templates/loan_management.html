@@ -872,7 +872,6 @@
                 <i class="fas fa-times-circle"></i> ตัวเสีย
                 </button>
                 <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">ตารางตัวเสีย</a></li>
                 <li><a class="dropdown-item" href="#" data-table="baddebt-table-section">ตารางตัวเสีย</a></li>
                 </ul>
             </div>
@@ -985,6 +984,29 @@
 </div>
 {% endif %}
 
+<!-- ตารางตัวเสีย -->
+<div class="baddebt-table-section" style="display:none;">
+  <h3>ตารางลูกค้าหนี้เสีย</h3>
+  <div style="overflow-x:auto;">
+    <table class="approove-table"> <!-- Re-using the same table style -->
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>CustomerID</th>
+          <th>CustomerName</th>
+          <th>Phone</th>
+          <th>ApprovedAmount</th>
+          <th>OutstandingBalance</th>
+          <th>MarkedBy</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="baddebt-tbody">
+        <!-- Data will be populated by JavaScript -->
+      </tbody>
+    </table>
+  </div>
+</div>
 
 <!-- ตารางค้นหา/ปิดจ๊อบรายวัน -->
 <div class="daily-job-table-section" style="display:none;">
@@ -1311,6 +1333,76 @@ if (firstDeleteBtn) {
       checkOtherCompanyVisibility();
       }
   };
+}
+
+// --- NEW: Bad Debt Logic ---
+const badDebtModal = document.getElementById('bad-debt-popup');
+const badDebtForm = document.getElementById('bad-debt-form');
+const cancelBadDebtBtn = document.getElementById('cancel-bad-debt-btn');
+const badDebtCustomerIdInput = document.getElementById('bad-debt-customer-id');
+const badDebtCustomerNameSpan = document.getElementById('bad-debt-customer-name');
+const badDebtNotesTextarea = document.getElementById('bad-debt-notes');
+
+if (badDebtModal) {
+    // Use event delegation on a parent container
+    document.querySelector('.main-content-area').addEventListener('click', (event) => {
+        if (event.target.matches('.bad-debt-btn')) {
+            const button = event.target;
+            const customerId = button.dataset.id;
+            const customerName = button.dataset.name;
+
+            badDebtCustomerIdInput.value = customerId;
+            badDebtCustomerNameSpan.textContent = customerName;
+            badDebtNotesTextarea.value = ''; // Clear previous notes
+            badDebtModal.style.display = 'block';
+        }
+    });
+
+    cancelBadDebtBtn.addEventListener('click', () => {
+        badDebtModal.style.display = 'none';
+    });
+
+    badDebtForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const customerId = badDebtCustomerIdInput.value;
+        const notes = badDebtNotesTextarea.value.trim();
+
+        if (!notes) {
+            alert('กรุณากรอกหมายเหตุ');
+            return;
+        }
+
+        const confirmBtn = badDebtForm.querySelector('button[type="submit"]');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'กำลังบันทึก...';
+
+        try {
+            const response = await fetch('/mark_as_bad_debt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customer_id: customerId, notes: notes })
+            });
+            const result = await response.json();
+            if (response.ok && result.success) {
+                alert('บันทึกหนี้เสียเรียบร้อยแล้ว');
+                badDebtModal.style.display = 'none';
+                document.querySelectorAll(`tr[data-customer-id="${customerId}"]`).forEach(row => {
+                    if (row.cells[0]) row.cells[0].textContent = 'หนี้เสีย';
+                    row.dataset.status = 'หนี้เสีย';
+                    const actionCell = row.querySelector('td:last-child');
+                    if (actionCell) actionCell.innerHTML = '<span style="color: var(--error-bg);">หนี้เสีย</span>';
+                });
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + (result.error || 'ไม่สามารถบันทึกได้'));
+            }
+        } catch (error) {
+            console.error('Error marking as bad debt:', error);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'ยืนยัน';
+        }
+    });
 }
 
   // ฟังก์ชันตรวจสอบว่ามีแถวไหนเลือก "อื่นๆ" ไหม เพื่อแสดงช่องกรอกบริษัทอื่นๆ
@@ -1657,21 +1749,62 @@ if (approveForm) {
 
 
 // สลับตารางเมื่อคลิก dropdown-menu item ที่มี data-table
-document.querySelectorAll('.dropdown-item[data-table]').forEach(item => {
-  item.addEventListener('click', e => {
+document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Make it async
+  item.addEventListener('click', async e => {
     e.preventDefault();
     const tableClass = item.getAttribute('data-table');
 
-    // ซ่อนทุกตารางก่อน อันนี้คือรายชื่อทุกตาราง
+    // Hide all tables
     document.querySelectorAll(
       '.approove-table-section, .closejob-table-section, .baddebt-table-section, .pullplug-table-section, .returnprincipal-table-section, .daily-job-table-section'
     ).forEach(section => {
       section.style.display = 'none';
     });
 
-    // แสดงเฉพาะตารางที่เลือก
+    // Show the selected table
     const targetTable = document.querySelector('.' + tableClass);
-    if (targetTable) targetTable.style.display = 'block';
+    if (targetTable) {
+        targetTable.style.display = 'block';
+    }
+
+    // --- NEW: Fetch data if it's the bad debt table ---
+    if (tableClass === 'baddebt-table-section') {
+        const tbody = document.getElementById('baddebt-tbody');
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>';
+
+        try {
+            const response = await fetch('/api/bad-debt-records');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const records = await response.json();
+
+            tbody.innerHTML = ''; // Clear loading message
+
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">ไม่พบข้อมูลหนี้เสีย</td></tr>';
+            } else {
+                records.forEach(record => {
+                    const row = `
+                        <tr>
+                            <td>${record.Timestamp || '-'}</td>
+                            <td>${record.CustomerID || '-'}</td>
+                            <td>${record.CustomerName || '-'}</td>
+                            <td>${record.Phone || '-'}</td>
+                            <td>${record.ApprovedAmount || '-'}</td>
+                            <td>${new Intl.NumberFormat('th-TH').format(record.OutstandingBalance || 0)}</td>
+                            <td>${record.MarkedBy || '-'}</td>
+                            <td>${record.Notes || '-'}</td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching bad debt records:', error);
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+        }
+    }
   });
 });
     const dailyJobSearchForm = document.getElementById('daily-job-search-form');
