@@ -113,37 +113,6 @@
             margin-bottom: 20px;
         }
 
-        /* --- New Styles for Form Layout --- */
-        .form-grid {
-            display: flex;
-            gap: 40px; /* Space between columns */
-            width: 100%;
-            text-align: left;
-        }
-
-        .form-column {
-            flex: 1; /* Each column takes equal space */
-            display: flex;
-            flex-direction: column;
-            gap: 30px; /* Space between fieldsets in a column */
-        }
-
-        fieldset {
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 25px;
-            margin: 0;
-        }
-
-        legend {
-            color: var(--primary-color);
-            font-weight: 600;
-            font-size: 1.2em;
-            padding: 0 10px;
-            margin-left: 10px; /* Align with padding of fieldset */
-        }
-        /* --- End New Styles --- */
-
         /* Styles for input groups (label + input) */
         .input-group {
             margin-bottom: 15px;
@@ -392,14 +361,6 @@
             }
             .sidebar-title {
                 margin-bottom: 20px;
-            }
-            /* Adjust form layout for smaller screens */
-            .form-grid {
-                flex-direction: column;
-                gap: 30px;
-            }
-            legend {
-                font-size: 1.1em;
             }
             .button-group {
                 flex-direction: column;
