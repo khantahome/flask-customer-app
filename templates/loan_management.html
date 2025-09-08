@@ -909,7 +909,6 @@
                 </button>
                 <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="#" data-table="returnprincipal-table-section">ตารางลูกค้าคืนต้น</a></li>
-                <li><a class="dropdown-item" href="#">ทำคืนต้น</a></li>
                 </ul>
             </div>
             </div>
@@ -938,19 +937,19 @@
             <button class="action-table-btn view-info-btn" data-id="{{ record['Customer ID'] }}">ดูข้อมูล</button>
             <button class="action-table-btn btn-danger bad-debt-btn" 
                     data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
                     data-phone="{{ record['เบอร์มือถือ'] }}">
                 หนี้เสีย
             </button>
             <button class="action-table-btn btn-warning pull-plug-btn" 
                     data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
                     data-phone="{{ record['เบอร์มือถือ'] }}">
                 ชั๊กปลั๊ก
             </button>
             <button class="action-table-btn btn-return-principal return-principal-btn" 
                     data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
                     data-phone="{{ record['เบอร์มือถือ'] }}">
                 คืนต้น
             </button>
@@ -1000,19 +999,19 @@
             <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
             <button class="action-table-btn btn-danger bad-debt-btn" 
                     data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
                     data-phone="{{ record['เบอร์มือถือ'] }}">
                 หนี้เสีย
             </button>
             <button class="action-table-btn btn-warning pull-plug-btn" 
                     data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
                     data-phone="{{ record['เบอร์มือถือ'] }}">
                 ชั๊กปลั๊ก
             </button>
             <button class="action-table-btn btn-return-principal return-principal-btn" 
                     data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อลูกค้า'] }}"
+                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
                     data-phone="{{ record['เบอร์มือถือ'] }}">
                 คืนต้น
             </button>
@@ -1049,6 +1048,28 @@
   </div>
 </div>
 
+<!-- ตารางชั๊กปลั๊ก -->
+<div class="pullplug-table-section" style="display:none;">
+  <h3>ตารางลูกค้าชั๊กปลั๊ก</h3>
+  <div style="overflow-x:auto;">
+    <table class="approove-table">
+      <thead>
+        <tr>
+          <th>วันที่บันทึก</th>
+          <th>รหัสลูกค้า</th>
+          <th>ชื่อ-นามสกุล</th>
+          <th>เบอร์โทรศัพท์</th>
+          <th>ยอดเงินที่ชั๊กปลั๊ก</th>
+          <th>ผู้บันทึก</th>
+          <th>หมายเหตุ</th>
+        </tr>
+      </thead>
+      <tbody id="pullplug-tbody">
+        <!-- Data will be populated by JavaScript -->
+      </tbody>
+    </table>
+  </div>
+</div>
 <!-- ตารางคืนต้น -->
 <div class="returnprincipal-table-section" style="display:none;">
   <h3>ตารางลูกค้าคืนต้น</h3>
@@ -2104,6 +2125,44 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
         } catch (error) {
             console.error('Error fetching bad debt records:', error);
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+        }
+    }
+
+    // --- NEW: Fetch data if it's the pull plug table ---
+    if (tableClass === 'pullplug-table-section') {
+        const tbody = document.getElementById('pullplug-tbody');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>';
+
+        try {
+            const response = await fetch('/api/pull-plug-records');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const records = await response.json();
+
+            tbody.innerHTML = ''; // Clear loading message
+
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">ไม่พบข้อมูลลูกค้าชั๊กปลั๊ก</td></tr>';
+            } else {
+                records.forEach(record => {
+                    const row = `
+                        <tr>
+                            <td>${record.Timestamp || '-'}</td>
+                            <td>${record.CustomerID || '-'}</td>
+                            <td>${record.CustomerName || '-'}</td>
+                            <td>${record.Phone || '-'}</td>
+                            <td>${new Intl.NumberFormat('th-TH').format(record.PullPlugAmount || 0)}</td>
+                            <td>${record.MarkedBy || '-'}</td>
+                            <td>${record.Notes || '-'}</td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching pull plug records:', error);
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
         }
     }
 

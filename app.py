@@ -60,7 +60,7 @@ APPROVE_WORKSHEET_NAME = 'approove'
 APPROVE_WORKSHEET_HEADERS = [
     'สถานะ', 
     'Customer ID', 
-    'ชื่อลูกค้า', 
+    'ชื่อ-นามสกุล', 
     'เบอร์มือถือ', 
     'วันที่ขอเข้ามา', 
     'วงเงินที่อนุมัติ', 
@@ -1012,7 +1012,7 @@ def mark_as_bad_debt():
             return jsonify({'error': 'Customer not found in approval list'}), 404
 
         # Use form data if provided, otherwise fall back to sheet data
-        customer_name = customer_info.get('ชื่อลูกค้า', '-') # Name is not editable on this form
+        customer_name = customer_info.get('ชื่อ-นามสกุล', '-') # Name is not editable on this form
         phone_from_sheet = customer_info.get('เบอร์มือถือ', '-')
         approved_amount = customer_info.get('วงเงินที่อนุมัติ', '0')
 
@@ -1100,7 +1100,7 @@ def mark_as_pull_plug():
         if not customer_info:
             return jsonify({'error': 'Customer not found in approval list'}), 404
 
-        customer_name = customer_info.get('ชื่อลูกค้า', '-')
+        customer_name = customer_info.get('ชื่อ-นามสกุล', '-')
 
         # 2. Append to pull_plug_records sheet
         pull_plug_ws = get_worksheet(SPREADSHEET_NAME, PULL_PLUG_WORKSHEET_NAME, PULL_PLUG_WORKSHEET_HEADERS)
@@ -1170,7 +1170,7 @@ def mark_as_return_principal():
         if not customer_info:
             return jsonify({'error': 'Customer not found in approval list'}), 404
 
-        customer_name = customer_info.get('ชื่อลูกค้า', '-')
+        customer_name = customer_info.get('ชื่อ-นามสกุล', '-')
 
         # 2. Append to return_principal_records sheet
         return_principal_ws = get_worksheet(SPREADSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_HEADERS)
