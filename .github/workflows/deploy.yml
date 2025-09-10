@@ -25,6 +25,9 @@ jobs:
           # Use fetch and reset to avoid conflicts with local changes on the server
           git fetch origin main
           git reset --hard origin/main
+          echo ">>> Clearing old Python cache files..."
+          find . -type f -name "*.pyc" -delete
+          find . -type d -name "__pycache__" -exec rm -r {} +
           echo ">>> Activating virtual environment..."
           source venv/bin/activate
           echo ">>> Installing/updating Python dependencies..."
