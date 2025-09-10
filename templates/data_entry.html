@@ -754,46 +754,78 @@
             }
         });
 
-        customerForm.addEventListener('submit', function(event) {
+        customerForm.addEventListener('submit', async function(event) { // Make the function async
             event.preventDefault();
 
             loadingOverlay.classList.add('visible');
             saveButton.disabled = true;
             saveButton.textContent = 'กำลังบันทึก...';
 
-            const formData = new FormData(customerForm);
-            formData.delete('customer_images');
-            selectedFiles.forEach(file => {
-                formData.append('customer_images', file, file.name);
-            });
+            let uploadedImageUrls = [];
 
-            // Submit using fetch
-            fetch(customerForm.action, { method: 'POST', body: formData })
-            .then(response => {
-                // If the server responds with a redirect, it means success.
-                // We navigate to the new URL, which will display the flashed message.
-                if (response.redirected) {
-                    window.location.href = response.url;
-                    return; // Stop further processing
-                }
-                // If there was no redirect, it means an error occurred and the server
-                // sent back the re-rendered page with a flash message. We need to display it.
-                return response.text().then(html => {
-                    // Replace the current document's content with the new HTML.
-                    // This preserves the URL but shows the error message.
-                    document.open();
-                    document.write(html);
-                    document.close();
-                });
-            })
-            .catch(error => {
-                    console.error('Error submitting form:', error);
-                    alert('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + error);
-                    // In case of a network or server error, hide overlay and re-enable the button.
+            // Step 1: Upload images to Cloudinary if any are selected
+            if (selectedFiles.length > 0) {
+                saveButton.textContent = 'กำลังอัปโหลดรูปภาพ...';
+                try {
+                    // Step 1a: Get signature from our backend
+                    const sigResponse = await fetch('/api/cloudinary-signature');
+                    if (!sigResponse.ok) {
+                        const err = await sigResponse.json();
+                        throw new Error(err.error || 'ไม่สามารถรับลายเซ็นสำหรับอัปโหลดได้');
+                    }
+                    const sigData = await sigResponse.json();
+                    const uploadUrl = `https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`;
+
+                    // Step 1b: Create an array of upload promises
+                    const uploadPromises = selectedFiles.map(file => {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('api_key', sigData.api_key);
+                        formData.append('timestamp', sigData.timestamp);
+                        formData.append('signature', sigData.signature);
+                        formData.append('folder', 'customer_app_images');
+
+                        return fetch(uploadUrl, { method: 'POST', body: formData })
+                            .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)));
+                    });
+
+                    // Step 1c: Wait for all uploads to complete
+                    const uploadResults = await Promise.all(uploadPromises);
+                    uploadedImageUrls = uploadResults.map(result => result.secure_url);
+
+                } catch (error) {
+                    console.error('Cloudinary upload error:', error);
+                    alert('เกิดข้อผิดพลาดระหว่างการอัปโหลดรูปภาพ: ' + (error.error ? error.error.message : error.message));
                     loadingOverlay.classList.remove('visible');
                     saveButton.disabled = false;
                     saveButton.textContent = 'บันทึกข้อมูล';
-                });
+                    return; // Stop the submission process
+                }
+            }
+
+            // Step 2: Submit form data (with image URLs) to our Flask backend
+            saveButton.textContent = 'กำลังบันทึกข้อมูล...';
+            const flaskFormData = new FormData(customerForm);
+            flaskFormData.delete('customer_images');
+            flaskFormData.append('image_urls', uploadedImageUrls.join(', '));
+
+            try {
+                const flaskResponse = await fetch(customerForm.action, { method: 'POST', body: flaskFormData });
+                if (flaskResponse.redirected) {
+                    window.location.href = flaskResponse.url;
+                } else {
+                    const html = await flaskResponse.text();
+                    document.open();
+                    document.write(html);
+                    document.close();
+                }
+            } catch (error) {
+                console.error('Error submitting form to Flask backend:', error);
+                alert('เกิดข้อผิดพลาดในการส่งข้อมูลไปยังเซิร์ฟเวอร์: ' + error);
+                loadingOverlay.classList.remove('visible');
+                saveButton.disabled = false;
+                saveButton.textContent = 'บันทึกข้อมูล';
+            }
         });
 
         // Set current date for application_date field

@@ -10,6 +10,7 @@ from pydrive.drive import GoogleDrive
 import os
 from datetime import datetime, timedelta
 import requests
+import time
 import json
 import cloudinary
 import cloudinary.uploader
@@ -587,6 +588,43 @@ def logout():
     flash('คุณได้ออกจากระบบแล้ว', 'success')
     return redirect(url_for('login'))
 
+@app.route('/api/cloudinary-signature', methods=['GET'])
+def get_cloudinary_signature():
+    """
+    Generates a signature for a direct Cloudinary upload.
+    This keeps the API secret on the server.
+    """
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        # Generate a timestamp in seconds.
+        timestamp = int(time.time())
+        
+        # The parameters to sign must match what the frontend will send,
+        # minus the 'file', 'api_key', and 'signature' itself.
+        params_to_sign = {
+            'timestamp': timestamp,
+            'folder': 'customer_app_images' # The folder we want to upload to
+        }
+
+        # Generate the signature using Cloudinary's utility function.
+        signature = cloudinary.utils.api_sign_request(
+            params_to_sign,
+            cloudinary.config().api_secret
+        )
+
+        # Return the necessary data to the frontend.
+        return jsonify({
+            'signature': signature,
+            'timestamp': timestamp,
+            'api_key': cloudinary.config().api_key,
+            'cloud_name': cloudinary.config().cloud_name
+        })
+    except Exception as e:
+        print(f"Error generating Cloudinary signature: {e}")
+        return jsonify({'error': 'Could not generate signature'}), 500
+
 @app.route('/enter_customer_data', methods=['GET', 'POST']) #หน้าลงทะเบียนลูกค้า
 def enter_customer_data():
     """
@@ -640,20 +678,11 @@ def enter_customer_data():
             work_location_link = request.form.get('work_location_link', '') or '-'
             remarks = request.form.get('remarks', '') or '-'
 
-            # Handle multiple image uploads
-            image_urls = []
-            if 'customer_images' in request.files:
-                files = request.files.getlist('customer_images')
-                for customer_image in files:
-                    if customer_image and customer_image.filename:
-                        # Make sure upload_image_to_cloudinary is defined elsewhere in app.py
-                        url = upload_image_to_cloudinary(customer_image.stream, customer_image.filename)
-                        if url:
-                            image_urls.append(url)
-
-            # Join all image URLs into a single comma-separated string, or "-" if no images
-            image_urls_str = ', '.join(image_urls) if image_urls else '-'
-
+            # --- MODIFIED PART ---
+            # The backend no longer handles file uploads directly.
+            # It receives a string of pre-uploaded image URLs from the frontend.
+            image_urls_str = request.form.get('image_urls', '') or '-'
+            
             # Get the customer data worksheet
             worksheet = get_customer_data_worksheet()
             if worksheet:
