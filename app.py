@@ -1322,29 +1322,21 @@ def edit_customer_data(row_index):
             'หมายเหตุ': request.form.get('remarks', '') or '-',
         }
         
-        # New logic: Get customer ID from form, or keep the existing one if not 'อนุมัติ'
-        customer_id = request.form.get('customer_id', '')
+        # --- MODIFIED PART for Direct Cloudinary Upload ---
+        # The backend no longer handles file uploads. It receives the final list of URLs
+        # and a list of URLs to be deleted from the frontend.
 
-        # Check for image URLs from both new uploads and kept images
-        current_image_urls = customer_data.get('existing_image_urls', [])
-        kept_image_urls_str = request.form.get('kept_image_urls', '')
-        kept_image_urls = [url.strip() for url in kept_image_urls_str.split(',')] if kept_image_urls_str else []
-        deleted_image_urls = [url for url in current_image_urls if url not in kept_image_urls]
+        # 1. Handle image deletion
+        deleted_urls_str = request.form.get('deleted_image_urls', '')
+        if deleted_urls_str:
+            urls_to_delete = deleted_urls_str.split(',')
+            for url in urls_to_delete:
+                if url: # Ensure not to process empty strings
+                    delete_image_from_cloudinary(url.strip())
 
-        for url_to_delete in deleted_image_urls:
-            delete_image_from_cloudinary(url_to_delete)
-
-        new_image_urls = []
-        if 'new_customer_images' in request.files:
-            files = request.files.getlist('new_customer_images')
-            for new_image in files:
-                if new_image and new_image.filename:
-                    url = upload_image_to_cloudinary(new_image.stream, new_image.filename)
-                    if url:
-                        new_image_urls.append(url)
-
-        final_image_urls = kept_image_urls + new_image_urls
-        updated_data['Image URLs'] = ', '.join(final_image_urls) if final_image_urls else '-'
+        # 2. Get the final list of image URLs to save
+        final_image_urls_str = request.form.get('final_image_urls', '')
+        updated_data['Image URLs'] = final_image_urls_str if final_image_urls_str else '-'
         updated_data['Logged In User'] = logged_in_user
 
         # ----------------------------------------------------
@@ -1352,6 +1344,9 @@ def edit_customer_data(row_index):
         # ----------------------------------------------------
         if updated_data.get('สถานะ') == 'อนุมัติ':
             try:
+                # New logic: Get customer ID from form, or keep the existing one if not 'อนุมัติ'
+                customer_id = request.form.get('customer_id', '')
+
                 # Get the 'approove' worksheet
                 client = gspread.authorize(creds)
                 approve_worksheet = client.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
@@ -1384,7 +1379,7 @@ def edit_customer_data(row_index):
                 print(f"Error saving to approve worksheet: {e}")
 
         # Finalize the data to update the original customer_records worksheet
-        updated_data['Customer ID'] = customer_id if customer_id else customer_data.get('Customer ID', '-')
+        # updated_data['Customer ID'] = customer_id if customer_id else customer_data.get('Customer ID', '-')
         
         # Prepare the row to update in the correct order of headers
         try:

@@ -480,8 +480,8 @@ body {
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-                <form id="editCustomerForm" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="row_index" value="{{ row_index }}">
+                <form id="editCustomerForm" method="post" enctype="multipart/form-data" data-existing-urls="{{ customer_data.existing_image_urls | join(',') }}">
+    <input type="hidden" name="row_index" value="{{ row_index }}"> <!-- This is still needed by the action URL -->
     <input type="hidden" id="keptImageUrls" name="kept_image_urls" value="{{ customer_data.existing_image_urls | join(', ') }}">
     
     <div class="input-group">
@@ -772,45 +772,90 @@ body {
                 }
             });
             // Form submission logic
-            editCustomerForm.addEventListener('submit', function(event) {
+            editCustomerForm.addEventListener('submit', async function(event) { // Make the function async
                 event.preventDefault(); // Prevent default form submission
 
                 // Show loading overlay and disable the save button
                 loadingOverlay.classList.add('visible');
                 saveButton.disabled = true; // Disable button to prevent multiple submissions
                 saveButton.textContent = 'กำลังบันทึก...'; // Change button text
+                
+                let newlyUploadedUrls = [];
 
-                const formData = new FormData(editCustomerForm);
+                // Step 1: Upload NEW images to Cloudinary if any are selected
+                if (newSelectedFiles.length > 0) {
+                    saveButton.textContent = 'กำลังอัปโหลดรูปภาพใหม่...';
+                    try {
+                        // Get signature from our backend
+                        const sigResponse = await fetch('/api/cloudinary-signature');
+                        if (!sigResponse.ok) {
+                            const err = await sigResponse.json();
+                            throw new Error(err.error || 'ไม่สามารถรับลายเซ็นสำหรับอัปโหลดได้');
+                        }
+                        const sigData = await sigResponse.json();
+                        const uploadUrl = `https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`;
 
-                // Append new image files
-                newSelectedFiles.forEach(file => {
-                    formData.append('new_customer_images', file, file.name);
-                });
+                        // Create an array of upload promises
+                        const uploadPromises = newSelectedFiles.map(file => {
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            formData.append('api_key', sigData.api_key);
+                            formData.append('timestamp', sigData.timestamp);
+                            formData.append('signature', sigData.signature);
+                            formData.append('folder', 'customer_app_images');
 
-                // Submit using fetch
-                fetch(editCustomerForm.action, { method: 'POST', body: formData })
-                .then(response => {
-                    // If the server responds with a redirect, navigate to the new URL.
-                    // This is the correct way to handle form submissions that redirect on success.
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                        return; // Stop processing, the page will navigate away.
+                            return fetch(uploadUrl, { method: 'POST', body: formData })
+                                .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)));
+                        });
+
+                        // Wait for all uploads to complete
+                        const uploadResults = await Promise.all(uploadPromises);
+                        newlyUploadedUrls = uploadResults.map(result => result.secure_url);
+
+                    } catch (error) {
+                        console.error('Cloudinary upload error:', error);
+                        alert('เกิดข้อผิดพลาดระหว่างการอัปโหลดรูปภาพ: ' + (error.error ? error.error.message : error.message));
+                        loadingOverlay.classList.remove('visible');
+                        saveButton.disabled = false;
+                        saveButton.textContent = 'บันทึกการแก้ไข';
+                        return; // Stop the submission process
                     }
-                    // If there was no redirect, it might be an error page, so display it.
-                    return response.text().then(html => {
+                }
+
+                // Step 2: Prepare form data for Flask backend
+                saveButton.textContent = 'กำลังบันทึกข้อมูล...';
+                const flaskFormData = new FormData(editCustomerForm);
+                flaskFormData.delete('new_customer_images'); // We don't send files to Flask anymore
+
+                // Determine final and deleted URLs
+                const originalUrls = (editCustomerForm.dataset.existingUrls || '').split(',').filter(Boolean);
+                const keptUrls = (keptImageUrlsInput.value || '').split(', ').filter(Boolean);
+                const deletedUrls = originalUrls.filter(url => !keptUrls.includes(url));
+                const finalUrls = keptUrls.concat(newlyUploadedUrls);
+
+                // Append the URL lists to the form data
+                flaskFormData.set('final_image_urls', finalUrls.join(', '));
+                flaskFormData.set('deleted_image_urls', deletedUrls.join(','));
+                flaskFormData.delete('kept_image_urls'); // This hidden input is no longer needed by the backend
+
+                // Step 3: Submit to Flask
+                try {
+                    const flaskResponse = await fetch(editCustomerForm.action, { method: 'POST', body: flaskFormData });
+                    if (flaskResponse.redirected) {
+                        window.location.href = flaskResponse.url;
+                    } else {
+                        const html = await flaskResponse.text();
                         document.open();
                         document.write(html);
                         document.close();
-                    });
-                })
-                .catch(error => {
-                    console.error('Error submitting form:', error);
-                    alert('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + error);
-                    // Hide loading overlay and re-enable the save button in case of an error
+                    }
+                } catch (error) {
+                    console.error('Error submitting form to Flask backend:', error);
+                    alert('เกิดข้อผิดพลาดในการส่งข้อมูลไปยังเซิร์ฟเวอร์: ' + error);
                     loadingOverlay.classList.remove('visible');
                     saveButton.disabled = false;
                     saveButton.textContent = 'บันทึกการแก้ไข'; // Restore button text
-                });
+                }
             });
 
             // Set current date for application_date field if it's empty
