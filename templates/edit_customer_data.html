@@ -788,28 +788,28 @@ body {
                 });
 
                 // Submit using fetch
-                fetch(editCustomerForm.action, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.text()) // Get response as text
-                .then(html => {
-                    // Hide loading overlay and re-enable the save button
-                    loadingOverlay.classList.remove('visible');
-                    saveButton.disabled = false;
-                    saveButton.textContent = 'บันทึกการแก้ไข'; // Restore button text
-
-                    document.open();
-                    document.write(html);
-                    document.close();
+                fetch(editCustomerForm.action, { method: 'POST', body: formData })
+                .then(response => {
+                    // If the server responds with a redirect, navigate to the new URL.
+                    // This is the correct way to handle form submissions that redirect on success.
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return; // Stop processing, the page will navigate away.
+                    }
+                    // If there was no redirect, it might be an error page, so display it.
+                    return response.text().then(html => {
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    });
                 })
                 .catch(error => {
                     console.error('Error submitting form:', error);
+                    alert('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + error);
                     // Hide loading overlay and re-enable the save button in case of an error
                     loadingOverlay.classList.remove('visible');
                     saveButton.disabled = false;
                     saveButton.textContent = 'บันทึกการแก้ไข'; // Restore button text
-                    // Optionally, display an error message to the user
                 });
             });
 
