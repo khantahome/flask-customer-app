@@ -20,7 +20,11 @@ from datetime import datetime
 
 # Initialize the Flask application
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your_super_secret_key_for_customer_app_2025_new')
+# In production, it's crucial that SECRET_KEY is set as an environment variable.
+# A hardcoded key is a security risk and should not be used.
+app.secret_key = os.environ.get('SECRET_KEY')
+if not app.secret_key:
+    raise ValueError("No SECRET_KEY set for Flask application. Please set it as an environment variable.")
 
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
@@ -435,6 +439,14 @@ def load_users():
     try:
         sheet = GSPREAD_CLIENT.open(USER_LOGIN_SPREADSHEET_NAME).worksheet(USER_LOGIN_WORKSHEET_NAME)
         data = sheet.get_all_records()
+
+        # --- ADDED: Robustness Check ---
+        # If the sheet is empty, get_all_records() returns an empty list.
+        # This prevents pandas from creating an empty DataFrame that causes issues.
+        if not data:
+            print("Warning: User login sheet is empty. No users loaded.")
+            return {}
+
         df = pd.DataFrame(data)
         if 'id' in df.columns and 'pass' in df.columns:
             users = dict(zip(df['id'], df['pass']))
@@ -1363,5 +1375,7 @@ def edit_customer_data(row_index):
 
 # --- Main execution block ---
 if __name__ == '__main__':
+    # This block is intended for local development.
+    # For production deployment on a VPS, use a WSGI server like Gunicorn instead of Flask's built-in server.
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=True) # debug=True is for development only
