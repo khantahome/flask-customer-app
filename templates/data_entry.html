@@ -767,25 +767,29 @@
                 formData.append('customer_images', file, file.name);
             });
 
-            fetch(customerForm.action, { method: customerForm.method, body: formData })
-                .then(response => {
-                    // If the server responds with a redirect, navigate to the new URL.
-                    // This is the correct way to handle form submissions that redirect on success.
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                        return; // Stop processing, the page will navigate away.
-                    }
-                    // If there was no redirect, it might be an error page, so display it.
-                    return response.text().then(html => {
-                        document.open();
-                        document.write(html);
-                        document.close();
-                    });
-                })
-                .catch(error => {
+            // Submit using fetch
+            fetch(customerForm.action, { method: 'POST', body: formData })
+            .then(response => {
+                // If the server responds with a redirect, it means success.
+                // We navigate to the new URL, which will display the flashed message.
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return; // Stop further processing
+                }
+                // If there was no redirect, it means an error occurred and the server
+                // sent back the re-rendered page with a flash message. We need to display it.
+                return response.text().then(html => {
+                    // Replace the current document's content with the new HTML.
+                    // This preserves the URL but shows the error message.
+                    document.open();
+                    document.write(html);
+                    document.close();
+                });
+            })
+            .catch(error => {
                     console.error('Error submitting form:', error);
                     alert('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + error);
-                    // In case of a network error, hide overlay and re-enable the button.
+                    // In case of a network or server error, hide overlay and re-enable the button.
                     loadingOverlay.classList.remove('visible');
                     saveButton.disabled = false;
                     saveButton.textContent = 'บันทึกข้อมูล';
