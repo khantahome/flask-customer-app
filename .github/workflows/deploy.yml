@@ -1,0 +1,33 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          echo ">>> Navigating to project directory..."
+          cd ${{ secrets.PROJECT_PATH }}
+          echo ">>> Pulling latest code from main branch..."
+          git pull origin main
+          echo ">>> Activating virtual environment..."
+          source venv/bin/activate
+          echo ">>> Installing/updating Python dependencies..."
+          pip install -r requirements.txt
+          echo ">>> Restarting the application service..."
+          sudo systemctl restart customer_app.service
+          sudo systemctl restart customer_app
+          echo ">>> Deployment complete!"
