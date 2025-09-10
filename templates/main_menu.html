@@ -697,8 +697,11 @@
                         // กลุ่มเดียวสำหรับทุกปี
                         const dataCounts = uniqueYears.map(year => {
                             let sum = 0;
-                            for (const month in data[year]) { // ใช้ 'data' parameter
-                                sum += data[year][month][selectedGroup] || 0; // ใช้ 'data' parameter
+                            const yearData = data[year];
+                            if (yearData) { // <-- เพิ่มการตรวจสอบตรงนี้
+                                for (const month in yearData) {
+                                    sum += yearData[month][selectedGroup] || 0;
+                                }
                             }
                             return sum;
                         });
@@ -714,8 +717,11 @@
                         uniqueCustomerGroups.forEach((group, groupIndex) => {
                             const dataCounts = uniqueYears.map(year => {
                                 let sum = 0;
-                                for (const month in data[year]) { // ใช้ 'data' parameter
-                                    sum += data[year][month][group] || 0; // ใช้ 'data' parameter
+                                const yearData = data[year];
+                                if (yearData) { // <-- เพิ่มการตรวจสอบตรงนี้
+                                    for (const month in yearData) {
+                                        sum += yearData[month][group] || 0;
+                                    }
                                 }
                                 return sum;
                             });
