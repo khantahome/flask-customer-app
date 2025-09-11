@@ -1039,6 +1039,51 @@ def upload_contract_docs():
         print(f"Error in upload_contract_docs: {traceback.format_exc()}")
         return jsonify({'error': 'An internal server error occurred.'}), 500
 
+@app.route('/delete_contract_doc', methods=['POST'])
+def delete_contract_doc():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        customer_id = data.get('customer_id')
+        url_to_delete = data.get('image_url_to_delete')
+
+        if not customer_id or not url_to_delete:
+            return jsonify({'error': 'Customer ID and image URL are required.'}), 400
+
+        # Step 1: Delete from Cloudinary
+        delete_success = delete_image_from_cloudinary(url_to_delete)
+        if not delete_success:
+            # Log the error but proceed to update the sheet anyway,
+            # as the link will be broken regardless.
+            print(f"Warning: Failed to delete image {url_to_delete} from Cloudinary, but proceeding to remove from sheet.")
+
+        # Step 2: Update Google Sheet
+        worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        all_data = worksheet.get_all_values()
+        headers = all_data[0]
+
+        id_col_index = headers.index('Customer ID')
+        doc_col_index = headers.index('รูปถ่ายสัญญา')
+
+        target_row_index = next((i for i, row in enumerate(all_data[1:], start=2) if str(row[id_col_index]).strip() == str(customer_id).strip()), None)
+
+        if not target_row_index:
+            return jsonify({'error': 'Customer not found in approove sheet.'}), 404
+
+        existing_urls_str = worksheet.cell(target_row_index, doc_col_index + 1).value or ''
+        existing_urls = [url.strip() for url in existing_urls_str.split(',') if url.strip() and url.strip() != '-']
+        updated_urls = [url for url in existing_urls if url.strip() != url_to_delete.strip()]
+        final_urls_str = ', '.join(updated_urls) if updated_urls else '-'
+        worksheet.update_cell(target_row_index, doc_col_index + 1, final_urls_str)
+
+        return jsonify({'success': True, 'message': 'Image deleted successfully.'})
+
+    except Exception as e:
+        print(f"Error in delete_contract_doc: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
+
 @app.route('/save-approved-data', methods=['POST'])
 def save_approved_data():
     if 'username' not in session:

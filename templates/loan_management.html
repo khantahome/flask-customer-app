@@ -759,6 +759,7 @@
 }
 
 .info-image-item {
+    position: relative; /* Needed for absolute positioning of the delete button */
     width: 100px;
     height: 100px;
     border-radius: 8px;
@@ -767,9 +768,38 @@
     transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
+.delete-doc-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(220, 53, 69, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    line-height: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+    opacity: 0; /* Hide by default */
+    pointer-events: none; /* Don't allow clicks when hidden */
+    z-index: 10; /* Ensure it's above the image link */
+}
+
+.info-image-item:hover .delete-doc-btn {
+    opacity: 1; /* Show on hover */
+    pointer-events: auto;
+}
+
 .info-image-item:hover {
     transform: scale(1.05);
     border-color: var(--primary-color);
+}
+
+.delete-doc-btn:hover {
+    background: var(--error-bg);
 }
 
 .info-image-item img {
@@ -2065,11 +2095,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const imageUrls = (data['รูปถ่ายสัญญา'] || '').split(',').map(url => url.trim()).filter(url => url && url !== '-');
           if (imageUrls.length > 0) {
               let imagesHTML = '<div class="info-image-gallery">';
-              imageUrls.forEach((url, index) => {
+              imageUrls.forEach((url, index) => { // Changed to a div container
                   imagesHTML += `
-                      <a href="${url}" class="info-image-item lightbox-trigger" data-index="${index}">
-                          <img src="${url}" alt="เอกสารสัญญา">
-                      </a>
+                      <div class="info-image-item">
+                          <a href="${url}" class="lightbox-trigger" data-index="${index}"><img src="${url}" alt="เอกสารสัญญา"></a>
+                          <button class="delete-doc-btn" data-url="${url}" data-customer-id="${data['Customer ID']}">&times;</button>
+                      </div>
                   `;
               });
               imagesHTML += '</div>';
@@ -2157,15 +2188,51 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Event delegation on the body of the info modal
-      viewInfoBody.addEventListener('click', (e) => {
-          const trigger = e.target.closest('.lightbox-trigger');
-          if (trigger) {
+      viewInfoBody.addEventListener('click', async (e) => {
+          // Handle lightbox trigger
+          if (e.target.closest('.lightbox-trigger')) {
               e.preventDefault();
+              const trigger = e.target.closest('.lightbox-trigger');
               const gallery = trigger.closest('.info-image-gallery');
               const allTriggers = Array.from(gallery.querySelectorAll('.lightbox-trigger'));
               const urls = allTriggers.map(t => t.href);
               const index = parseInt(trigger.dataset.index, 10);
               openLightbox(urls, index);
+          }
+
+          // Handle delete button click
+          if (e.target.classList.contains('delete-doc-btn')) {
+              e.preventDefault();
+              e.stopPropagation(); // Prevent lightbox from opening
+
+              const button = e.target;
+              const urlToDelete = button.dataset.url;
+              const customerId = button.dataset.customerId;
+
+              if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพนี้?`)) {
+                  button.textContent = '...';
+                  button.disabled = true;
+
+                  try {
+                      const response = await fetch('/delete_contract_doc', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ customer_id: customerId, image_url_to_delete: urlToDelete })
+                      });
+                      const result = await response.json();
+
+                      if (response.ok && result.success) {
+                          button.closest('.info-image-item').remove();
+                          alert('ลบรูปภาพเรียบร้อยแล้ว');
+                      } else {
+                          throw new Error(result.error || 'เกิดข้อผิดพลาดในการลบรูปภาพ');
+                      }
+                  } catch (error) {
+                      alert(`เกิดข้อผิดพลาด: ${error.message}`);
+                      button.textContent = '×';
+                      button.disabled = false;
+                  }
+              }
           }
       });
 
