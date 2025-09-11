@@ -916,7 +916,7 @@
 {% if approove %}
 <!-- ตารางอนุมัติยอด -->
 <div class="approove-table-section" style="display:none;">
-  <h3>ตารางลูกค้าที่รอปิดจ๊อบ</h3>
+  <h3>ตารางลูกค้าที่อนุมัติ</h3>
   <table class="approove-table">
     <thead>
       <tr>
@@ -935,24 +935,6 @@
         <td>
             <button class="action-table-btn add-doc-btn" data-id="{{ record['Customer ID'] }}">เพิ่มเอกสาร</button>
             <button class="action-table-btn view-info-btn" data-id="{{ record['Customer ID'] }}">ดูข้อมูล</button>
-            <button class="action-table-btn btn-danger bad-debt-btn" 
-                    data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
-                    data-phone="{{ record['เบอร์มือถือ'] }}">
-                หนี้เสีย
-            </button>
-            <button class="action-table-btn btn-warning pull-plug-btn" 
-                    data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
-                    data-phone="{{ record['เบอร์มือถือ'] }}">
-                ชั๊กปลั๊ก
-            </button>
-            <button class="action-table-btn btn-return-principal return-principal-btn" 
-                    data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
-                    data-phone="{{ record['เบอร์มือถือ'] }}">
-                คืนต้น
-            </button>
         </td>
       </tr>
       {% endfor %}
