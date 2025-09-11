@@ -69,7 +69,8 @@ APPROVE_WORKSHEET_HEADERS = [
     'เบอร์มือถือ', 
     'วันที่ขอเข้ามา', 
     'วงเงินที่อนุมัติ', 
-    'ผู้บันทึก'
+    'ผู้บันทึก',
+    'รูปถ่ายสัญญา'
 ]
 
 BAD_DEBT_WORKSHEET_NAME = 'bad_debt_records'
@@ -984,6 +985,56 @@ def loan_management():
         username=session['username'],
         approove=approove_data
     )
+
+@app.route('/upload_contract_docs', methods=['POST'])
+def upload_contract_docs():
+    """
+    Handles uploading contract document images for a specific customer.
+    """
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        customer_id = request.form.get('customer_id')
+        files = request.files.getlist('contract_files[]')
+
+        if not customer_id or not files:
+            return jsonify({'error': 'Customer ID and files are required.'}), 400
+
+        uploaded_urls = []
+        for file in files:
+            if file and file.filename:
+                url = upload_image_to_cloudinary(file.stream, file.filename)
+                if url:
+                    uploaded_urls.append(url)
+        
+        if not uploaded_urls:
+            return jsonify({'error': 'Failed to upload any files to Cloudinary.'}), 500
+
+        worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        all_data = worksheet.get_all_values()
+        headers = all_data[0]
+        
+        id_col_index = headers.index('Customer ID')
+        doc_col_index = headers.index('รูปถ่ายสัญญา')
+
+        target_row_index = next((i for i, row in enumerate(all_data[1:], start=2) if str(row[id_col_index]).strip() == str(customer_id).strip()), None)
+        
+        if not target_row_index:
+            return jsonify({'error': 'Customer not found in approove sheet.'}), 404
+
+        existing_urls_str = worksheet.cell(target_row_index, doc_col_index + 1).value or ''
+        existing_urls = [url.strip() for url in existing_urls_str.split(',') if url.strip() and url.strip() != '-']
+        final_urls = existing_urls + uploaded_urls
+        final_urls_str = ', '.join(final_urls)
+
+        worksheet.update_cell(target_row_index, doc_col_index + 1, final_urls_str)
+
+        return jsonify({'success': True, 'new_urls_string': final_urls_str})
+
+    except Exception as e:
+        print(f"Error in upload_contract_docs: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
 
 @app.route('/save-approved-data', methods=['POST'])
 def save_approved_data():

@@ -916,24 +916,42 @@
 {% if approove %}
 <!-- ตารางอนุมัติยอด -->
 <div class="approove-table-section" style="display:none;">
-  <h3>ตารางลูกค้าที่อนุมัติ</h3>
+  <h3>ตารางลูกค้าที่รออนุมัติ</h3>
   <table class="approove-table">
     <thead>
       <tr>
-        {% for header in approove[0].keys() %}
-          <th>{{ header }}</th>
-        {% endfor %}
+        <th>สถานะ</th>
+        <th>Customer ID</th>
+        <th>ชื่อ-นามสกุล</th>
+        <th>เบอร์มือถือ</th>
+        <th>วันที่ขอเข้ามา</th>
+        <th>วงเงินที่อนุมัติ</th>
+        <th>ผู้บันทึก</th>
+        <th>รูปถ่ายสัญญา</th>
         <th>การกระทำ</th>
       </tr>
     </thead>
     <tbody>
       {% for record in approove %}
-      <tr>
-        {% for value in record.values() %}
-          <td>{{ value }}</td>
-        {% endfor %}
+      <tr data-customer-id-row="{{ record['Customer ID'] }}">
+        <td>{{ record['สถานะ'] }}</td>
+        <td>{{ record['Customer ID'] }}</td>
+        <td>{{ record['ชื่อ-นามสกุล'] }}</td>
+        <td>{{ record['เบอร์มือถือ'] }}</td>
+        <td>{{ record['วันที่ขอเข้ามา'] }}</td>
+        <td>{{ record['วงเงินที่อนุมัติ'] }}</td>
+        <td>{{ record['ผู้บันทึก'] }}</td>
+        <td class="contract-docs-cell">
+            {% if record['รูปถ่ายสัญญา'] and record['รูปถ่ายสัญญา'] != '-' %}
+                {% for url in record['รูปถ่ายสัญญา'].split(',') %}
+                    <a href="{{ url.strip() }}" target="_blank" style="color: var(--secondary-color);">เอกสาร {{ loop.index }}</a><br>
+                {% endfor %}
+            {% else %}
+                -
+            {% endif %}
+        </td>
         <td>
-            <button class="action-table-btn add-doc-btn" data-id="{{ record['Customer ID'] }}">เพิ่มเอกสาร</button>
+            <button class="action-table-btn add-doc-btn" data-id="{{ record['Customer ID'] }}" data-name="{{ record['ชื่อ-นามสกุล'] }}">เพิ่มเอกสาร</button>
             <button class="action-table-btn view-info-btn" data-id="{{ record['Customer ID'] }}">ดูข้อมูล</button>
         </td>
       </tr>
@@ -1335,6 +1353,40 @@
     </form>
   </div>
 </div>
+
+<!-- NEW: Add Document Modal -->
+<div id="add-doc-modal" class="modal">
+  <div class="modal-content closejob-modal-content">
+    <h3 id="add-doc-modal-title">เพิ่มเอกสารสัญญา</h3>
+    <form id="add-doc-form" autocomplete="off" enctype="multipart/form-data">
+        <input type="hidden" id="add-doc-customer-id" name="customer_id">
+        
+        <div class="form-group">
+            <label class="form-label" for="contract-files-input">เลือกไฟล์รูปภาพสัญญา (เลือกหลายรูปได้)</label>
+            <input type="file" id="contract-files-input" name="contract_files[]" class="form-input" multiple accept="image/*" style="width:100%; background-color: var(--card-background);">
+        </div>
+
+        <!-- Image Previews -->
+        <div class="form-group">
+            <label class="form-label">ตัวอย่างรูปภาพที่จะอัปโหลด:</label>
+            <div id="doc-previews-container" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 80px; border: 1px dashed var(--border-color); padding: 10px; border-radius: 8px;">
+                <p id="doc-preview-placeholder" style="color: var(--light-text-color);">ยังไม่มีรูปภาพที่เลือก</p>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="upload-spinner" style="display: none; text-align: center; margin: 20px 0;">
+            <div class="spinner"></div>
+            <p>กำลังอัปโหลดไฟล์...</p>
+        </div>
+
+      <div class="form-actions">
+          <button type="submit" class="btn btn-approve" style="flex: 1;">บันทึกเอกสาร</button>
+          <button type="button" id="cancel-add-doc-btn" class="btn btn-danger" style="flex: 1;">ยกเลิก</button>
+      </div>
+    </form>
+  </div>
+</div>
             </div> {# End of .container #}
         </div> {# End of .main-content-area #}
     </div> {# End of .dashboard-layout #}
@@ -1427,6 +1479,113 @@ document.addEventListener('DOMContentLoaded', () => {
   const addShareBtn = document.getElementById('add-share-btn');
   const otherCompanyContainer = document.getElementById('other-company-container');
   const otherCompanyInput = document.getElementById('other_company');
+
+  // --- NEW: Add Document Modal Logic ---
+  const addDocModal = document.getElementById('add-doc-modal');
+  const addDocForm = document.getElementById('add-doc-form');
+  const cancelAddDocBtn = document.getElementById('cancel-add-doc-btn');
+  const addDocCustomerIdInput = document.getElementById('add-doc-customer-id');
+  const addDocModalTitle = document.getElementById('add-doc-modal-title');
+  const contractFilesInput = document.getElementById('contract-files-input');
+  const docPreviewsContainer = document.getElementById('doc-previews-container');
+  const docPreviewPlaceholder = document.getElementById('doc-preview-placeholder');
+  const uploadSpinner = document.getElementById('upload-spinner');
+  let selectedDocFiles = [];
+
+  if (addDocModal) {
+      // Open Modal
+      document.querySelector('.approove-table-section').addEventListener('click', (event) => {
+          if (event.target.matches('.add-doc-btn')) {
+              const button = event.target;
+              const customerId = button.dataset.id;
+              const customerName = button.dataset.name;
+
+              addDocCustomerIdInput.value = customerId;
+              addDocModalTitle.textContent = `เพิ่มเอกสารสำหรับ: ${customerName} (${customerId})`;
+              
+              // Reset form state
+              addDocForm.reset();
+              selectedDocFiles = [];
+              renderDocPreviews();
+              uploadSpinner.style.display = 'none';
+              addDocForm.querySelector('button[type="submit"]').disabled = false;
+
+              addDocModal.style.display = 'block';
+          }
+      });
+
+      // Close Modal
+      cancelAddDocBtn.addEventListener('click', () => {
+          addDocModal.style.display = 'none';
+      });
+
+      // File selection and preview
+      contractFilesInput.addEventListener('change', (event) => {
+          selectedDocFiles = Array.from(event.target.files);
+          renderDocPreviews();
+      });
+
+      function renderDocPreviews() {
+          docPreviewsContainer.innerHTML = ''; // Clear previous previews
+          if (selectedDocFiles.length === 0) {
+              docPreviewsContainer.innerHTML = `<p id="doc-preview-placeholder" style="color: var(--light-text-color);">ยังไม่มีรูปภาพที่เลือก</p>`;
+          } else {
+              selectedDocFiles.forEach(file => {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                      const img = document.createElement('img');
+                      img.src = e.target.result;
+                      img.style.width = '80px';
+                      img.style.height = '80px';
+                      img.style.objectFit = 'cover';
+                      img.style.borderRadius = '4px';
+                      docPreviewsContainer.appendChild(img);
+                  };
+                  reader.readAsDataURL(file);
+              });
+          }
+      }
+
+      // Form Submission
+      addDocForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (selectedDocFiles.length === 0) {
+              alert('กรุณาเลือกไฟล์เอกสารก่อนบันทึก');
+              return;
+          }
+
+          uploadSpinner.style.display = 'block';
+          const submitBtn = addDocForm.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+
+          const formData = new FormData(addDocForm);
+
+          try {
+              const response = await fetch('/upload_contract_docs', { method: 'POST', body: formData });
+              const result = await response.json();
+
+              if (response.ok && result.success) {
+                  alert('อัปโหลดและบันทึกเอกสารเรียบร้อยแล้ว');
+                  addDocModal.style.display = 'none';
+                  // Update the table cell without reloading the page
+                  const customerId = addDocCustomerIdInput.value;
+                  const row = document.querySelector(`tr[data-customer-id-row="${customerId}"]`);
+                  if (row) {
+                      const cell = row.querySelector('.contract-docs-cell');
+                      const urls = result.new_urls_string.split(',');
+                      cell.innerHTML = urls.map((url, index) => `<a href="${url.trim()}" target="_blank" style="color: var(--secondary-color);">เอกสาร ${index + 1}</a>`).join('<br>');
+                  }
+              } else {
+                  throw new Error(result.error || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+              }
+          } catch (error) {
+              alert(`เกิดข้อผิดพลาด: ${error.message}`);
+          } finally {
+              uploadSpinner.style.display = 'none';
+              submitBtn.disabled = false;
+          }
+      });
+  }
 
   // ฟังก์ชันเพิ่มแถวส่วนแบ่ง
   addShareBtn.addEventListener('click', function() {
