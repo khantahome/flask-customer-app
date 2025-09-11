@@ -923,11 +923,10 @@
         <th>สถานะ</th>
         <th>Customer ID</th>
         <th>ชื่อ-นามสกุล</th>
-        <th>เบอร์มือถือ</th>
-        <th>วันที่ขอเข้ามา</th>
+        <th>หมายเลขโทรศัพท์</th>
+        <th>วันที่อนุมัติ</th>
         <th>วงเงินที่อนุมัติ</th>
-        <th>ผู้บันทึก</th>
-        <th>รูปถ่ายสัญญา</th>
+        <th>ชื่อผู้ลงทะเบียน</th>
         <th>การกระทำ</th>
       </tr>
     </thead>
@@ -937,19 +936,10 @@
         <td>{{ record['สถานะ'] }}</td>
         <td>{{ record['Customer ID'] }}</td>
         <td>{{ record['ชื่อ-นามสกุล'] }}</td>
-        <td>{{ record['เบอร์มือถือ'] }}</td>
-        <td>{{ record['วันที่ขอเข้ามา'] }}</td>
+        <td>{{ record['หมายเลขโทรศัพท์'] }}</td>
+        <td>{{ record['วันที่อนุมัติ'] }}</td>
         <td>{{ record['วงเงินที่อนุมัติ'] }}</td>
-        <td>{{ record['ผู้บันทึก'] }}</td>
-        <td class="contract-docs-cell">
-            {% if record['รูปถ่ายสัญญา'] and record['รูปถ่ายสัญญา'] != '-' %}
-                {% for url in record['รูปถ่ายสัญญา'].split(',') %}
-                    <a href="{{ url.strip() }}" target="_blank" style="color: var(--secondary-color);">เอกสาร {{ loop.index }}</a><br>
-                {% endfor %}
-            {% else %}
-                -
-            {% endif %}
-        </td>
+        <td>{{ record['ชื่อผู้ลงทะเบียน'] }}</td>
         <td>
             <button class="action-table-btn add-doc-btn" data-id="{{ record['Customer ID'] }}" data-name="{{ record['ชื่อ-นามสกุล'] }}">เพิ่มเอกสาร</button>
             <button class="action-table-btn view-info-btn" data-id="{{ record['Customer ID'] }}">ดูข้อมูล</button>
@@ -1000,19 +990,19 @@
             <button class="action-table-btn btn-danger bad-debt-btn" 
                     data-id="{{ record['Customer ID'] }}" 
                     data-name="{{ record['ชื่อ-นามสกุล'] }}"
-                    data-phone="{{ record['เบอร์มือถือ'] }}">
+                    data-phone="{{ record['หมายเลขโทรศัพท์'] }}">
                 หนี้เสีย
             </button>
             <button class="action-table-btn btn-warning pull-plug-btn" 
                     data-id="{{ record['Customer ID'] }}" 
                     data-name="{{ record['ชื่อ-นามสกุล'] }}"
-                    data-phone="{{ record['เบอร์มือถือ'] }}">
+                    data-phone="{{ record['หมายเลขโทรศัพท์'] }}">
                 ชั๊กปลั๊ก
             </button>
             <button class="action-table-btn btn-return-principal return-principal-btn" 
                     data-id="{{ record['Customer ID'] }}" 
                     data-name="{{ record['ชื่อ-นามสกุล'] }}"
-                    data-phone="{{ record['เบอร์มือถือ'] }}">
+                    data-phone="{{ record['หมายเลขโทรศัพท์'] }}">
                 คืนต้น
             </button>
           </td>
@@ -1957,7 +1947,7 @@ if (returnPrincipalModal) {
       document.getElementById('customer_id').value = safe(infoData['Customer ID']);
       document.getElementById('fullname').value = safe(infoData['ชื่อ-นามสกุล']);
       document.getElementById('phone').value = safe(infoData['หมายเลขโทรศัพท์']);
-      document.getElementById('approve_date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('approve_date').value = safe(infoData['วันที่อนุมัติ']);
       document.getElementById('approved_amount').value = safe(infoData['วงเงินที่อนุมัติ']);
       document.getElementById('registrar').value = safe(infoData['ชื่อผู้ลงทะเบียน']);
 
