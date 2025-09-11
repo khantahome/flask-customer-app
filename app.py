@@ -90,6 +90,20 @@ RETURN_PRINCIPAL_WORKSHEET_HEADERS = [
     'ReturnAmount', 'MarkedBy', 'Notes'
 ]
 
+# NEW: Static list of all possible channels for consistency in filters
+ALL_CHANNELS = [
+    "FACEBOOK สตาร์โลน",
+    "FACEBOOK กลอรี่แคช",
+    "FACEBOOK แคชเครดิต",
+    "ไลน์@สตาร์โลน",
+    "ไลน์@กลอรี่แคช",
+    "ไลน์@แคชเครดิต",
+    "โทรเข้ามา สตาร์โลน",
+    "โทรเข้ามา กลอรี่แคช",
+    "โทรเข้ามา แคชเครดิต",
+    "อีเมล"
+]
+
 # Original Customer Records Sheet (uses เลขบัตรประชาชน)
 WORKSHEET_NAME = 'customer_records'
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
@@ -432,7 +446,7 @@ def get_channel_province_chart_data():
     
     # Data structure: {year: {month: {province: {channel: {group: count}}}}}
     chart_data = {} 
-    unique_channels = set()
+    # unique_channels = set() # No longer needed, using a static list
     unique_provinces = set()
     unique_years = set()
     unique_groups = set()
@@ -452,7 +466,7 @@ def get_channel_province_chart_data():
                 month = dt_object.strftime('%m') # '01', '02', etc.
  
                 unique_years.add(year)
-                unique_channels.add(channel)
+                # unique_channels.add(channel) # No longer needed
                 unique_provinces.add(province)
                 unique_groups.add(group)
 
@@ -470,7 +484,7 @@ def get_channel_province_chart_data():
 
     # Convert sets to sorted lists for consistent ordering
     sorted_years = sorted(list(unique_years))
-    sorted_channels = sorted(list(unique_channels))
+    # sorted_channels = sorted(list(unique_channels)) # No longer needed
     sorted_provinces = sorted(list(unique_provinces))
     sorted_groups = sorted(list(unique_groups))
     
@@ -479,7 +493,7 @@ def get_channel_province_chart_data():
 
     return jsonify({
         'chart_data': chart_data,
-        'unique_channels': sorted_channels,
+        'unique_channels': ALL_CHANNELS, # Use the static list
         'unique_provinces': sorted_provinces,
         'unique_years': sorted_years,
         'all_months': all_months,
