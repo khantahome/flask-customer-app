@@ -547,6 +547,25 @@
     background-color: #138496; /* A darker cyan */
     color: var(--info-text);
 }
+
+/* NEW: Styles for specific action buttons to make them stand out */
+.action-table-btn i {
+    margin-right: 6px; /* Space between icon and text */
+}
+.action-table-btn.btn-add-doc {
+    background-color: var(--success-bg); /* Green */
+    color: var(--success-text);
+}
+.action-table-btn.btn-add-doc:hover {
+    background-color: #218838; /* Darker Green */
+}
+.action-table-btn.btn-view-info {
+    background-color: var(--secondary-color); /* Cyan */
+    color: white; /* Ensure text is always white for good contrast */
+}
+.action-table-btn.btn-view-info:hover {
+    background-color: #008C9E; /* Darker Cyan */
+}
 .closejob-modal-content {
             background: var(--card-background);
             border-radius: 16px;
@@ -1268,8 +1287,8 @@
         <td>{{ record['วงเงินที่อนุมัติ'] }}</td>
         <td>{{ record['ชื่อผู้ลงทะเบียน'] }}</td>
         <td>
-            <button class="action-table-btn add-doc-btn" data-id="{{ record['Customer ID'] }}" data-name="{{ record['ชื่อ-นามสกุล'] }}">เพิ่มเอกสาร</button>
-            <button class="action-table-btn view-info-btn" data-id="{{ record['Customer ID'] }}">ดูข้อมูล</button>
+            <button class="action-table-btn btn-add-doc add-doc-btn" data-id="{{ record['Customer ID'] }}" data-name="{{ record['ชื่อ-นามสกุล'] }}"><i class="fas fa-file-upload"></i> เพิ่มเอกสาร</button>
+            <button class="action-table-btn btn-view-info view-info-btn" data-id="{{ record['Customer ID'] }}"><i class="fas fa-eye"></i> ดูข้อมูล</button>
         </td>
       </tr>
       {% endfor %}
@@ -1874,7 +1893,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     // Click to select files
-    fileDropZone.addEventListener('click', () => contractFilesInput.click());
     contractFilesInput.addEventListener('change', (e) => handleFiles(e.target.files));
 
     // Render previews
