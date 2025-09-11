@@ -423,6 +423,58 @@ def get_customer_chart_data():
         'all_months': all_months
     })
 
+@app.route('/get_channel_province_chart_data')
+def get_channel_province_chart_data():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    all_customers = get_all_customer_records()
+    
+    chart_data = {} # {year: {month: {channel: {province: count}}}}
+    unique_channels = set()
+    unique_provinces = set()
+    unique_years = set()
+    
+    for record in all_customers:
+        # Use 'วันที่ขอเข้ามา', 'ขอเข้ามาทางไหน', 'จังหวัดที่อยู่'
+        date_str = record.get('วันที่ขอเข้ามา')
+        channel = record.get('ขอเข้ามาทางไหน')
+        province = record.get('จังหวัดที่อยู่')
+
+        if date_str and channel and province and channel != '-' and province != '-':
+            try:
+                # Parse date string (e.g., 'YYYY-MM-DD')
+                dt_object = datetime.strptime(date_str, '%Y-%m-%d')
+                year = str(dt_object.year)
+                month = dt_object.strftime('%m') # '01', '02', etc.
+
+                unique_years.add(year)
+                unique_channels.add(channel)
+                unique_provinces.add(province)
+
+                # Build nested dictionary
+                chart_data.setdefault(year, {}).setdefault(month, {}).setdefault(channel, {})
+                chart_data[year][month][channel][province] = chart_data[year][month][channel].get(province, 0) + 1
+
+            except (ValueError, TypeError):
+                print(f"Warning: Could not parse date '{date_str}' for channel/province chart data.")
+                continue
+
+    # Convert sets to sorted lists for consistent ordering
+    sorted_years = sorted(list(unique_years))
+    sorted_channels = sorted(list(unique_channels))
+    sorted_provinces = sorted(list(unique_provinces))
+    
+    # Months list is fixed
+    all_months = [str(i).zfill(2) for i in range(1, 13)]
+
+    return jsonify({
+        'chart_data': chart_data,
+        'unique_channels': sorted_channels,
+        'unique_provinces': sorted_provinces,
+        'unique_years': sorted_years,
+        'all_months': all_months
+    })
 
 
 
