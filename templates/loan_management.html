@@ -849,6 +849,142 @@
 .lightbox-zoom-controls button:hover {
     color: var(--secondary-color);
 }
+
+/* NEW: Modern Add Document Modal Styles */
+.add-doc-modal-content {
+    background: var(--card-background);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    max-width: 550px; /* More compact width */
+    margin: 40px auto;
+    padding: 0; /* Remove padding to use header/body/footer structure */
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.add-doc-header {
+    background-color: var(--table-header-bg);
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.add-doc-header h3 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.close-add-doc-modal {
+    color: var(--light-text-color);
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-add-doc-modal:hover {
+    color: var(--text-color);
+}
+
+.add-doc-body {
+    padding: 25px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* File Drop Zone */
+.file-drop-zone {
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s, background-color 0.3s;
+    margin-bottom: 20px;
+}
+
+.file-drop-zone:hover, .file-drop-zone.dragover {
+    border-color: var(--primary-color);
+    background-color: rgba(138, 43, 226, 0.1);
+}
+
+.file-drop-zone .drop-zone-text {
+    color: var(--light-text-color);
+    font-size: 1.1rem;
+}
+
+.file-drop-zone .drop-zone-text i {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 10px;
+    color: var(--secondary-color);
+}
+
+#contract-files-input {
+    display: none; /* Hide the actual input */
+}
+
+/* Image Previews */
+#doc-previews-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.doc-preview-item {
+    position: relative;
+    width: 100%;
+    padding-top: 100%; /* 1:1 Aspect Ratio */
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--background-color);
+}
+
+.doc-preview-item img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-doc-preview {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(220, 53, 69, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    line-height: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.remove-doc-preview:hover {
+    background: var(--error-bg);
+}
+
+.add-doc-footer {
+    padding: 15px 25px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--table-header-bg);
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
         
 /* Responsive: ตารางไม่ล้นจอและเลื่อนซ้ายขวาได้ */
 .daily-job-table-section {
@@ -1535,24 +1671,27 @@
   </div>
 </div>
 
-<!-- NEW: Add Document Modal -->
+<!-- NEW: Add Document Modal (Modernized) -->
 <div id="add-doc-modal" class="modal">
-  <div class="modal-content closejob-modal-content">
-    <h3 id="add-doc-modal-title">เพิ่มเอกสารสัญญา</h3>
-    <form id="add-doc-form" autocomplete="off" enctype="multipart/form-data">
+  <div class="modal-content add-doc-modal-content">
+    <div class="add-doc-header">
+        <h3 id="add-doc-modal-title">เพิ่มเอกสารสัญญา</h3>
+        <span class="close-add-doc-modal">&times;</span>
+    </div>
+    <form id="add-doc-form" class="add-doc-body" autocomplete="off" enctype="multipart/form-data">
         <input type="hidden" id="add-doc-customer-id" name="customer_id">
         
-        <div class="form-group">
-            <label class="form-label" for="contract-files-input">เลือกไฟล์รูปภาพสัญญา (เลือกหลายรูปได้)</label>
-            <input type="file" id="contract-files-input" name="contract_files[]" class="form-input" multiple accept="image/*" style="width:100%; background-color: var(--card-background);">
-        </div>
+        <label for="contract-files-input" class="file-drop-zone">
+            <span class="drop-zone-text">
+                <i class="fas fa-cloud-upload-alt"></i>
+                ลากและวางไฟล์ที่นี่<br>หรือคลิกเพื่อเลือกไฟล์
+            </span>
+        </label>
+        <input type="file" id="contract-files-input" name="contract_files[]" multiple accept="image/*">
 
         <!-- Image Previews -->
-        <div class="form-group">
-            <label class="form-label">ตัวอย่างรูปภาพที่จะอัปโหลด:</label>
-            <div id="doc-previews-container" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 80px; border: 1px dashed var(--border-color); padding: 10px; border-radius: 8px;">
-                <p id="doc-preview-placeholder" style="color: var(--light-text-color);">ยังไม่มีรูปภาพที่เลือก</p>
-            </div>
+        <div id="doc-previews-container">
+            <!-- Previews will be injected here by JS -->
         </div>
 
         <!-- Loading Spinner -->
@@ -1560,12 +1699,11 @@
             <div class="spinner"></div>
             <p>กำลังอัปโหลดไฟล์...</p>
         </div>
-
-      <div class="form-actions">
-          <button type="submit" class="btn btn-approve" style="flex: 1;">บันทึกเอกสาร</button>
-          <button type="button" id="cancel-add-doc-btn" class="btn btn-danger" style="flex: 1;">ยกเลิก</button>
-      </div>
     </form>
+    <div class="add-doc-footer">
+        <button type="button" id="cancel-add-doc-btn" class="btn btn-danger">ยกเลิก</button>
+        <button type="submit" form="add-doc-form" class="btn btn-approve">บันทึกเอกสาร</button>
+    </div>
   </div>
 </div>
 
@@ -1692,19 +1830,87 @@ document.addEventListener('DOMContentLoaded', () => {
   const otherCompanyContainer = document.getElementById('other-company-container');
   const otherCompanyInput = document.getElementById('other_company');
 
-  // --- NEW: Add Document Modal Logic ---
+  // --- NEW: Add Document Modal Logic (Modernized) ---
   const addDocModal = document.getElementById('add-doc-modal');
-  const addDocForm = document.getElementById('add-doc-form');
-  const cancelAddDocBtn = document.getElementById('cancel-add-doc-btn');
-  const addDocCustomerIdInput = document.getElementById('add-doc-customer-id');
-  const addDocModalTitle = document.getElementById('add-doc-modal-title');
-  const contractFilesInput = document.getElementById('contract-files-input');
-  const docPreviewsContainer = document.getElementById('doc-previews-container');
-  const docPreviewPlaceholder = document.getElementById('doc-preview-placeholder');
-  const uploadSpinner = document.getElementById('upload-spinner');
-  let selectedDocFiles = [];
-
   if (addDocModal) {
+    const addDocForm = document.getElementById('add-doc-form');
+    const cancelAddDocBtn = document.getElementById('cancel-add-doc-btn');
+    const closeAddDocModalBtn = addDocModal.querySelector('.close-add-doc-modal');
+    const addDocCustomerIdInput = document.getElementById('add-doc-customer-id');
+    const addDocModalTitle = document.getElementById('add-doc-modal-title');
+    const contractFilesInput = document.getElementById('contract-files-input');
+    const docPreviewsContainer = document.getElementById('doc-previews-container');
+    const uploadSpinner = document.getElementById('upload-spinner');
+    const fileDropZone = addDocModal.querySelector('.file-drop-zone');
+    const dropZoneTextSpan = fileDropZone.querySelector('.drop-zone-text');
+    const originalDropZoneText = dropZoneTextSpan.innerHTML;
+    let selectedDocFiles = [];
+
+    // Function to handle file selection
+    function handleFiles(files) {
+        const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+        // Prevent duplicates
+        newFiles.forEach(newFile => {
+            if (!selectedDocFiles.some(existingFile => existingFile.name === newFile.name && existingFile.size === newFile.size)) {
+                selectedDocFiles.push(newFile);
+            }
+        });
+        renderDocPreviews();
+    }
+
+    // Drag and Drop events
+    fileDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileDropZone.classList.add('dragover');
+    });
+    fileDropZone.addEventListener('dragleave', () => {
+        fileDropZone.classList.remove('dragover');
+    });
+    fileDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileDropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            handleFiles(e.dataTransfer.files);
+        }
+    });
+    // Click to select files
+    fileDropZone.addEventListener('click', () => contractFilesInput.click());
+    contractFilesInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    // Render previews
+    function renderDocPreviews() {
+        docPreviewsContainer.innerHTML = ''; // Clear previous previews
+        
+        if (selectedDocFiles.length > 0) {
+            dropZoneTextSpan.innerHTML = `<i class="fas fa-images"></i> ${selectedDocFiles.length} ไฟล์ถูกเลือกแล้ว<br>ลากไฟล์เพิ่มเติมหรือคลิกที่นี่`;
+        } else {
+            dropZoneTextSpan.innerHTML = originalDropZoneText;
+        }
+
+        selectedDocFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'doc-preview-item';
+                previewItem.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <button type="button" class="remove-doc-preview" data-index="${index}">&times;</button>
+                `;
+                docPreviewsContainer.appendChild(previewItem);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Remove a preview
+    docPreviewsContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-doc-preview')) {
+            const indexToRemove = parseInt(e.target.dataset.index, 10);
+            selectedDocFiles.splice(indexToRemove, 1);
+            renderDocPreviews();
+        }
+    });
+
       // Open Modal
       document.querySelector('.approove-table-section').addEventListener('click', (event) => {
           if (event.target.matches('.add-doc-btn')) {
@@ -1713,50 +1919,25 @@ document.addEventListener('DOMContentLoaded', () => {
               const customerName = button.dataset.name;
 
               addDocCustomerIdInput.value = customerId;
-              addDocModalTitle.textContent = `เพิ่มเอกสารสำหรับ: ${customerName} (${customerId})`;
+              addDocModalTitle.textContent = `เพิ่มเอกสารสำหรับ: ${customerName}`;
               
               // Reset form state
               addDocForm.reset();
               selectedDocFiles = [];
               renderDocPreviews();
               uploadSpinner.style.display = 'none';
-              addDocForm.querySelector('button[type="submit"]').disabled = false;
+              addDocModal.querySelector('button[type="submit"]').disabled = false;
 
               addDocModal.style.display = 'block';
           }
       });
 
       // Close Modal
-      cancelAddDocBtn.addEventListener('click', () => {
+      function closeAddDocModal() {
           addDocModal.style.display = 'none';
-      });
-
-      // File selection and preview
-      contractFilesInput.addEventListener('change', (event) => {
-          selectedDocFiles = Array.from(event.target.files);
-          renderDocPreviews();
-      });
-
-      function renderDocPreviews() {
-          docPreviewsContainer.innerHTML = ''; // Clear previous previews
-          if (selectedDocFiles.length === 0) {
-              docPreviewsContainer.innerHTML = `<p id="doc-preview-placeholder" style="color: var(--light-text-color);">ยังไม่มีรูปภาพที่เลือก</p>`;
-          } else {
-              selectedDocFiles.forEach(file => {
-                  const reader = new FileReader();
-                  reader.onload = (e) => {
-                      const img = document.createElement('img');
-                      img.src = e.target.result;
-                      img.style.width = '80px';
-                      img.style.height = '80px';
-                      img.style.objectFit = 'cover';
-                      img.style.borderRadius = '4px';
-                      docPreviewsContainer.appendChild(img);
-                  };
-                  reader.readAsDataURL(file);
-              });
-          }
       }
+      cancelAddDocBtn.addEventListener('click', closeAddDocModal);
+      closeAddDocModalBtn.addEventListener('click', closeAddDocModal);
 
       // Form Submission
       addDocForm.addEventListener('submit', async (e) => {
@@ -1767,10 +1948,14 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           uploadSpinner.style.display = 'block';
-          const submitBtn = addDocForm.querySelector('button[type="submit"]');
+          const submitBtn = addDocModal.querySelector('button[type="submit"]');
           submitBtn.disabled = true;
 
-          const formData = new FormData(addDocForm);
+          const formData = new FormData();
+          formData.append('customer_id', addDocCustomerIdInput.value);
+          selectedDocFiles.forEach(file => {
+              formData.append('contract_files[]', file);
+          });
 
           try {
               const response = await fetch('/upload_contract_docs', { method: 'POST', body: formData });
@@ -1778,15 +1963,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
               if (response.ok && result.success) {
                   alert('อัปโหลดและบันทึกเอกสารเรียบร้อยแล้ว');
-                  addDocModal.style.display = 'none';
-                  // Update the table cell without reloading the page
-                  const customerId = addDocCustomerIdInput.value;
-                  const row = document.querySelector(`tr[data-customer-id-row="${customerId}"]`);
-                  if (row) {
-                      const cell = row.querySelector('.contract-docs-cell');
-                      const urls = result.new_urls_string.split(',');
-                      cell.innerHTML = urls.map((url, index) => `<a href="${url.trim()}" target="_blank" style="color: var(--secondary-color);">เอกสาร ${index + 1}</a>`).join('<br>');
-                  }
+                  closeAddDocModal();
+                  // Reload page to ensure "View Info" modal gets fresh data
+                  window.location.reload();
               } else {
                   throw new Error(result.error || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
               }

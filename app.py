@@ -566,19 +566,22 @@ def get_customer_records_by_keyword(keyword):
 
 def upload_image_to_cloudinary(file_stream, original_filename):
     """
-    Uploads an image file stream to Cloudinary.
+    Uploads an image file stream to Cloudinary, resizing it for optimization.
     Returns the URL of the uploaded file, or None if upload fails.
     """
     try:
-        # Upload the file directly from the stream
-        # The 'folder' parameter allows you to organize images in Cloudinary
+        # Upload the file directly from the stream, applying a transformation
+        # to resize the image, which saves storage and speeds up loading.
         upload_result = cloudinary.uploader.upload(
             file_stream,
-            folder="customer_app_images"
+            folder="customer_app_images",
+            transformation=[
+                {'width': 1200, 'height': 1200, 'crop': 'limit', 'quality': 'auto'}
+            ]
         )
 
         if upload_result and 'secure_url' in upload_result:
-            print(f"Uploaded file '{original_filename}' to Cloudinary. URL: {upload_result['secure_url']}")
+            print(f"Uploaded and resized file '{original_filename}' to Cloudinary. URL: {upload_result['secure_url']}")
             return upload_result['secure_url']
         else:
             print(f"Error uploading image '{original_filename}' to Cloudinary: No secure_url returned.")
