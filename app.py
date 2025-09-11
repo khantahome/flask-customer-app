@@ -1153,17 +1153,19 @@ def save_approved_data():
                 net_opening_col = f"{table_prefix}NetOpening"
                 opening_balance_col = f"{table_prefix}OpeningBalance"
 
-                # VALIDATION: Check against the inherited state
-                pr_val = to_float(new_row_data.get(principal_returned_col, 0))
+                # CORRECTED VALIDATION: The current balance for a specific table is the sum of its
+                # 'OpeningBalance' and 'NetOpening' from the latest record. These fields already
+                # represent the running balance, so we don't need to subtract the cumulative returned principal again.
                 no_val = to_float(new_row_data.get(net_opening_col, 0))
                 ob_val = to_float(new_row_data.get(opening_balance_col, 0))
-                lost_val = to_float(new_row_data.get(f"{table_prefix}LostAmount", 0))
-                table_balance = (ob_val + no_val) - (pr_val + lost_val)
+                table_balance = ob_val + no_val
 
                 if amount > table_balance:
                     error_msg = f'ยอดคืนต้น ({amount:,.2f}) ของบริษัท {company} โต๊ะ {table} มากกว่ายอดคงเหลือ ({table_balance:,.2f})'
                     return jsonify({'error': error_msg}), 400
 
+                # Now, update the values for the new row
+                pr_val = to_float(new_row_data.get(principal_returned_col, 0))
                 new_row_data[principal_returned_col] = pr_val + amount
                 if no_val != 0:
                     new_row_data[net_opening_col] = no_val - amount
