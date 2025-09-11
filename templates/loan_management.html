@@ -1345,8 +1345,8 @@
     <table class="closejob-table">
       <thead>
         <tr>
-          {% for header in approove[0].keys() %}
-            <th>{{ header }}</th>
+          {% for header in approove[0].keys() if header != 'รูปถ่ายสัญญา' %}
+              <th>{{ header }}</th>
           {% endfor %}
           <th>การกระทำ</th>
         </tr>
@@ -1358,8 +1358,8 @@
           data-customer-id="{{ record['Customer ID'] }}" 
           data-customer-name="{{ record['ชื่อลูกค้า'] }}"
         >
-          {% for value in record.values() %}
-            <td>{{ value }}</td>
+          {% for key, value in record.items() if key != 'รูปถ่ายสัญญา' %}
+              <td>{{ value }}</td>
           {% endfor %}
           <td>
             <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
