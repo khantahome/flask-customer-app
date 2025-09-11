@@ -904,6 +904,7 @@
             let channelChartInstance;
 
             let rawChannelData = {};
+            let uniqueGroupsForChannelChart = []; // NEW: To store unique groups
 
             function toggleChannelLoading(show) {
                 channelChartLoadingOverlay.style.display = show ? 'flex' : 'none';
@@ -917,6 +918,7 @@
                     const data = await response.json();
                     
                     rawChannelData = data.chart_data;
+                    uniqueGroupsForChannelChart = data.unique_groups; // NEW: Store unique groups
                     
                     populateChannelFilters(data.unique_years, data.all_months, data.unique_channels, data.unique_provinces);
                     updateChannelChart();
@@ -978,27 +980,33 @@
 
                 const aggregatedData = {}; // { label: count }
 
+                // Loop through all data points with the new flexible structure
                 for (const year in rawChannelData) {
                     if (selectedYear && year !== selectedYear) continue;
                     for (const month in rawChannelData[year]) {
                         if (selectedMonth && month !== selectedMonth) continue;
-                        for (const channel in rawChannelData[year][month]) {
-                            if (selectedChannel && channel !== selectedChannel) continue;
-                            for (const province in rawChannelData[year][month][channel]) {
-                                if (selectedProvince && province !== selectedProvince) continue;
-                                
-                                const count = rawChannelData[year][month][channel][province];
-                                
-                                let label;
-                                if (selectedChannel) {
-                                    label = province;
-                                } else if (selectedProvince) {
-                                    label = channel;
-                                } else {
-                                    label = channel;
+                        for (const province in rawChannelData[year][month]) {
+                            if (selectedProvince && province !== selectedProvince) continue;
+                            for (const channel in rawChannelData[year][month][province]) {
+                                if (selectedChannel && channel !== selectedChannel) continue;
+                                for (const group in rawChannelData[year][month][province][channel]) {
+                                    const count = rawChannelData[year][month][province][channel][group];
+                                    
+                                    let label;
+                                    // Determine what the bar labels should be based on the filters
+                                    if (selectedProvince) {
+                                        // If a province is selected, we always group by customer group.
+                                        label = group;
+                                    } else if (selectedChannel) {
+                                        // If only a channel is selected, we group by province.
+                                        label = province;
+                                    } else {
+                                        // If no province or channel is selected, we group by channel.
+                                        label = channel;
+                                    }
+                                    
+                                    aggregatedData[label] = (aggregatedData[label] || 0) + count;
                                 }
-                                
-                                aggregatedData[label] = (aggregatedData[label] || 0) + count;
                             }
                         }
                     }

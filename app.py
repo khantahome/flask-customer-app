@@ -430,31 +430,39 @@ def get_channel_province_chart_data():
 
     all_customers = get_all_customer_records()
     
-    chart_data = {} # {year: {month: {channel: {province: count}}}}
+    # Data structure: {year: {month: {province: {channel: {group: count}}}}}
+    chart_data = {} 
     unique_channels = set()
     unique_provinces = set()
     unique_years = set()
+    unique_groups = set()
     
     for record in all_customers:
-        # Use 'วันที่ขอเข้ามา', 'ขอเข้ามาทางไหน', 'จังหวัดที่อยู่'
+        # Use 'วันที่ขอเข้ามา', 'ขอเข้ามาทางไหน', 'จังหวัดที่อยู่', and 'กลุ่มลูกค้าหลัก'
         date_str = record.get('วันที่ขอเข้ามา')
         channel = record.get('ขอเข้ามาทางไหน')
         province = record.get('จังหวัดที่อยู่')
+        group = record.get('กลุ่มลูกค้าหลัก')
 
-        if date_str and channel and province and channel != '-' and province != '-':
+        if date_str and channel and province and group and channel != '-' and province != '-' and group != '-':
             try:
                 # Parse date string (e.g., 'YYYY-MM-DD')
                 dt_object = datetime.strptime(date_str, '%Y-%m-%d')
                 year = str(dt_object.year)
                 month = dt_object.strftime('%m') # '01', '02', etc.
-
+ 
                 unique_years.add(year)
                 unique_channels.add(channel)
                 unique_provinces.add(province)
+                unique_groups.add(group)
 
-                # Build nested dictionary
-                chart_data.setdefault(year, {}).setdefault(month, {}).setdefault(channel, {})
-                chart_data[year][month][channel][province] = chart_data[year][month][channel].get(province, 0) + 1
+                # Build the deeply nested dictionary for flexible filtering
+                year_data = chart_data.setdefault(year, {})
+                month_data = year_data.setdefault(month, {})
+                province_data = month_data.setdefault(province, {})
+                channel_data = province_data.setdefault(channel, {})
+                
+                channel_data[group] = channel_data.get(group, 0) + 1
 
             except (ValueError, TypeError):
                 print(f"Warning: Could not parse date '{date_str}' for channel/province chart data.")
@@ -464,6 +472,7 @@ def get_channel_province_chart_data():
     sorted_years = sorted(list(unique_years))
     sorted_channels = sorted(list(unique_channels))
     sorted_provinces = sorted(list(unique_provinces))
+    sorted_groups = sorted(list(unique_groups))
     
     # Months list is fixed
     all_months = [str(i).zfill(2) for i in range(1, 13)]
@@ -473,7 +482,8 @@ def get_channel_province_chart_data():
         'unique_channels': sorted_channels,
         'unique_provinces': sorted_provinces,
         'unique_years': sorted_years,
-        'all_months': all_months
+        'all_months': all_months,
+        'unique_groups': sorted_groups
     })
 
 
