@@ -496,8 +496,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // --- Theme & Chart Variables ---
+            // --- Combined Variables for Theme and Both Charts ---
             const body = document.body;
+
+            // --- Customer Chart (Chart 1) Variables ---
             const chartYearSelect = document.getElementById('chartYearSelect');
             const chartMonthSelect = document.getElementById('chartMonthSelect');
             const customerGroupSelect = document.getElementById('customerGroupSelect');
@@ -509,6 +511,17 @@
             let uniqueCustomerGroups = [];
             let uniqueYears = [];
             let allMonths = [];
+
+            // --- Channel/Province Chart (Chart 2) Variables ---
+            const channelChartYearSelect = document.getElementById('channelChartYearSelect');
+            const channelChartMonthSelect = document.getElementById('channelChartMonthSelect');
+            const channelSelect = document.getElementById('channelSelect');
+            const provinceSelect = document.getElementById('provinceSelect');
+            const channelChartCanvas = document.getElementById('channelProvinceChart');
+            const channelChartLoadingOverlay = document.getElementById('channelChartLoadingOverlay');
+            let channelChartInstance;
+            let rawChannelData = {};
+            let uniqueGroupsForChannelChart = [];
 
             // --- Theme Toggler Function ---
             const applyTheme = (theme) => {
@@ -522,11 +535,15 @@
                 if (customerChartInstance) {
                     updateChart();
                 }
+                // NEW: Update the second chart as well when theme changes
+                if (channelChartInstance) {
+                    updateChannelChart();
+                }
             };
 
-            // --- Chart Functions ---
+            // --- Customer Chart (Chart 1) Functions ---
             // ฟังก์ชันสำหรับแสดง/ซ่อน loading overlay
-            function toggleLoading(show) {
+            function toggleCustomerChartLoading(show) {
                 if (show) {
                     chartLoadingOverlay.style.display = 'flex';
                 } else {
@@ -536,7 +553,7 @@
 
             // ฟังก์ชันสำหรับดึงข้อมูลจาก Flask API
             async function fetchChartData() {
-                toggleLoading(true);
+                toggleCustomerChartLoading(true);
                 try {
                     const response = await fetch('/get_customer_chart_data');
                     if (!response.ok) {
@@ -564,7 +581,7 @@
                     console.error('Error fetching chart data:', error);
                     alert('ไม่สามารถโหลดข้อมูลกราฟได้ กรุณาลองใหม่อีกครั้ง');
                 } finally {
-                    toggleLoading(false);
+                    toggleCustomerChartLoading(false);
                 }
             }
 
@@ -767,8 +784,8 @@
             function updateChart() { // *** ไม่รับ parameter ตรงนี้แล้ว ***
                 // --- [สำคัญ] ดึงค่าสีล่าสุดทุกครั้งที่อัปเดตกราฟ ---
                 const isLightMode = document.body.classList.contains('light-mode');
-                const textColor = isLightMode ? '#212529' : '#E0E0E0'; // สีตัวอักษร: ดำในโหมดสว่าง, ขาวในโหมดมืด
-                const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.15)' : '#3A3A5A'; // สีเส้นตาราง: เข้มในโหมดสว่าง, อ่อนในโหมดมืด
+                const textColor = isLightMode ? '#000000' : '#E0E0E0'; // สีตัวอักษร: ดำในโหมดสว่าง, ขาวในโหมดมืด
+                const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.2)' : '#3A3A5A'; // สีเส้นตาราง: เข้มในโหมดสว่าง, อ่อนในโหมดมืด
                 // -----------------------------------------------------------------
 
                 // เพิ่มการตรวจสอบว่า rawChartData (global) มีข้อมูลหรือไม่
@@ -870,42 +887,7 @@
                 });
             }
     
-            // --- Initial Setup ---
-
-            // Add event listeners for filter changes
-            chartYearSelect.addEventListener('change', updateChart);
-            chartMonthSelect.addEventListener('change', updateChart);
-            customerGroupSelect.addEventListener('change', updateChart);
-
-            // Add event listener for theme toggle button
-            const themeToggleCheckbox = document.getElementById('theme-checkbox');
-            if (themeToggleCheckbox) {
-                themeToggleCheckbox.addEventListener('change', () => {
-                    const newTheme = themeToggleCheckbox.checked ? 'light' : 'dark';
-                    localStorage.setItem('theme', newTheme);
-                    applyTheme(newTheme);
-                });
-            }
-
-            // Load saved theme from localStorage and then fetch data
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            applyTheme(savedTheme); // Apply theme first
-            fetchChartData();
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- Channel/Province Chart Variables & Logic ---
-            const channelChartYearSelect = document.getElementById('channelChartYearSelect');
-            const channelChartMonthSelect = document.getElementById('channelChartMonthSelect');
-            const channelSelect = document.getElementById('channelSelect');
-            const provinceSelect = document.getElementById('provinceSelect');
-            const channelChartCanvas = document.getElementById('channelProvinceChart');
-            const channelChartLoadingOverlay = document.getElementById('channelChartLoadingOverlay');
-            let channelChartInstance;
-
-            let rawChannelData = {};
-            let uniqueGroupsForChannelChart = []; // NEW: To store unique groups
-
+            // --- Channel/Province Chart (Chart 2) Functions ---
             function toggleChannelLoading(show) {
                 channelChartLoadingOverlay.style.display = show ? 'flex' : 'none';
             }
@@ -918,7 +900,7 @@
                     const data = await response.json();
                     
                     rawChannelData = data.chart_data;
-                    uniqueGroupsForChannelChart = data.unique_groups; // NEW: Store unique groups
+                    uniqueGroupsForChannelChart = data.unique_groups;
                     
                     populateChannelFilters(data.unique_years, data.all_months, data.unique_channels, data.unique_provinces);
                     updateChannelChart();
@@ -1024,17 +1006,24 @@
 
             function updateChannelChart() {
                 const isLightMode = document.body.classList.contains('light-mode');
-                const textColor = isLightMode ? '#212529' : '#E0E0E0';
-                const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.15)' : '#3A3A5A';
+                const textColor = isLightMode ? '#000000' : '#E0E0E0';
+                const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.2)' : '#3A3A5A';
 
                 if (!rawChannelData || Object.keys(rawChannelData).length === 0) return;
 
                 const chartData = prepareChannelChartData();
                 if (channelChartInstance) channelChartInstance.destroy();
                 
+                // NEW: More descriptive title logic
                 let titleText = 'ลูกค้าตามช่องทาง';
-                if (channelSelect.value) titleText = `ลูกค้าช่องทาง "${channelSelect.value}" ตามจังหวัด`;
-                else if (provinceSelect.value) titleText = `ลูกค้าในจังหวัด "${provinceSelect.value}" ตามช่องทาง`;
+                const selectedProvince = provinceSelect.value;
+                const selectedChannel = channelSelect.value;
+
+                if (selectedProvince) {
+                    titleText = `กลุ่มลูกค้าใน จ. ${selectedProvince}` + (selectedChannel ? ` (ช่องทาง: ${selectedChannel})` : ' (ทุกช่องทาง)');
+                } else if (selectedChannel) {
+                    titleText = `ลูกค้าช่องทาง "${selectedChannel}" ตามจังหวัด`;
+                }
 
                 channelChartInstance = new Chart(channelChartCanvas.getContext('2d'), {
                     type: 'bar', data: chartData,
@@ -1047,7 +1036,30 @@
                 });
             }
 
+            // --- Initial Setup & Event Listeners ---
+
+            // Add event listeners for Chart 1 filters
+            chartYearSelect.addEventListener('change', updateChart);
+            chartMonthSelect.addEventListener('change', updateChart);
+            customerGroupSelect.addEventListener('change', updateChart);
+
+            // Add event listeners for Chart 2 filters
             [channelChartYearSelect, channelChartMonthSelect, channelSelect, provinceSelect].forEach(el => el.addEventListener('change', updateChannelChart));
+
+            // Add event listener for theme toggle button
+            const themeToggleCheckbox = document.getElementById('theme-checkbox');
+            if (themeToggleCheckbox) {
+                themeToggleCheckbox.addEventListener('change', () => {
+                    const newTheme = themeToggleCheckbox.checked ? 'light' : 'dark';
+                    localStorage.setItem('theme', newTheme);
+                    applyTheme(newTheme);
+                });
+            }
+
+            // Load saved theme from localStorage, then fetch data for both charts
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme); // Apply theme first
+            fetchChartData();
             fetchChannelChartData();
         });
     </script>
