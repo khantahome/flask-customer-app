@@ -680,12 +680,16 @@ def get_cloudinary_signature():
     try:
         # Generate a timestamp in seconds.
         timestamp = int(time.time())
+        # Define the transformation string for resizing and optimizing images.
+        # This will be applied by Cloudinary upon upload.
+        transformation_str = "w_1200,h_1200,c_limit,q_auto"
         
         # The parameters to sign must match what the frontend will send,
         # minus the 'file', 'api_key', and 'signature' itself.
         params_to_sign = {
             'timestamp': timestamp,
-            'folder': 'customer_app_images' # The folder we want to upload to
+            'folder': 'customer_app_images', # The folder we want to upload to
+            'transformation': transformation_str # Add the transformation to the signature
         }
 
         # Generate the signature using Cloudinary's utility function.
@@ -694,12 +698,14 @@ def get_cloudinary_signature():
             cloudinary.config().api_secret
         )
 
-        # Return the necessary data to the frontend.
+        # Return the necessary data to the frontend, including the transformation string
+        # so it can be included in the upload request.
         return jsonify({
             'signature': signature,
             'timestamp': timestamp,
             'api_key': cloudinary.config().api_key,
-            'cloud_name': cloudinary.config().cloud_name
+            'cloud_name': cloudinary.config().cloud_name,
+            'transformation': transformation_str
         })
     except Exception as e:
         print(f"Error generating Cloudinary signature: {e}")
@@ -799,17 +805,16 @@ def enter_customer_data():
 
                     row_to_append = [row_data.get(header, '-') for header in CUSTOMER_DATA_WORKSHEET_HEADERS]
                     worksheet.append_row(row_to_append)
-                    flash('บันทึกข้อมูลลูกค้าเรียบร้อยแล้ว!', 'success')
-                    return redirect(url_for('enter_customer_data')) # Redirect to clear form
+                    return jsonify({'success': True, 'message': 'บันทึกข้อมูลลูกค้าเรียบร้อยแล้ว!'})
                 except Exception as e:
-                    flash(f'เกิดข้อผิดพลาดในการบันทึกข้อมูล: {e}', 'error')
                     print(f"Error saving data to Google Sheet: {e}")
+                    return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาดในการบันทึกข้อมูลลง Google Sheet: {e}'}), 500
             else:
-                flash('ไม่สามารถเข้าถึง Google Sheet สำหรับบันทึกข้อมูลลูกค้าได้', 'error')
                 print("Error: Customer data worksheet not available.")
+                return jsonify({'success': False, 'message': 'ไม่สามารถเข้าถึง Google Sheet สำหรับบันทึกข้อมูลลูกค้าได้'}), 500
         except Exception as e:
-            flash(f'เกิดข้อผิดพลาดในการประมวลผลข้อมูลลูกค้า: {e}', 'error')
             print(f"Error processing customer data form: {e}")
+            return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาดในการประมวลผลข้อมูลจากฟอร์ม: {e}'}), 500
 
     return render_template('data_entry.html', username=logged_in_user)
 

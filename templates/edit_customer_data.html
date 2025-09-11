@@ -900,6 +900,7 @@ body {
                             formData.append('timestamp', sigData.timestamp);
                             formData.append('signature', sigData.signature);
                             formData.append('folder', 'customer_app_images');
+                            formData.append('transformation', sigData.transformation); // Add transformation parameter
 
                             return fetch(uploadUrl, { method: 'POST', body: formData })
                                 .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)));

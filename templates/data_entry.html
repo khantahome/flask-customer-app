@@ -889,6 +889,7 @@
                         formData.append('timestamp', sigData.timestamp);
                         formData.append('signature', sigData.signature);
                         formData.append('folder', 'customer_app_images');
+                            formData.append('transformation', sigData.transformation); // Add transformation parameter
 
                         return fetch(uploadUrl, { method: 'POST', body: formData })
                             .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)));
@@ -916,17 +917,20 @@
 
             try {
                 const flaskResponse = await fetch(customerForm.action, { method: 'POST', body: flaskFormData });
-                if (flaskResponse.redirected) {
-                    window.location.href = flaskResponse.url;
+                const result = await flaskResponse.json(); // Always expect JSON now
+
+                if (flaskResponse.ok && result.success) {
+                    // Success! Show a pop-up with an "OK" button.
+                    alert(result.message); // Show the success message from the backend
+                    // After clicking "OK" on the alert, redirect to the same page to clear the form.
+                    window.location.href = "{{ url_for('enter_customer_data') }}";
                 } else {
-                    const html = await flaskResponse.text();
-                    document.open();
-                    document.write(html);
-                    document.close();
+                    // Handle business logic error from backend (e.g., worksheet not found)
+                    throw new Error(result.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
                 }
             } catch (error) {
-                console.error('Error submitting form to Flask backend:', error);
-                alert('เกิดข้อผิดพลาดในการส่งข้อมูลไปยังเซิร์ฟเวอร์: ' + error);
+                console.error('Error submitting form to Flask backend:', error); // This will catch both network errors and errors thrown from the `else` block above.
+                alert('เกิดข้อผิดพลาด: ' + error.message);
                 loadingOverlay.classList.remove('visible');
                 saveButton.disabled = false;
                 saveButton.textContent = 'บันทึกข้อมูล';
