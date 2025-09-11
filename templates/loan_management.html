@@ -758,6 +758,97 @@
     height: 100%;
     object-fit: cover;
 }
+
+/* NEW: Lightbox Styles for Image Viewing */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* High z-index */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.lightbox-overlay.visible {
+    display: flex;
+    opacity: 1;
+}
+.lightbox-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.lightbox-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+}
+.lightbox-close, .lightbox-nav {
+    position: absolute;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(30, 30, 30, 0.6);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s ease;
+    z-index: 2001;
+}
+.lightbox-close {
+    top: 20px;
+    right: 20px;
+    width: 45px;
+    height: 45px;
+    font-size: 2.2rem;
+    line-height: 1;
+}
+.lightbox-nav {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    font-size: 2.5rem;
+}
+.lightbox-nav.prev { left: 20px; }
+.lightbox-nav.next { right: 20px; }
+.lightbox-close:hover, .lightbox-nav:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+.lightbox-zoom-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(30, 30, 30, 0.6);
+    padding: 8px 15px;
+    border-radius: 25px;
+    display: flex;
+    gap: 20px;
+    z-index: 2001;
+}
+.lightbox-zoom-controls button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.lightbox-zoom-controls button:hover {
+    color: var(--secondary-color);
+}
         
 /* Responsive: ตารางไม่ล้นจอและเลื่อนซ้ายขวาได้ */
 .daily-job-table-section {
@@ -1494,6 +1585,20 @@
     </div>
   </div>
 </div>
+
+<!-- NEW: Lightbox for Image Viewing -->
+<div id="image-lightbox" class="lightbox-overlay">
+    <span class="lightbox-close">&times;</span>
+    <span class="lightbox-nav prev">&lt;</span>
+    <span class="lightbox-nav next">&gt;</span>
+    <div class="lightbox-content">
+        <img src="" alt="Full size image" class="lightbox-image">
+    </div>
+    <div class="lightbox-zoom-controls">
+        <button id="zoom-in-btn">+</button>
+        <button id="zoom-out-btn">-</button>
+    </div>
+</div>
             </div> {# End of .container #}
         </div> {# End of .main-content-area #}
     </div> {# End of .dashboard-layout #}
@@ -1763,9 +1868,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const imageUrls = (data['รูปถ่ายสัญญา'] || '').split(',').map(url => url.trim()).filter(url => url && url !== '-');
           if (imageUrls.length > 0) {
               let imagesHTML = '<div class="info-image-gallery">';
-              imageUrls.forEach(url => {
+              imageUrls.forEach((url, index) => {
                   imagesHTML += `
-                      <a href="${url}" target="_blank" class="info-image-item">
+                      <a href="${url}" class="info-image-item lightbox-trigger" data-index="${index}">
                           <img src="${url}" alt="เอกสารสัญญา">
                       </a>
                   `;
@@ -1799,6 +1904,91 @@ document.addEventListener('DOMContentLoaded', () => {
       window.addEventListener('click', (event) => {
           if (event.target == viewInfoModal) {
               viewInfoModal.style.display = 'none';
+          }
+      });
+
+      // --- NEW: Lightbox for Image Viewing ---
+      const lightbox = document.getElementById('image-lightbox');
+      const lightboxImage = lightbox.querySelector('.lightbox-image');
+      const lightboxClose = lightbox.querySelector('.lightbox-close');
+      const lightboxPrev = lightbox.querySelector('.lightbox-nav.prev');
+      const lightboxNext = lightbox.querySelector('.lightbox-nav.next');
+      const zoomInBtn = document.getElementById('zoom-in-btn');
+      const zoomOutBtn = document.getElementById('zoom-out-btn');
+
+      let currentLightboxUrls = [];
+      let currentLightboxIndex = 0;
+      let currentZoom = 1;
+
+      function openLightbox(urls, index) {
+          currentLightboxUrls = urls;
+          currentLightboxIndex = index;
+          currentZoom = 1;
+          updateLightboxImage();
+          lightbox.style.display = 'flex';
+          setTimeout(() => lightbox.classList.add('visible'), 10); // Allow display change before opacity transition
+      }
+
+      function closeLightbox() {
+          lightbox.classList.remove('visible');
+          lightbox.addEventListener('transitionend', () => {
+              if (!lightbox.classList.contains('visible')) {
+                  lightbox.style.display = 'none';
+              }
+          }, { once: true });
+      }
+
+      function updateLightboxImage() {
+          if (currentLightboxUrls.length > 0) {
+              lightboxImage.src = currentLightboxUrls[currentLightboxIndex];
+              lightboxImage.style.transform = `scale(${currentZoom})`;
+              lightboxPrev.style.display = currentLightboxUrls.length > 1 ? 'flex' : 'none';
+              lightboxNext.style.display = currentLightboxUrls.length > 1 ? 'flex' : 'none';
+          }
+      }
+
+      function showNextImage() {
+          currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxUrls.length;
+          currentZoom = 1;
+          updateLightboxImage();
+      }
+
+      function showPrevImage() {
+          currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxUrls.length) % currentLightboxUrls.length;
+          currentZoom = 1;
+          updateLightboxImage();
+      }
+
+      // Event delegation on the body of the info modal
+      viewInfoBody.addEventListener('click', (e) => {
+          const trigger = e.target.closest('.lightbox-trigger');
+          if (trigger) {
+              e.preventDefault();
+              const gallery = trigger.closest('.info-image-gallery');
+              const allTriggers = Array.from(gallery.querySelectorAll('.lightbox-trigger'));
+              const urls = allTriggers.map(t => t.href);
+              const index = parseInt(trigger.dataset.index, 10);
+              openLightbox(urls, index);
+          }
+      });
+
+      lightboxClose.addEventListener('click', closeLightbox);
+      lightboxNext.addEventListener('click', showNextImage);
+      lightboxPrev.addEventListener('click', showPrevImage);
+      zoomInBtn.addEventListener('click', () => {
+          currentZoom = Math.min(currentZoom + 0.2, 3); // Max 3x zoom
+          lightboxImage.style.transform = `scale(${currentZoom})`;
+      });
+      zoomOutBtn.addEventListener('click', () => {
+          currentZoom = Math.max(currentZoom - 0.2, 0.5); // Min 0.5x zoom
+          lightboxImage.style.transform = `scale(${currentZoom})`;
+      });
+      lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+      document.addEventListener('keydown', (e) => {
+          if (lightbox.classList.contains('visible')) {
+              if (e.key === 'ArrowRight') showNextImage();
+              if (e.key === 'ArrowLeft') showPrevImage();
+              if (e.key === 'Escape') closeLightbox();
           }
       });
   }
