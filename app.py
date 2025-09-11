@@ -97,7 +97,7 @@ CUSTOMER_DATA_WORKSHEET_HEADERS = [
     'กลุ่มลูกค้าหลัก',
     'กลุ่มอาชีพย่อย',
     'ระบุอาชีพย่อยอื่นๆ', 
-    'จดทะเบียน', 'ชื่อกิจการ', 'ประเภทธุรกิจ', 'ที่อยู่จดทะเบียน', 'สถานะ',
+    'จดทะเบียน', 'ชื่อกิจการ', 'จังหวัดที่อยู่', 'ที่อยู่จดทะเบียน', 'สถานะ',
     'วงเงินที่ต้องการ', 'วงเงินที่อนุมัติ', 'เคยขอเข้ามาในเครือหรือยัง', 'เช็ค',
     'ขอเข้ามาทางไหน', 'LINE ID', 'หักดอกหัวท้าย', 'ค่าดำเนินการ',
     'วันที่ขอเข้ามา', 'ลิงค์โลเคชั่นบ้าน', 'ลิงค์โลเคชั่นที่ทำงาน', 'หมายเหตุ',
@@ -662,7 +662,7 @@ def enter_customer_data():
 
             registered = request.form.get('registered', '') or '-'
             business_name = request.form.get('business_name', '') or '-'
-            business_type = request.form.get('business_type', '') or '-'
+            province = request.form.get('province', '') or '-'
             registered_address = request.form.get('registered_address', '') or '-'
             status = request.form.get('status', '') or '-'
             desired_credit_limit = request.form.get('desired_credit_limit', '') or '-'
@@ -698,7 +698,7 @@ def enter_customer_data():
                         'ระบุอาชีพย่อยอื่นๆ': other_sub_profession,
                         'จดทะเบียน': registered,
                         'ชื่อกิจการ': business_name,
-                        'ประเภทธุรกิจ': business_type,
+                        'จังหวัดที่อยู่': province,
                         'ที่อยู่จดทะเบียน': registered_address,
                         'สถานะ': status,
                         'วงเงินที่ต้องการ': desired_credit_limit,
@@ -1305,7 +1305,7 @@ def edit_customer_data(row_index):
             'ระบุอาชีพย่อยอื่นๆ': other_sub_profession,
             'จดทะเบียน': request.form.get('registered', '') or '-',
             'ชื่อกิจการ': request.form.get('business_name', '') or '-',
-            'ประเภทธุรกิจ': request.form.get('business_type', '') or '-',
+            'จังหวัดที่อยู่': request.form.get('province', '') or '-',
             'ที่อยู่จดทะเบียน': request.form.get('registered_address', '') or '-',
             'สถานะ': request.form.get('status', '') or '-',
             'วงเงินที่ต้องการ': request.form.get('desired_credit_limit', '') or '-',

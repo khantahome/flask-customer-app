@@ -509,7 +509,6 @@
             100% { transform: rotate(360deg); }
         }
     </style>
-    <meta name="viewport" content="width=1200">
 </head>
 <body>
     <div class="loading-overlay" id="loadingOverlay">
@@ -590,15 +589,100 @@
                     </div>
                     <div class="input-group">
                         <label for="registered">จดทะเบียน</label>
-                        <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่">
+                        <select id="registered" name="registered">
+                            <option value="">--- เลือกประเภทการจดทะเบียน ---</option>
+                            <option value="บจก.">บจก.</option>
+                            <option value="หจก.">หจก.</option>
+                            <option value="พาณิชย์">พาณิชย์</option>
+                            <option value="ไม่ได้จดทะเบียน">ไม่ได้จดทะเบียน</option>
+                        </select>
                     </div>
                     <div class="input-group">
                         <label for="business_name">ชื่อกิจการ</label>
                         <input type="text" id="business_name" name="business_name" placeholder="กรอกชื่อกิจการ">
                     </div>
                     <div class="input-group">
-                        <label for="business_type">ประเภทธุรกิจ (เกี่ยวกับอะไร)</label>
-                        <input type="text" id="business_type" name="business_type" placeholder="เช่น ร้านอาหาร, บริการ">
+                        <label for="province">จังหวัดที่อยู่</label>
+                        <input type="text" id="province" name="province" list="province-list" placeholder="กรอกหรือเลือกจังหวัด">
+                        <datalist id="province-list">
+                            <option value="กรุงเทพมหานคร"></option>
+                            <option value="กระบี่"></option>
+                            <option value="กาญจนบุรี"></option>
+                            <option value="กาฬสินธุ์"></option>
+                            <option value="กำแพงเพชร"></option>
+                            <option value="ขอนแก่น"></option>
+                            <option value="จันทบุรี"></option>
+                            <option value="ฉะเชิงเทรา"></option>
+                            <option value="ชลบุรี"></option>
+                            <option value="ชัยนาท"></option>
+                            <option value="ชัยภูมิ"></option>
+                            <option value="ชุมพร"></option>
+                            <option value="เชียงราย"></option>
+                            <option value="เชียงใหม่"></option>
+                            <option value="ตรัง"></option>
+                            <option value="ตราด"></option>
+                            <option value="ตาก"></option>
+                            <option value="นครนายก"></option>
+                            <option value="นครปฐม"></option>
+                            <option value="นครพนม"></option>
+                            <option value="นครราชสีมา"></option>
+                            <option value="นครศรีธรรมราช"></option>
+                            <option value="นครสวรรค์"></option>
+                            <option value="นนทบุรี"></option>
+                            <option value="นราธิวาส"></option>
+                            <option value="น่าน"></option>
+                            <option value="บึงกาฬ"></option>
+                            <option value="บุรีรัมย์"></option>
+                            <option value="ปทุมธานี"></option>
+                            <option value="ประจวบคีรีขันธ์"></option>
+                            <option value="ปราจีนบุรี"></option>
+                            <option value="ปัตตานี"></option>
+                            <option value="พระนครศรีอยุธยา"></option>
+                            <option value="พะเยา"></option>
+                            <option value="พังงา"></option>
+                            <option value="พัทลุง"></option>
+                            <option value="พิจิตร"></option>
+                            <option value="พิษณุโลก"></option>
+                            <option value="เพชรบุรี"></option>
+                            <option value="เพชรบูรณ์"></option>
+                            <option value="แพร่"></option>
+                            <option value="ภูเก็ต"></option>
+                            <option value="มหาสารคาม"></option>
+                            <option value="มุกดาหาร"></option>
+                            <option value="แม่ฮ่องสอน"></option>
+                            <option value="ยะลา"></option>
+                            <option value="ยโสธร"></option>
+                            <option value="ร้อยเอ็ด"></option>
+                            <option value="ระนอง"></option>
+                            <option value="ระยอง"></option>
+                            <option value="ราชบุรี"></option>
+                            <option value="ลพบุรี"></option>
+                            <option value="ลำปาง"></option>
+                            <option value="ลำพูน"></option>
+                            <option value="เลย"></option>
+                            <option value="ศรีสะเกษ"></option>
+                            <option value="สกลนคร"></option>
+                            <option value="สงขลา"></option>
+                            <option value="สตูล"></option>
+                            <option value="สมุทรปราการ"></option>
+                            <option value="สมุทรสงคราม"></option>
+                            <option value="สมุทรสาคร"></option>
+                            <option value="สระแก้ว"></option>
+                            <option value="สระบุรี"></option>
+                            <option value="สิงห์บุรี"></option>
+                            <option value="สุโขทัย"></option>
+                            <option value="สุพรรณบุรี"></option>
+                            <option value="สุราษฎร์ธานี"></option>
+                            <option value="สุรินทร์"></option>
+                            <option value="หนองคาย"></option>
+                            <option value="หนองบัวลำภู"></option>
+                            <option value="อ่างทอง"></option>
+                            <option value="อำนาจเจริญ"></option>
+                            <option value="อุดรธานี"></option>
+                            <option value="อุตรดิตถ์"></option>
+                            <option value="อุทัยธานี"></option>
+                            <option value="อุบลราชธานี"></option>
+                        </datalist>
                     </div>
                     <div class="input-group">
                         <label for="registered_address">ที่อยู่จดทะเบียน</label>
@@ -626,7 +710,19 @@
                     </div>
                     <div class="input-group">
                         <label for="how_applied">ขอเข้ามาทางไหน</label>
-                        <input type="text" id="how_applied" name="how_applied" placeholder="เช่น เว็บไซต์, โทรศัพท์">
+                        <select id="how_applied" name="how_applied">
+                            <option value="">--- เลือกช่องทาง ---</option>
+                            <option value="FACEBOOK สตาร์โลน">FACEBOOK สตาร์โลน</option>
+                            <option value="FACEBOOK กลอรี่แคช">FACEBOOK กลอรี่แคช</option>
+                            <option value="FACEBOOK แคชเครดิต">FACEBOOK แคชเครดิต</option>
+                            <option value="ไลน์@สตาร์โลน">ไลน์@สตาร์โลน</option>
+                            <option value="ไลน์@กลอรี่แคช">ไลน์@กลอรี่แคช</option>
+                            <option value="ไลน์@แคชเครดิต">ไลน์@แคชเครดิต</option>
+                            <option value="โทรเข้ามา สตาร์โลน">โทรเข้ามา สตาร์โลน</option>
+                            <option value="โทรเข้ามา กลอรี่แคช">โทรเข้ามา กลอรี่แคช</option>
+                            <option value="โทรเข้ามา แคชเครดิต">โทรเข้ามา แคชเครดิต</option>
+                            <option value="อีเมล">อีเมล</option>
+                        </select>
                     </div>
                     <div class="input-group">
                         <label for="line_id">LINE : ID</label>
@@ -670,12 +766,24 @@
         </div>
     </div>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() { // รวม DOMContentLoaded เป็นหนึ่งเดียว
+        // --- Helper Functions ---
+        const setTodayDate = () => {
+            const applicationDateInput = document.getElementById('application_date');
+            if (applicationDateInput) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                applicationDateInput.value = `${year}-${month}-${day}`;
+            }
+        };
+
+        // --- Theme Toggler Logic ---
         const themeToggleCheckbox = document.getElementById('theme-checkbox');
         const body = document.body;
         const themeLabel = document.querySelector('.theme-switch-label');
 
-        // Function to apply the theme
         const applyTheme = (theme) => {
             if (theme === 'light') {
                 body.classList.add('light-mode');
@@ -688,11 +796,9 @@
             }
         };
 
-        // Load saved theme from localStorage, default to 'dark'
         const savedTheme = localStorage.getItem('theme') || 'dark';
         applyTheme(savedTheme);
 
-        // Add event listener to the button
         if (themeToggleCheckbox) {
             themeToggleCheckbox.addEventListener('change', () => {
                 const newTheme = themeToggleCheckbox.checked ? 'light' : 'dark';
@@ -700,9 +806,8 @@
                 applyTheme(newTheme);
             });
         }
-    });
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- โค้ด JavaScript เดิมสำหรับ image preview และ form clearing ---
+
+        // --- Form Logic (Image preview, submission, dropdowns) ---
         const customerImageInput = document.getElementById('customer_images');
         const imagePreviewsContainer = document.getElementById('imagePreviewsContainer');
         const clearFormButton = document.getElementById('clearFormButton');
@@ -828,16 +933,7 @@
             }
         });
 
-        // Set current date for application_date field
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        document.getElementById('application_date').value = `${year}-${month}-${day}`;
-        // --- สิ้นสุดโค้ด JavaScript เดิม ---
-
-
-        // --- โค้ด JavaScript ใหม่สำหรับ Dynamic Dropdowns (ย้ายเข้ามาใน DOMContentLoaded) ---
+        // --- Dynamic Dropdowns Logic ---
         const mainCustomerGroupSelect = document.getElementById('main_customer_group');
         const subProfessionGroupSelect = document.getElementById('sub_profession_group');
         const otherSubProfessionInputGroup = document.getElementById('otherSubProfessionInputGroup');
@@ -944,20 +1040,25 @@
         subProfessionGroupSelect.addEventListener('change', toggleOtherSubProfessionInput);
 
         updateSubProfessionOptions(); // Initial call
-        otherSubProfessionInputGroup.style.display = 'none';
-        otherSubProfessionInput.value = '';
+        toggleOtherSubProfessionInput(); // Call this to set initial state of "other" input
 
-        // Modify clearFormButton functionality
+        // --- Initial Setup & Event Listeners ---
+
+        // Set initial date
+        setTodayDate();
+
+        // Improved clearFormButton functionality
         clearFormButton.addEventListener('click', function() {
             customerForm.reset();
             selectedFiles = [];
             renderImagePreviews();
 
+            // Reset dynamic dropdowns and date
             mainCustomerGroupSelect.value = '';
             updateSubProfessionOptions();
             toggleOtherSubProfessionInput();
+            setTodayDate(); // Reset date to today
         });
-        // --- สิ้นสุดโค้ด JavaScript ใหม่ ---
     });
 </script>
 </body>

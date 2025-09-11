@@ -535,7 +535,13 @@ body {
 
     <div class="input-group">
         <label for="registered">จดทะเบียน</label>
-        <input type="text" id="registered" name="registered" placeholder="เช่น วันที่จดทะเบียน / ใช่-ไม่ใช่" value="{{ customer_data.get('จดทะเบียน', '') }}">
+        <select id="registered" name="registered">
+            <option value="">--- เลือกประเภทการจดทะเบียน ---</option>
+            <option value="บจก." {% if customer_data.get('จดทะเบียน') == 'บจก.' %}selected{% endif %}>บจก.</option>
+            <option value="หจก." {% if customer_data.get('จดทะเบียน') == 'หจก.' %}selected{% endif %}>หจก.</option>
+            <option value="พาณิชย์" {% if customer_data.get('จดทะเบียน') == 'พาณิชย์' %}selected{% endif %}>พาณิชย์</option>
+            <option value="ไม่ได้จดทะเบียน" {% if customer_data.get('จดทะเบียน') == 'ไม่ได้จดทะเบียน' %}selected{% endif %}>ไม่ได้จดทะเบียน</option>
+        </select>
     </div>
 
     <div class="input-group">
@@ -544,8 +550,87 @@ body {
     </div>
 
     <div class="input-group">
-        <label for="business_type">ประเภทธุรกิจ (เกี่ยวกับอะไร)</label>
-        <input type="text" id="business_type" name="business_type" placeholder="เช่น ร้านอาหาร, บริการ" value="{{ customer_data.get('ประเภทธุรกิจ', '') }}">
+        <label for="province">จังหวัดที่อยู่</label>
+        <input type="text" id="province" name="province" list="province-list" placeholder="กรอกหรือเลือกจังหวัด" value="{{ customer_data.get('จังหวัดที่อยู่', '') }}">
+        <datalist id="province-list">
+            <option value="กรุงเทพมหานคร"></option>
+            <option value="กระบี่"></option>
+            <option value="กาญจนบุรี"></option>
+            <option value="กาฬสินธุ์"></option>
+            <option value="กำแพงเพชร"></option>
+            <option value="ขอนแก่น"></option>
+            <option value="จันทบุรี"></option>
+            <option value="ฉะเชิงเทรา"></option>
+            <option value="ชลบุรี"></option>
+            <option value="ชัยนาท"></option>
+            <option value="ชัยภูมิ"></option>
+            <option value="ชุมพร"></option>
+            <option value="เชียงราย"></option>
+            <option value="เชียงใหม่"></option>
+            <option value="ตรัง"></option>
+            <option value="ตราด"></option>
+            <option value="ตาก"></option>
+            <option value="นครนายก"></option>
+            <option value="นครปฐม"></option>
+            <option value="นครพนม"></option>
+            <option value="นครราชสีมา"></option>
+            <option value="นครศรีธรรมราช"></option>
+            <option value="นครสวรรค์"></option>
+            <option value="นนทบุรี"></option>
+            <option value="นราธิวาส"></option>
+            <option value="น่าน"></option>
+            <option value="บึงกาฬ"></option>
+            <option value="บุรีรัมย์"></option>
+            <option value="ปทุมธานี"></option>
+            <option value="ประจวบคีรีขันธ์"></option>
+            <option value="ปราจีนบุรี"></option>
+            <option value="ปัตตานี"></option>
+            <option value="พระนครศรีอยุธยา"></option>
+            <option value="พะเยา"></option>
+            <option value="พังงา"></option>
+            <option value="พัทลุง"></option>
+            <option value="พิจิตร"></option>
+            <option value="พิษณุโลก"></option>
+            <option value="เพชรบุรี"></option>
+            <option value="เพชรบูรณ์"></option>
+            <option value="แพร่"></option>
+            <option value="ภูเก็ต"></option>
+            <option value="มหาสารคาม"></option>
+            <option value="มุกดาหาร"></option>
+            <option value="แม่ฮ่องสอน"></option>
+            <option value="ยะลา"></option>
+            <option value="ยโสธร"></option>
+            <option value="ร้อยเอ็ด"></option>
+            <option value="ระนอง"></option>
+            <option value="ระยอง"></option>
+            <option value="ราชบุรี"></option>
+            <option value="ลพบุรี"></option>
+            <option value="ลำปาง"></option>
+            <option value="ลำพูน"></option>
+            <option value="เลย"></option>
+            <option value="ศรีสะเกษ"></option>
+            <option value="สกลนคร"></option>
+            <option value="สงขลา"></option>
+            <option value="สตูล"></option>
+            <option value="สมุทรปราการ"></option>
+            <option value="สมุทรสงคราม"></option>
+            <option value="สมุทรสาคร"></option>
+            <option value="สระแก้ว"></option>
+            <option value="สระบุรี"></option>
+            <option value="สิงห์บุรี"></option>
+            <option value="สุโขทัย"></option>
+            <option value="สุพรรณบุรี"></option>
+            <option value="สุราษฎร์ธานี"></option>
+            <option value="สุรินทร์"></option>
+            <option value="หนองคาย"></option>
+            <option value="หนองบัวลำภู"></option>
+            <option value="อ่างทอง"></option>
+            <option value="อำนาจเจริญ"></option>
+            <option value="อุดรธานี"></option>
+            <option value="อุตรดิตถ์"></option>
+            <option value="อุทัยธานี"></option>
+            <option value="อุบลราชธานี"></option>
+        </datalist>
     </div>
 
     <div class="input-group">
@@ -587,7 +672,19 @@ body {
 
     <div class="input-group">
         <label for="how_applied">ขอเข้ามาทางไหน</label>
-        <input type="text" id="how_applied" name="how_applied" placeholder="เช่น เว็บไซต์, โทรศัพท์" value="{{ customer_data.get('ขอเข้ามาทางไหน', '') }}">
+        <select id="how_applied" name="how_applied">
+            <option value="">--- เลือกช่องทาง ---</option>
+            <option value="FACEBOOK สตาร์โลน" {% if customer_data.get('ขอเข้ามาทางไหน') == 'FACEBOOK สตาร์โลน' %}selected{% endif %}>FACEBOOK สตาร์โลน</option>
+            <option value="FACEBOOK กลอรี่แคช" {% if customer_data.get('ขอเข้ามาทางไหน') == 'FACEBOOK กลอรี่แคช' %}selected{% endif %}>FACEBOOK กลอรี่แคช</option>
+            <option value="FACEBOOK แคชเครดิต" {% if customer_data.get('ขอเข้ามาทางไหน') == 'FACEBOOK แคชเครดิต' %}selected{% endif %}>FACEBOOK แคชเครดิต</option>
+            <option value="ไลน์@สตาร์โลน" {% if customer_data.get('ขอเข้ามาทางไหน') == 'ไลน์@สตาร์โลน' %}selected{% endif %}>ไลน์@สตาร์โลน</option>
+            <option value="ไลน์@กลอรี่แคช" {% if customer_data.get('ขอเข้ามาทางไหน') == 'ไลน์@กลอรี่แคช' %}selected{% endif %}>ไลน์@กลอรี่แคช</option>
+            <option value="ไลน์@แคชเครดิต" {% if customer_data.get('ขอเข้ามาทางไหน') == 'ไลน์@แคชเครดิต' %}selected{% endif %}>ไลน์@แคชเครดิต</option>
+            <option value="โทรเข้ามา สตาร์โลน" {% if customer_data.get('ขอเข้ามาทางไหน') == 'โทรเข้ามา สตาร์โลน' %}selected{% endif %}>โทรเข้ามา สตาร์โลน</option>
+            <option value="โทรเข้ามา กลอรี่แคช" {% if customer_data.get('ขอเข้ามาทางไหน') == 'โทรเข้ามา กลอรี่แคช' %}selected{% endif %}>โทรเข้ามา กลอรี่แคช</option>
+            <option value="โทรเข้ามา แคชเครดิต" {% if customer_data.get('ขอเข้ามาทางไหน') == 'โทรเข้ามา แคชเครดิต' %}selected{% endif %}>โทรเข้ามา แคชเครดิต</option>
+            <option value="อีเมล" {% if customer_data.get('ขอเข้ามาทางไหน') == 'อีเมล' %}selected{% endif %}>อีเมล</option>
+        </select>
     </div>
 
     <div class="input-group">
