@@ -873,10 +873,10 @@
                                     {% set status = record.get('สถานะ', 'unknown') | string | lower %}
                                     {% if 'รอดำเนินการ' in status %}
                                         <span class="status-badge status-pending">รอดำเนินการ</span>
-                                    {% elif 'อนุมัติ' in status %}
-                                        <span class="status-badge status-approved">อนุมัติ</span>
                                     {% elif 'ไม่อนุมัติ' in status %}
                                         <span class="status-badge status-rejected">ไม่อนุมัติ</span>
+                                    {% elif 'อนุมัติ' in status %}
+                                        <span class="status-badge status-approved">อนุมัติ</span>
                                     {% elif 'ยกเลิก' in status %}
                                         <span class="status-badge status-cancelled">ยกเลิก</span>
                                     {% else %}
