@@ -125,9 +125,6 @@
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            display: flex; /* Use flexbox for the main layout */
-            justify-content: center; /* Center horizontally */
-            align-items: flex-start; /* Align content to the top (for mobile scroll) */
         }
 
         body.loaded {
@@ -138,16 +135,11 @@
         .dashboard-layout {
             display: flex;
             width: 100%;
-            max-width: 1200px; /* Max width for the entire dashboard */
-            min-height: 90vh; /* Make dashboard take most of the screen height */
+            min-height: 100vh; /* Make dashboard take full screen height */
             background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay over background image */
-            border-radius: 15px;
             box-shadow: var(--shadow-light);
             overflow: hidden; /* For rounded corners */
-            margin-top: 20px; /* Space from top */
-            margin-bottom: 20px; /* Space from bottom */
-            margin-left: 20px;
-            margin-right: 20px;
+            margin: 0;
         }
 
         /* Sidebar styles */
@@ -160,6 +152,8 @@
             flex-direction: column;
             align-items: center;
             flex-shrink: 0; /* Prevent sidebar from shrinking */
+            transition: width 0.3s ease-in-out;
+            position: relative;
         }
 
         .sidebar-title {
@@ -178,6 +172,7 @@
             flex-direction: column;
             gap: 30px; /* Space between main-container and results-container */
             overflow-y: auto; /* Enable scrolling if content overflows */
+            width: 100%;
         }
 
         /* Container for content */
@@ -328,6 +323,68 @@
 
         .action-button.logout:hover {
             background-color: #de1f32; /* Darker red on hover */
+        }
+
+        /* --- NEW: Collapsible Sidebar & Full-width Layout Styles --- */
+        .sidebar-toggle-btn {
+            position: absolute;
+            top: 25px;
+            right: -15px;
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: 1px solid var(--background-color);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        .sidebar-toggle-btn:hover {
+            background-color: #6A1B9A;
+            transform: scale(1.1);
+        }
+        .sidebar-toggle-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 85px;
+        }
+        .sidebar.collapsed .sidebar-toggle-btn i {
+            transform: rotate(180deg);
+        }
+        .sidebar.collapsed .sidebar-title,
+        .sidebar.collapsed .link-text,
+        .sidebar.collapsed .theme-switch-label,
+        .sidebar.collapsed .logged-in-user {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            pointer-events: none;
+            margin: 0;
+            padding: 0;
+            white-space: nowrap;
+        }
+        .sidebar.collapsed .action-button {
+            justify-content: center;
+        }
+        .sidebar.collapsed .action-button i {
+            margin-right: 0;
+            font-size: 1.4em;
+        }
+        .sidebar.collapsed .theme-switch-wrapper {
+            justify-content: center;
+        }
+        .action-button i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
         }
 
         .logged-in-user {
@@ -1214,19 +1271,19 @@
     <div class="sidebar">
         <h3 class="sidebar-title">เมนู</h3>
         <div class="action-button-group">
-            <a href="{{ url_for('dashboard') }}" class="action-button {% if request.endpoint == 'dashboard' %}active{% endif %}">หน้าหลัก</a>
-            <a href="{{ url_for('enter_customer_data') }}" class="action-button {% if request.endpoint == 'enter_customer_data' %}active{% endif %}">กรอกข้อมูลลูกค้าใหม่</a>
-            <a href="{{ url_for('search_customer_data') }}" class="action-button {% if request.endpoint == 'search_customer_data' %}active{% endif %}">ค้นหา/แก้ไขข้อมูลลูกค้า</a>
-            <a href="{{ url_for('loan_management') }}" class="action-button {% if request.endpoint == 'loan_management' %}active{% endif %}">จัดการสินเชื่อ</a>
+            <a href="{{ url_for('dashboard') }}" class="action-button {% if request.endpoint == 'dashboard' %}active{% endif %}"><i class="fas fa-home"></i><span class="link-text">หน้าหลัก</span></a>
+            <a href="{{ url_for('enter_customer_data') }}" class="action-button {% if request.endpoint == 'enter_customer_data' %}active{% endif %}"><i class="fas fa-user-plus"></i><span class="link-text">กรอกข้อมูลลูกค้าใหม่</span></a>
+            <a href="{{ url_for('search_customer_data') }}" class="action-button {% if request.endpoint == 'search_customer_data' %}active{% endif %}"><i class="fas fa-search"></i><span class="link-text">ค้นหา/แก้ไขข้อมูลลูกค้า</span></a>
+            <a href="{{ url_for('loan_management') }}" class="action-button {% if request.endpoint == 'loan_management' %}active{% endif %}"><i class="fas fa-hand-holding-usd"></i><span class="link-text">จัดการสินเชื่อ</span></a>
             <div class="theme-switch-wrapper">
                 <label class="theme-switch" for="theme-checkbox">
                     <input type="checkbox" id="theme-checkbox" />
                     <div class="slider round"></div>
                 </label>
-                <span class="theme-switch-label">โหมดมืด</span>
+                <span class="theme-switch-label link-text">โหมดมืด</span>
             </div>
         </div>
-        <a href="{{ url_for('logout') }}" class="action-button logout">ออกจากระบบ</a>
+        <a href="{{ url_for('logout') }}" class="action-button logout"><i class="fas fa-sign-out-alt"></i><span class="link-text">ออกจากระบบ</span></a>
         <p class="logged-in-user">สวัสดี, {{ username }}</p>
     </div>
 
@@ -3196,6 +3253,42 @@ if (companySelect) {
 }
 setupCloseJobTableSearch();
   }
+
+    // --- Collapsible Sidebar Logic ---
+    const sidebar = document.querySelector('.sidebar');
+    const toggleButton = document.createElement('button');
+    toggleButton.id = 'sidebar-toggle';
+    toggleButton.className = 'sidebar-toggle-btn';
+    toggleButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    
+    if (sidebar) {
+        sidebar.appendChild(toggleButton);
+
+        const toggleSidebar = () => {
+            sidebar.classList.toggle('collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+            updateToggleIcon(isCollapsed);
+        };
+
+        const updateToggleIcon = (isCollapsed) => {
+            if (isCollapsed) {
+                toggleButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            } else {
+                toggleButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            }
+        };
+
+        toggleButton.addEventListener('click', toggleSidebar);
+
+        // Check localStorage on page load
+        const savedState = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (savedState) {
+            sidebar.classList.add('collapsed');
+        }
+        updateToggleIcon(savedState);
+    }
+
 });
 </script>
 </body>
