@@ -18,6 +18,7 @@ import cloudinary.api
 from flask_caching import Cache
 from flask import request, jsonify, session
 from datetime import datetime
+import math
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -823,57 +824,70 @@ def enter_customer_data():
 
 @app.route('/search_customer_data', methods=['GET'])
 def search_customer_data():
-    """
-    Handles searching for customer data from the original customer_records sheet.
-    Now defaults to showing 'รอดำเนินการ' status if no specific search or filter is applied.
-    Requires user to be logged in.
-    """
     if 'username' not in session:
         flash('กรุณาเข้าสู่ระบบก่อน', 'error')
         return redirect(url_for('login'))
 
     logged_in_user = session['username']
-
     search_keyword = request.args.get('search_keyword', '').strip()
-    status_filter = request.args.get('status_filter', '').strip()
+    
+    # Get page number from query parameter, default to 1
+    try:
+        page = int(request.args.get('page', 1))
+    except ValueError:
+        page = 1
+    
+    items_per_page = 10
 
-    customer_records = []
-    display_title = "ค้นหาข้อมูลลูกค้า"
-
-    # Logic:
-    # 1. If status_filter is explicitly 'pending', show pending.
-    # 2. If a search_keyword is provided, perform keyword search.
-    # 3. Otherwise (no explicit filter or keyword), default to showing 'รอดำเนินการ'.
-    if status_filter == 'pending':
-        customer_records = get_customer_records_by_status("รอดำเนินการ")
-        display_title = "ข้อมูลลูกค้า: รอดำเนินการ"
-        if not customer_records:
-            flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ'", "info")
-        else:
-            flash(f"พบ {len(customer_records)} รายการที่มีสถานะ 'รอดำเนินการ'", "success")
-    elif search_keyword:
-        customer_records = get_customer_records_by_keyword(search_keyword)
+    # Get all records or filter by keyword
+    if search_keyword:
+        all_records = get_customer_records_by_keyword(search_keyword)
         display_title = f"ผลการค้นหาสำหรับ: '{search_keyword}'"
-        if not customer_records:
+    else:
+        all_records = get_all_customer_records()
+        display_title = "ข้อมูลลูกค้าทั้งหมด"
+
+    # Reverse the list so newest entries appear first
+    all_records.reverse()
+
+    # Pagination logic
+    total_items = len(all_records)
+    total_pages = math.ceil(total_items / items_per_page)
+    
+    # Ensure page is within valid range
+    if page < 1:
+        page = 1
+    if page > total_pages and total_pages > 0:
+        page = total_pages
+
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    paginated_records = all_records[start_index:end_index]
+
+    if not all_records:
+        if search_keyword:
             flash(f"ไม่พบข้อมูลลูกค้าสำหรับ '{search_keyword}'", "info")
         else:
-            flash(f"พบ {len(customer_records)} รายการสำหรับ '{search_keyword}'", "success")
-    else:
-        # Default behavior: Show records with status 'รอดำเนินการ'
-        customer_records = get_customer_records_by_status("รอดำเนินการ")
-        display_title = "ข้อมูลลูกค้า: รอดำเนินการ"
-        if not customer_records:
-            flash("ไม่พบข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ' ในระบบ", "info")
-        else:
-            flash(f"แสดงข้อมูลลูกค้าที่มีสถานะ 'รอดำเนินการ' {len(customer_records)} รายการ", "info")
+            flash("ไม่พบข้อมูลลูกค้าในระบบ", "info")
+    
+    # Create pagination object to pass to template
+    pagination = {
+        'page': page,
+        'total_pages': total_pages,
+        'has_prev': page > 1,
+        'has_next': page < total_pages,
+        'prev_num': page - 1,
+        'next_num': page + 1
+    }
 
 
     return render_template(
         'search_data.html',
-        customer_records=customer_records,
+        customer_records=paginated_records,
         search_keyword=search_keyword,
         username=logged_in_user,
-        display_title=display_title
+        display_title=display_title,
+        pagination=pagination
     )
 
 #เรียกตารางค้นหา/ปิดจ๊อบรายวัน

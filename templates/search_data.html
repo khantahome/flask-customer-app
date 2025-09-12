@@ -579,6 +579,98 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
         }
 
+        /* NEW: Table and Pagination Styles */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9em;
+            min-width: 1200px; /* Prevent wrapping on small viewports, allow scroll */
+        }
+
+        .results-table th, .results-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+            text-align: left;
+            vertical-align: middle;
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        .results-table th {
+            background-color: var(--record-bg-odd);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .results-table tbody tr:nth-child(odd) {
+            background-color: var(--record-bg-odd);
+        }
+
+        .results-table tbody tr:nth-child(even) {
+            background-color: var(--record-bg-even);
+        }
+
+        .results-table tbody tr:hover {
+            background-color: rgba(138, 43, 226, 0.15);
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: white;
+            font-weight: 500;
+            font-size: 0.85em;
+            text-align: center;
+            min-width: 90px;
+            display: inline-block;
+        }
+        .status-pending { background-color: #FFC107; color: #333; } /* Yellow */
+        .status-approved { background-color: #28A745; } /* Green */
+        .status-rejected { background-color: #DC3545; } /* Red */
+        .status-cancelled { background-color: #FD7E14; } /* Orange */
+        .status-unknown { background-color: #6c757d; } /* Grey */
+
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 30px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .pagination-controls a, .pagination-controls span {
+            color: var(--text-color);
+            padding: 8px 15px;
+            text-decoration: none;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .pagination-controls a:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .pagination-controls .current-page {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            font-weight: bold;
+            cursor: default;
+        }
+        .pagination-controls .disabled {
+            color: var(--light-text-color);
+            pointer-events: none;
+            background-color: transparent;
+            border-color: var(--border-color);
+        }
+
         /* Back to Main Menu button at the bottom (Removed, replaced by sidebar) */
         /* .back-to-main-menu { ... } */
 
@@ -747,61 +839,93 @@
                 </form>
             </div>
 
-            {# Only display results container if there are records to show #}
-            {% if customer_records %}
             <div class="results-container">
                 <h3>{{ display_title }}</h3>
-                {% for record in customer_records %}
-            <div class="customer-record-card">
-                <p><strong>ชื่อ-นามสกุล:</strong> {{ record.ชื่อ }} {{ record.นามสกุล }}</p>
-                <p><strong>เบอร์มือถือ:</strong> {{ record.เบอร์มือถือ }}</p>
-                <p><strong>กลุ่มลูกค้าหลัก:</strong> {{ record.get('กลุ่มลูกค้าหลัก', '-') }}</p>
-                <p><strong>กลุ่มอาชีพย่อย:</strong> {{ record.get('กลุ่มอาชีพย่อย', '-') }}</p>
-                <p><strong>อาชีพย่อยอื่นๆ:</strong> {{ record.get('ระบุอาชีพย่อยอื่นๆ', '-') }}</p>
-                <p><strong>เลขบัตรประชาชน:</strong> {{ record.เลขบัตรประชาชน }}</p>
-                <p><strong>จดทะเบียน:</strong> {{ record['จดทะเบียน'] }}</p>
-                <p><strong>ชื่อกิจการ:</strong> {{ record.ชื่อกิจการ }}</p>
-                <p><strong>จังหวัดที่อยู่:</strong> {{ record['จังหวัดที่อยู่'] }}</p>
-                <p><strong>ที่อยู่จดทะเบียน:</strong> {{ record['ที่อยู่จดทะเบียน'] }}</p>
-                <p><strong>สถานะ:</strong> {{ record.สถานะ }}</p>
-                <p><strong>วงเงินที่ต้องการ:</strong> {{ record['วงเงินที่ต้องการ'] }}</p>
-                <p><strong>วงเงินที่อนุมัติ:</strong> {{ record['วงเงินที่อนุมัติ'] }}</p>
-                <p><strong>เคยขอเข้ามาในเครือหรือยัง:</strong> {{ record['เคยขอเข้ามาในเครือหรือยัง'] }}</p>
-                <p><strong>เช็ค:</strong> {{ record['เช็ค'] }}</p>
-                <p><strong>LINE ID:</strong> {{ record['LINE ID'] }}</p>
-                <p><strong>ขอเข้ามาทางไหน:</strong> {{ record['ขอเข้ามาทางไหน'] }}</p>
-                <p><strong>หักดอกหัวท้าย:</strong> {{ record['หักดอกหัวท้าย'] }}</p>
-                <p><strong>ค่าดำเนินการ:</strong> {{ record['ค่าดำเนินการ'] }}</p>
-                <p><strong>วันที่ขอเข้ามา:</strong> {{ record['วันที่ขอเข้ามา'] }}</p>
-                <p><strong>ลิงค์โลเคชั่นบ้าน:</strong> <a href="{{ record['ลิงค์โลเคชั่นบ้าน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นบ้าน'] }}</a></p>
-                <p><strong>ลิงค์โลเคชั่นที่ทำงาน:</strong> <a href="{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}" target="_blank">{{ record['ลิงค์โลเคชั่นที่ทำงาน'] }}</a></p>
-                <p><strong>หมายเหตุ:</strong> {{ record.หมายเหตุ }}</p>
-                <p><strong>บันทึกโดย:</strong> {{ record['Logged In User'] }}</p>
-                <p><strong>รูปภาพ:</strong>
-                    <div class="image-thumbnails" data-image-urls="{{ record['Image URLs'] if record['Image URLs'] != '-' else '' }}">
-                        {% if record['Image URLs'] and record['Image URLs'] != '-' %}
-                            {% set image_urls_list = record['Image URLs'].split(', ') | select('ne', '-') | map('trim') | list %}
-                            {% if image_urls_list %}
-                                {% for url in image_urls_list %}
-                                    <img src="{{ url }}" alt="Thumbnail {{ loop.index }}" class="image-thumbnail" onerror="console.error('Thumbnail image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/90x90/FF0000/FFFFFF?text=Error';">
-                                {% endfor %}
-                            {% else %}
-                                <p style="color: var(--light-text-color);">ไม่มีรูปภาพที่ถูกต้อง</p>
-                            {% endif %}
-                        {% else %}
-                            <p style="color: var(--light-text-color);">-</p>
-                        {% endif %}
-                    </div>
-                </p>
-                
-                <div class="record-buttons">
-                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไขข้อมูล</a>
-                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button">อัปโหลดรูปเพิ่มเติม</a>
+
+                {% if customer_records %}
+                <div class="table-responsive">
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>ชื่อ-นามสกุล</th>
+                                <th>เบอร์มือถือ</th>
+                                <th>ชื่อกิจการ</th>
+                                <th>จังหวัด</th>
+                                <th>วงเงินที่ต้องการ</th>
+                                <th>ดอกเบี้ย</th>
+                                <th>วันที่ขอเข้ามา</th>
+                                <th>สถานะ</th>
+                                <th>ผู้บันทึก</th>
+                                <th>การกระทำ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in customer_records %}
+                            <tr>
+                                <td>{{ record.get('ชื่อ', '') }} {{ record.get('นามสกุล', '') }}</td>
+                                <td>{{ record.get('เบอร์มือถือ', '-') }}</td>
+                                <td>{{ record.get('ชื่อกิจการ', '-') }}</td>
+                                <td>{{ record.get('จังหวัดที่อยู่', '-') }}</td>
+                                <td>{{ record.get('วงเงินที่ต้องการ', '-') }}</td>
+                                <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td>
+                                <td>{{ record.get('วันที่ขอเข้ามา', '-') }}</td>
+                                <td>
+                                    {% set status = record.get('สถานะ', 'unknown') | string | lower %}
+                                    {% if 'รอดำเนินการ' in status %}
+                                        <span class="status-badge status-pending">รอดำเนินการ</span>
+                                    {% elif 'อนุมัติ' in status %}
+                                        <span class="status-badge status-approved">อนุมัติ</span>
+                                    {% elif 'ไม่อนุมัติ' in status %}
+                                        <span class="status-badge status-rejected">ไม่อนุมัติ</span>
+                                    {% elif 'ยกเลิก' in status %}
+                                        <span class="status-badge status-cancelled">ยกเลิก</span>
+                                    {% else %}
+                                        <span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.get('Logged In User', '-') }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไข</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+
+                {# Pagination Controls #}
+                {% if pagination and pagination.total_pages > 1 %}
+                <div class="pagination-controls">
+                    {# Previous Page Link #}
+                    {% if pagination.has_prev %}
+                        <a href="{{ url_for('search_customer_data', page=pagination.prev_num, search_keyword=search_keyword) }}">&laquo; ก่อนหน้า</a>
+                    {% else %}
+                        <span class="disabled">&laquo; ก่อนหน้า</span>
+                    {% endif %}
+
+                    {# Page Numbers #}
+                    {% for page_num in range(1, pagination.total_pages + 1) %}
+                        {% if page_num == pagination.page %}
+                            <span class="current-page">{{ page_num }}</span>
+                        {% else %}
+                            <a href="{{ url_for('search_customer_data', page=page_num, search_keyword=search_keyword) }}">{{ page_num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {# Next Page Link #}
+                    {% if pagination.has_next %}
+                        <a href="{{ url_for('search_customer_data', page=pagination.next_num, search_keyword=search_keyword) }}">ถัดไป &raquo;</a>
+                    {% else %}
+                        <span class="disabled">ถัดไป &raquo;</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% else %}
+                    {# This part is shown if no records are found after a search, handled by flash message now, but good to have a fallback #}
+                    <p style="text-align: center; color: var(--light-text-color); margin-top: 20px;">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</p>
+                {% endif %}
             </div>
-        {% endfor %}
-            </div>
-            {% endif %}
 
             {# Removed the old back-to-main-menu button as sidebar handles navigation #}
             <!-- <a href="{{ url_for('dashboard') }}" class="back-to-main-menu">กลับสู่เมนูหลัก</a> -->
