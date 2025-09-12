@@ -865,8 +865,8 @@
                     </label>
                     <span class="theme-switch-label link-text">โหมดมืด</span>
                 </div>
+                <a href="{{ url_for('logout') }}" class="action-button logout"><i class="fas fa-sign-out-alt"></i><span class="link-text">ออกจากระบบ</span></a>
             </div>
-            <a href="{{ url_for('logout') }}" class="action-button logout"><i class="fas fa-sign-out-alt"></i><span class="link-text">ออกจากระบบ</span></a>
             <p class="logged-in-user" style="margin-top: 25px; text-align: center;">สวัสดี, {{ username }}</p>
         </div>
         <div class="main-content-area">
