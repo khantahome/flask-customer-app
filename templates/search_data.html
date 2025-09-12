@@ -594,7 +594,9 @@
             padding: 10px 12px;
             text-align: left;
             vertical-align: middle;
-            white-space: nowrap; /* Prevent text from wrapping */
+            white-space: nowrap; /* Prevent text from wrapping by default */
+            overflow: hidden; /* Hide overflowing content */
+            text-overflow: ellipsis; /* Add '...' to overflowing content */
         }
 
         .results-table th {
@@ -672,6 +674,8 @@
             word-break: break-word; /* Break long words to prevent overflow */
             min-width: 150px; /* Give it a reasonable minimum width */
             max-width: 250px; /* Set a max-width to trigger wrapping */
+            overflow: visible; /* Allow content to be visible and wrap */
+            text-overflow: clip; /* Do not show ellipsis */
         }
 
 
