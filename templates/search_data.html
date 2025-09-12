@@ -732,19 +732,37 @@
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 15px;
         }
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
+        .detail-list { /* Changed from detail-grid */
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
         .detail-item {
-            background-color: var(--background-color);
-            padding: 12px 15px;
-            border-radius: 8px;
-            border-left: 4px solid var(--secondary-color);
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.05em;
         }
-        .detail-item.full-width {
-            grid-column: 1 / -1;
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: var(--secondary-color);
+            flex-shrink: 0;
+            width: 200px;
+        }
+        .detail-value {
+            word-break: break-word;
+        }
+        .detail-value a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+        .detail-value a:hover {
+            text-decoration: underline;
         }
         .modal-actions {
             margin-top: 30px;
@@ -1203,25 +1221,27 @@
             }
 
             function populateModal(record) {
-                const createDetailItem = (label, value, isLink = false, isFullWidth = false) => {
-                    if (!value || value === '-') return '';
-                    let valueHTML = isLink ? `<a href="${value}" target="_blank" rel="noopener noreferrer">${value}</a>` : value;
-                    return `<div class="detail-item ${isFullWidth ? 'full-width' : ''}"><div class="detail-label">${label}</div><div class="detail-value">${valueHTML}</div></div>`;
+                const createDetailItem = (label, value, isLink = false) => {
+                    const displayValue = (value && String(value).trim() !== '' && String(value).trim() !== '-') ? value : '-';
+                    let valueHTML = (isLink && displayValue !== '-') ? `<a href="${displayValue}" target="_blank" rel="noopener noreferrer">${displayValue}</a>` : displayValue;
+                    return `<div class="detail-item"><strong class="detail-label">${label}:</strong> <span class="detail-value">${valueHTML}</span></div>`;
                 };
 
                 let imagesHTML = '';
                 const imageUrls = (record['Image URLs'] || '').split(',').map(url => url.trim()).filter(url => url && url !== '-');
                 if (imageUrls.length > 0) {
-                    imagesHTML += '<div class="detail-item full-width"><div class="detail-label">รูปภาพ</div><div class="image-thumbnails">';
+                    imagesHTML += '<div class="detail-item"><strong class="detail-label">รูปภาพ:</strong><div class="image-thumbnails">';
                     imageUrls.forEach(url => {
                         imagesHTML += `<img src="${url}" alt="Thumbnail" class="image-thumbnail" onerror="this.src='https://placehold.co/90x90/FF0000/FFFFFF?text=Error';">`;
                     });
-                    imagesHTML += '</div></div>';
+                    imagesHTML += '</div></div>'; // Close image-thumbnails and detail-item
+                } else {
+                    imagesHTML = createDetailItem('รูปภาพ', '-');
                 }
 
                 modalBody.innerHTML = `
                     <h3>รายละเอียดลูกค้า: ${record['ชื่อ'] || ''} ${record['นามสกุล'] || ''}</h3>
-                    <div class="detail-grid">
+                    <div class="detail-list">
                         ${createDetailItem('ชื่อ-นามสกุล', `${record['ชื่อ'] || ''} ${record['นามสกุล'] || ''}`)}
                         ${createDetailItem('เบอร์มือถือ', record['เบอร์มือถือ'])}
                         ${createDetailItem('เลขบัตรประชาชน', record['เลขบัตรประชาชน'])}
@@ -1229,9 +1249,9 @@
                         ${createDetailItem('กลุ่มลูกค้าหลัก', record['กลุ่มลูกค้าหลัก'])}
                         ${createDetailItem('กลุ่มอาชีพย่อย', record['กลุ่มอาชีพย่อย'])}
                         ${createDetailItem('จดทะเบียน', record['จดทะเบียน'])}
-                        ${createDetailItem('ชื่อกิจการ', record['ชื่อกิจการ'], false, true)}
+                        ${createDetailItem('ชื่อกิจการ', record['ชื่อกิจการ'])}
                         ${createDetailItem('จังหวัดที่อยู่', record['จังหวัดที่อยู่'])}
-                        ${createDetailItem('ที่อยู่จดทะเบียน', record['ที่อยู่จดทะเบียน'], false, true)}
+                        ${createDetailItem('ที่อยู่จดทะเบียน', record['ที่อยู่จดทะเบียน'])}
                         ${createDetailItem('สถานะ', record['สถานะ'])}
                         ${createDetailItem('วงเงินที่ต้องการ', record['วงเงินที่ต้องการ'])}
                         ${createDetailItem('วงเงินที่อนุมัติ', record['วงเงินที่อนุมัติ'])}
@@ -1243,7 +1263,7 @@
                         ${createDetailItem('วันที่ขอเข้ามา', record['วันที่ขอเข้ามา'])}
                         ${createDetailItem('ลิงค์โลเคชั่นบ้าน', record['ลิงค์โลเคชั่นบ้าน'], true)}
                         ${createDetailItem('ลิงค์โลเคชั่นที่ทำงาน', record['ลิงค์โลเคชั่นที่ทำงาน'], true)}
-                        ${createDetailItem('หมายเหตุ', record['หมายเหตุ'], false, true)}
+                        ${createDetailItem('หมายเหตุ', record['หมายเหตุ'])}
                         ${createDetailItem('บันทึกโดย', record['Logged In User'])}
                         ${imagesHTML}
                     </div>
