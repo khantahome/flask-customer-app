@@ -115,7 +115,7 @@ CUSTOMER_DATA_WORKSHEET_HEADERS = [
     'ระบุอาชีพย่อยอื่นๆ', 
     'จดทะเบียน', 'ชื่อกิจการ', 'จังหวัดที่อยู่', 'ที่อยู่จดทะเบียน', 'สถานะ',
     'วงเงินที่ต้องการ', 'วงเงินที่อนุมัติ', 'เคยขอเข้ามาในเครือหรือยัง', 'เช็ค',
-    'ขอเข้ามาทางไหน', 'LINE ID', 'หักดอกหัวท้าย', 'ค่าดำเนินการ',
+    'ขอเข้ามาทางไหน', 'บริษัทที่รับงาน', 'หักดอกหัวท้าย', 'ค่าดำเนินการ',
     'วันที่ขอเข้ามา', 'ลิงค์โลเคชั่นบ้าน', 'ลิงค์โลเคชั่นที่ทำงาน', 'หมายเหตุ',
     'Image URLs',
     'Logged In User'
@@ -757,7 +757,7 @@ def enter_customer_data():
             applied_before = request.form.get('applied_before', '') or '-'
             check = request.form.get('check', '') or '-'
             how_applied = request.form.get('how_applied', '') or '-'
-            line_id = request.form.get('line_id', '') or '-'
+            assigned_company = request.form.get('assigned_company', '') or '-'
             upfront_interest = request.form.get('upfront_interest', '') or '-'
             processing_fee = request.form.get('processing_fee', '') or '-'
             application_date = request.form.get('application_date', '') or '-'
@@ -793,7 +793,7 @@ def enter_customer_data():
                         'เคยขอเข้ามาในเครือหรือยัง': applied_before,
                         'เช็ค': check,
                         'ขอเข้ามาทางไหน': how_applied,
-                        'LINE ID': line_id,
+                        'บริษัทที่รับงาน': assigned_company,
                         'หักดอกหัวท้าย': upfront_interest,
                         'ค่าดำเนินการ': processing_fee,
                         'วันที่ขอเข้ามา': application_date,
@@ -1569,7 +1569,7 @@ def edit_customer_data(row_index):
             'เคยขอเข้ามาในเครือหรือยัง': request.form.get('applied_before', '') or '-',
             'เช็ค': request.form.get('check', '') or '-',
             'ขอเข้ามาทางไหน': request.form.get('how_applied', '') or '-',
-            'LINE ID': request.form.get('line_id', '') or '-',
+            'บริษัทที่รับงาน': request.form.get('assigned_company', '') or '-',
             'หักดอกหัวท้าย': request.form.get('upfront_interest', '') or '-',
             'ค่าดำเนินการ': request.form.get('processing_fee', '') or '-',
             'วันที่ขอเข้ามา': request.form.get('application_date', '') or '-',

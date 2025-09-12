@@ -688,8 +688,14 @@ body {
     </div>
 
     <div class="input-group">
-        <label for="line_id">LINE : ID</label>
-        <input type="text" id="line_id" name="line_id" placeholder="กรอก LINE ID" value="{{ customer_data.get('LINE ID', '') }}">
+        <label for="assigned_company">บริษัทที่รับงาน</label>
+        <select id="assigned_company" name="assigned_company">
+            <option value="">--- เลือกบริษัท ---</option>
+            <option value="STARLOAN" {% if customer_data.get('บริษัทที่รับงาน') == 'STARLOAN' %}selected{% endif %}>STARLOAN</option>
+            <option value="GLORYCASH" {% if customer_data.get('บริษัทที่รับงาน') == 'GLORYCASH' %}selected{% endif %}>GLORYCASH</option>
+            <option value="CASHCREDIT" {% if customer_data.get('บริษัทที่รับงาน') == 'CASHCREDIT' %}selected{% endif %}>CASHCREDIT</option>
+            <option value="อื่นๆ" {% if customer_data.get('บริษัทที่รับงาน') == 'อื่นๆ' %}selected{% endif %}>อื่นๆ</option>
+        </select>
     </div>
 
     <div class="input-group">

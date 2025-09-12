@@ -2989,6 +2989,49 @@ if (approveForm) {
   });
 }
 
+// --- NEW: Function to refresh the return principal table ---
+async function refreshReturnPrincipalTable() {
+    const tbody = document.getElementById('returnprincipal-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>';
+
+    try {
+        const response = await fetch('/api/return-principal-records');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const records = await response.json();
+
+        tbody.innerHTML = ''; // Clear loading message
+
+        if (records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">ไม่พบข้อมูลลูกค้าคืนต้น</td></tr>';
+        } else {
+            records.forEach(record => {
+                const row = `
+                    <tr>
+                        <td>${record.Timestamp || '-'}</td>
+                        <td>${record.CustomerID || '-'}</td>
+                        <td>${record.CustomerName || '-'}</td>
+                        <td>${record.Phone || '-'}</td>
+                        <td>${new Intl.NumberFormat('th-TH').format(record.ReturnAmount || 0)}</td>
+                        <td>${record.MarkedBy || '-'}</td>
+                        <td>${record.Notes || '-'}</td>
+                        <td>
+                            <button class="action-table-btn btn-danger finish-return-btn" data-id="${record.CustomerID}">จบการคืนต้น</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching return principal records:', error);
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+    }
+}
+
 
 // สลับตารางเมื่อคลิก dropdown-menu item ที่มี data-table
 document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Make it async
@@ -3088,43 +3131,7 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
 
     // --- NEW: Fetch data if it's the return principal table ---
     if (tableClass === 'returnprincipal-table-section') {
-        const tbody = document.getElementById('returnprincipal-tbody'); // This is already defined
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>'; // Changed colspan to 8
-
-        try {
-            const response = await fetch('/api/return-principal-records');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const records = await response.json();
-
-            tbody.innerHTML = ''; // Clear loading message
-
-            if (records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">ไม่พบข้อมูลลูกค้าคืนต้น</td></tr>'; // Changed colspan to 8
-            } else {
-                records.forEach(record => {
-                    const row = `
-                        <tr>
-                            <td>${record.Timestamp || '-'}</td>
-                            <td>${record.CustomerID || '-'}</td>
-                            <td>${record.CustomerName || '-'}</td>
-                            <td>${record.Phone || '-'}</td>
-                            <td>${new Intl.NumberFormat('th-TH').format(record.ReturnAmount || 0)}</td>
-                            <td>${record.MarkedBy || '-'}</td>
-                            <td>${record.Notes || '-'}</td>
-                            <td>
-                                <button class="action-table-btn btn-danger finish-return-btn" data-id="${record.CustomerID}">จบการคืนต้น</button>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.insertAdjacentHTML('beforeend', row);
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching return principal records:', error);
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>'; // Changed colspan to 8
-        }
+        await refreshReturnPrincipalTable();
     }
   });
 });
@@ -3312,9 +3319,8 @@ document.querySelector('.main-content-area').addEventListener('click', async (ev
 
                 if (response.ok && result.success) {
                     alert('อัปเดตสถานะเป็น "คืนต้นครบแล้ว" เรียบร้อย');
-                    // Remove the row from the "คืนต้น" table
-                    button.closest('tr').remove();
-                    
+                    // --- FIX: Refresh the table instead of just removing the row ---
+                    await refreshReturnPrincipalTable();
                     // Update the status in the main `allRows` array for consistency
                     const targetRowInMemory = allRows.find(row => (row.dataset.customerId || '').trim() === customerId);
                     if (targetRowInMemory) {

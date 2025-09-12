@@ -1039,6 +1039,7 @@
                                 <th>วงเงินที่ต้องการ</th>
                                 <th>ดอกเบี้ย</th>
                                 <th>วันที่ขอเข้ามา</th>
+                                <th>บริษัทที่รับงาน</th>
                                 <th>ขอเข้ามาทางไหน</th>
                                 <th>สถานะ</th>
                                 <th>ผู้บันทึก</th>
@@ -1055,6 +1056,7 @@
                                 <td>{{ record.get('วงเงินที่ต้องการ', '-') }}</td>
                                 <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td>
                                 <td>{{ record.get('วันที่ขอเข้ามา', '-') }}</td>
+                                <td>{{ record.get('บริษัทที่รับงาน', '-') }}</td>
                                 <td>{{ record.get('ขอเข้ามาทางไหน', '-') }}</td>
                                 <td>
                                     {% set status = record.get('สถานะ', 'unknown') | string | lower %}
@@ -1266,7 +1268,7 @@
                         ${createDetailItem('ชื่อ-นามสกุล', `${record['ชื่อ'] || ''} ${record['นามสกุล'] || ''}`)}
                         ${createDetailItem('เบอร์มือถือ', record['เบอร์มือถือ'])}
                         ${createDetailItem('เลขบัตรประชาชน', record['เลขบัตรประชาชน'])}
-                        ${createDetailItem('LINE ID', record['LINE ID'])}
+                        ${createDetailItem('บริษัทที่รับงาน', record['บริษัทที่รับงาน'])}
                         ${createDetailItem('กลุ่มลูกค้าหลัก', record['กลุ่มลูกค้าหลัก'])}
                         ${createDetailItem('กลุ่มอาชีพย่อย', record['กลุ่มอาชีพย่อย'])}
                         ${createDetailItem('จดทะเบียน', record['จดทะเบียน'])}
