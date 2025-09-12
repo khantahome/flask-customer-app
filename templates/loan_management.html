@@ -1613,12 +1613,15 @@
             <input type="text" id="phone" name="phone" class="form-input" readonly value="081-234-5678">
         </div>
         <div class="form-group">
-            <label class="form-label">วันที่อนุมัติ:</label>
-            <input type="text" id="approve_date" name="approve_date" class="form-input" readonly>
+            <label class="form-label">วันที่อนุมัติ:</label> 
+            <input type="text" id="approve_date" name="approve_date" class="form-input" readonly> 
         </div>
         <div class="form-group">
-            <label class="form-label">วงเงินที่อนุมัติ:</label>
-            <input type="text" id="approved_amount" name="approved_amount" class="form-input" readonly value="150,000">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <label class="form-label" style="margin-bottom: 0;">วงเงินที่อนุมัติ:</label>
+                <button type="button" id="edit-approved-amount-btn" class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-size: 0.8em; line-height: 1.5;">เพิ่มวงเงิน</button>
+            </div>
+            <input type="text" id="approved_amount" name="approved_amount" class="form-input" readonly>
         </div>
         <div class="form-group">
             <label class="form-label">ยอดเงินที่ใช้อยู่:</label>
@@ -2353,6 +2356,17 @@ if (firstDeleteBtn) {
   };
 }
 
+    // --- NEW: Logic for "Increase Limit" button ---
+    const editApprovedAmountBtn = document.getElementById('edit-approved-amount-btn');
+    if (editApprovedAmountBtn) {
+        editApprovedAmountBtn.addEventListener('click', () => {
+            const approvedAmountInput = document.getElementById('approved_amount');
+            approvedAmountInput.readOnly = false;
+            approvedAmountInput.focus();
+            approvedAmountInput.select(); // Select text for easy editing
+        });
+    }
+
 // --- NEW: Bad Debt Logic ---
 const badDebtModal = document.getElementById('bad-debt-popup');
 const badDebtForm = document.getElementById('bad-debt-form');
@@ -2685,7 +2699,10 @@ if (returnPrincipalModal) {
       document.getElementById('fullname').value = safe(infoData['ชื่อ-นามสกุล']);
       document.getElementById('phone').value = safe(infoData['หมายเลขโทรศัพท์']);
       document.getElementById('approve_date').value = safe(infoData['วันที่อนุมัติ']);
-      document.getElementById('approved_amount').value = safe(infoData['วงเงินที่อนุมัติ']);
+      // --- FIX: Set readonly state when opening modal ---
+      const approvedAmountInput = document.getElementById('approved_amount');
+      approvedAmountInput.value = safe(infoData['วงเงินที่อนุมัติ']);
+      approvedAmountInput.readOnly = true;
       document.getElementById('registrar').value = safe(infoData['ชื่อผู้ลงทะเบียน']);
 
     
@@ -2851,6 +2868,25 @@ if (approveForm) {
     const actions = formData.getAll('action_type[]');
     const tables = formData.getAll('table_select[]');
     const amounts = formData.getAll('amount[]');
+
+    // --- NEW: Validation for approved amount ---
+    const approvedAmountRaw = document.getElementById('approved_amount').value;
+    const approvedAmount = parseFloat(String(approvedAmountRaw).replace(/,/g, '')) || 0;
+    
+    let totalOpeningAmount = 0;
+    for (let i = 0; i < actions.length; i++) {
+        const action = actions[i];
+        const amount = parseFloat(amounts[i]) || 0;
+        if (action === 'เปิดยอด' || action === 'เปิดสุทธิ') {
+            totalOpeningAmount += amount;
+        }
+    }
+
+    if (totalOpeningAmount > approvedAmount) {
+        alert(`ยอดเปิดรวม (${new Intl.NumberFormat('th-TH').format(totalOpeningAmount)}) เกินวงเงินที่อนุมัติ (${new Intl.NumberFormat('th-TH').format(approvedAmount)})`);
+        return; // Stop form submission
+    }
+    // --- END: Validation ---
 
     // ดึง input ของบริษัทอื่นๆ (ต้องตรงกับชื่อ element จริง)
     const otherCompanyInput = document.getElementById('other_company'); 

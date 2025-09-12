@@ -1116,7 +1116,8 @@ def save_approved_data():
         # --- 1. Extract and prepare data from request ---
         customer_id = data.get('customer_id')
         fullname = data.get('fullname')
-        approve_date = data.get('approve_date')
+        # --- FIX: Use the current date for the transaction, not the original approval date ---
+        transaction_date = datetime.now().strftime('%Y-%m-%d')
         interest_str = data.get('interest', '0')
         transactions = data.get('transactions', [])
 
@@ -1217,7 +1218,7 @@ def save_approved_data():
 
             # Construct and append the row for THIS transaction
             final_row_list = [
-                approve_date, company, customer_id, datetime.now().strftime("%H:%M:%S"), fullname, interest_per_trx,
+                transaction_date, company, customer_id, datetime.now().strftime("%H:%M:%S"), fullname, interest_per_trx,
                 new_row_data['Table1_OpeningBalance'], new_row_data['Table1_NetOpening'], new_row_data['Table1_PrincipalReturned'], new_row_data['Table1_LostAmount'],
                 new_row_data['Table2_OpeningBalance'], new_row_data['Table2_NetOpening'], new_row_data['Table2_PrincipalReturned'], new_row_data['Table2_LostAmount'],
                 new_row_data['Table3_OpeningBalance'], new_row_data['Table3_NetOpening'], new_row_data['Table3_PrincipalReturned'], new_row_data['Table3_LostAmount'],
