@@ -1507,6 +1507,7 @@
           <th>ยอดเงินที่คืน</th>
           <th>ผู้บันทึก</th>
           <th>หมายเหตุ</th>
+          <th>การกระทำ</th>
         </tr>
       </thead>
       <tbody id="returnprincipal-tbody">
@@ -2735,6 +2736,25 @@ if (returnPrincipalModal) {
   let allRows = [];
   let dailyJobData = [];
 
+  // --- NEW: Functions for managing the closejob table, moved to a higher scope ---
+  const closeJobTbody = document.getElementById('closejob-tbody');
+
+  function showPendingOnly() {
+    if (!closeJobTbody) return;
+    closeJobTbody.innerHTML = '';
+    allRows.forEach(row => {
+      // Show only rows with the status "รอปิดจ๊อบ"
+      if ((row.dataset.status || '').trim() === 'รอปิดจ๊อบ') {
+        closeJobTbody.appendChild(row);
+      }
+    });
+  }
+
+  function showRows(rowsToShow) {
+    if (!closeJobTbody) return;
+    closeJobTbody.innerHTML = '';
+    rowsToShow.forEach(r => closeJobTbody.appendChild(r));
+  }
   // --- NEW: Report Popup Logic ---
   const reportPopup = document.getElementById('report-popup');
   const viewReportBtn = document.getElementById('view-report-btn');
@@ -2956,20 +2976,16 @@ if (approveForm) {
     } catch (error) {
         console.error('Error re-fetching balance after save:', error);
     }
-    
+
     // 1. หาแถวเป้าหมายใน Array ข้อมูลหลัก (allRows)
     const targetRow = allRows.find(row => (row.dataset.customerId || '').trim() === customerId);
 
     if (targetRow) {
-        // 2. อัปเดต data-status ใน Array ข้อมูลหลัก เพื่อให้การค้นหาครั้งต่อไปถูกต้อง
+        // 2. อัปเดต data-status ใน Array ข้อมูลหลัก เพื่อให้การค้นหา/กรองครั้งต่อไปถูกต้อง
         targetRow.dataset.status = 'ปิดจ๊อบแล้ว';
-
-        // 3. อัปเดตข้อความในเซลล์สถานะที่แสดงผลอยู่บนหน้าจอ (คอลัมน์แรก)
-        if (targetRow.cells[0]) {
-            targetRow.cells[0].textContent = 'ปิดจ๊อบแล้ว';
-        }
     }
-    // ไม่ต้องเรียก showPendingOnly() อีกต่อไป เพื่อให้หน้าจอไม่เปลี่ยน และผู้ใช้เห็นสถานะที่อัปเดต
+    // 3. รีเฟรชตารางให้แสดงผลตามค่าเริ่มต้น (เฉพาะ "รอปิดจ๊อบ")
+    showPendingOnly();
   });
 }
 
@@ -3072,8 +3088,8 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
 
     // --- NEW: Fetch data if it's the return principal table ---
     if (tableClass === 'returnprincipal-table-section') {
-        const tbody = document.getElementById('returnprincipal-tbody');
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>';
+        const tbody = document.getElementById('returnprincipal-tbody'); // This is already defined
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>'; // Changed colspan to 8
 
         try {
             const response = await fetch('/api/return-principal-records');
@@ -3085,7 +3101,7 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
             tbody.innerHTML = ''; // Clear loading message
 
             if (records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">ไม่พบข้อมูลลูกค้าคืนต้น</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">ไม่พบข้อมูลลูกค้าคืนต้น</td></tr>'; // Changed colspan to 8
             } else {
                 records.forEach(record => {
                     const row = `
@@ -3097,6 +3113,9 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
                             <td>${new Intl.NumberFormat('th-TH').format(record.ReturnAmount || 0)}</td>
                             <td>${record.MarkedBy || '-'}</td>
                             <td>${record.Notes || '-'}</td>
+                            <td>
+                                <button class="action-table-btn btn-danger finish-return-btn" data-id="${record.CustomerID}">จบการคืนต้น</button>
+                            </td>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', row);
@@ -3104,7 +3123,7 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
             }
         } catch (error) {
             console.error('Error fetching return principal records:', error);
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>'; // Changed colspan to 8
         }
     }
   });
@@ -3230,28 +3249,13 @@ if (companySelect) {
   const searchInput = document.getElementById('closejob-search-input');
   const searchBtn = document.getElementById('closejob-search-btn');
   const resetBtn = document.getElementById('closejob-reset-btn');
-  const tbody = document.getElementById('closejob-tbody');
-  const allRows = Array.from(tbody.querySelectorAll('tr'));
-
-    
-  console.log('setupCloseJobTableSearch: allRows count =', allRows.length);
-
-  function showPendingOnly() {
-    tbody.innerHTML = '';
-    let count = 0;
-    allRows.forEach(row => {
-      if ((row.dataset.status || '').trim() === 'รอปิดจ๊อบ') {
-        tbody.appendChild(row);
-        count++;
-      }
-    });
-    console.log('showPendingOnly: rows shown =', count);
-  }
-
-  function showRows(rows) {
-    tbody.innerHTML = '';
-    rows.forEach(r => tbody.appendChild(r));
-    console.log('showRows: rows shown =', rows.length);
+  
+  // --- FIX: Assign to the global `allRows` variable ---
+  if (closeJobTbody) {
+      allRows = Array.from(closeJobTbody.querySelectorAll('tr'));
+  } else {
+      console.error("Could not find 'closejob-tbody'. Table filtering will not work.");
+      return;
   }
 
   searchBtn.onclick = function() {
@@ -3268,7 +3272,7 @@ if (companySelect) {
       return id.includes(keyword) || name.includes(keyword) || status.includes(keyword);
     });
      if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="${tbody.parentElement.querySelectorAll('th').length}" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
+      closeJobTbody.innerHTML = `<tr><td colspan="${closeJobTbody.parentElement.querySelectorAll('th').length}" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
     } else {
       showRows(filtered);
     }
@@ -3287,6 +3291,47 @@ if (companySelect) {
   // โหลดหน้า: โชว์เฉพาะ "รอปิดจ๊อบ"
   showPendingOnly();
 }
+
+// --- NEW: Event listener for "จบการคืนต้น" button ---
+document.querySelector('.main-content-area').addEventListener('click', async (event) => {
+    if (event.target.matches('.finish-return-btn')) {
+        const button = event.target;
+        const customerId = button.dataset.id;
+
+        if (confirm(`คุณแน่ใจหรือไม่ที่จะจบการคืนต้นสำหรับลูกค้า ID: ${customerId}?`)) {
+            button.disabled = true;
+            button.textContent = 'กำลังบันทึก...';
+
+            try {
+                const response = await fetch('/finish_return_principal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customer_id: customerId })
+                });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    alert('อัปเดตสถานะเป็น "คืนต้นครบแล้ว" เรียบร้อย');
+                    // Remove the row from the "คืนต้น" table
+                    button.closest('tr').remove();
+                    
+                    // Update the status in the main `allRows` array for consistency
+                    const targetRowInMemory = allRows.find(row => (row.dataset.customerId || '').trim() === customerId);
+                    if (targetRowInMemory) {
+                        targetRowInMemory.dataset.status = 'คืนต้นครบแล้ว';
+                    }
+                } else {
+                    throw new Error(result.error || 'ไม่สามารถอัปเดตสถานะได้');
+                }
+            } catch (error) {
+                alert(`เกิดข้อผิดพลาด: ${error.message}`);
+                button.disabled = false;
+                button.textContent = 'จบการคืนต้น';
+            }
+        }
+    }
+});
+
 setupCloseJobTableSearch();
   }
 

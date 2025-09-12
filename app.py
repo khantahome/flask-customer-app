@@ -1465,6 +1465,45 @@ def get_return_principal_records():
     except Exception as e:
         print(f"Error fetching return principal records: {traceback.format_exc()}")
         return jsonify({'error': 'An internal server error occurred.'}), 500
+
+@app.route('/finish_return_principal', methods=['POST'])
+def finish_return_principal():
+    """
+    Updates a customer's status to 'คืนต้นครบแล้ว' in the 'approove' worksheet.
+    """
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        customer_id = data.get('customer_id')
+
+        if not customer_id:
+            return jsonify({'error': 'Customer ID is required'}), 400
+
+        # Get the 'approove' worksheet
+        approve_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+        
+        # Find the column index for 'Customer ID' and 'สถานะ'
+        headers = approve_ws.row_values(1)
+        try:
+            id_col_index = headers.index('Customer ID') + 1
+            status_col_index = headers.index('สถานะ') + 1
+        except ValueError:
+            return jsonify({'error': 'Required columns not found in approove sheet'}), 500
+
+        # Find the cell with the matching customer ID
+        cell = approve_ws.find(str(customer_id).strip(), in_column=id_col_index)
+        if not cell:
+            return jsonify({'error': 'Customer not found in approove sheet'}), 404
+
+        # Update the status cell in the found row
+        approve_ws.update_cell(cell.row, status_col_index, 'คืนต้นครบแล้ว')
+        return jsonify({'success': True, 'message': f'Customer {customer_id} status updated to "คืนต้นครบแล้ว".'})
+
+    except Exception as e:
+        print(f"Error in finish_return_principal: {traceback.format_exc()}")
+        return jsonify({'error': 'An internal server error occurred.'}), 500
 # ... (โค้ดส่วนล่างของ app.py) ...
 
 
