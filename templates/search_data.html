@@ -665,6 +665,15 @@
             border-color: var(--border-color);
         }
 
+        /* NEW: Style for business name cell to allow wrapping */
+        .business-name-cell {
+            white-space: normal; /* Override nowrap to allow wrapping */
+            word-break: break-word; /* Break long words to prevent overflow */
+            min-width: 150px; /* Give it a reasonable minimum width */
+            max-width: 250px; /* Set a max-width to trigger wrapping */
+        }
+
+
         /* --- NEW: Collapsible Sidebar & Full-width Layout Styles --- */
         .sidebar-toggle-btn {
             position: absolute;
@@ -921,7 +930,7 @@
                             <tr>
                                 <td>{{ record.get('ชื่อ', '') }} {{ record.get('นามสกุล', '') }}</td>
                                 <td>{{ record.get('เบอร์มือถือ', '-') }}</td>
-                                <td>{{ record.get('ชื่อกิจการ', '-') }}</td>
+                                <td class="business-name-cell">{{ record.get('ชื่อกิจการ', '-') }}</td>
                                 <td>{{ record.get('จังหวัดที่อยู่', '-') }}</td>
                                 <td>{{ record.get('วงเงินที่ต้องการ', '-') }}</td>
                                 <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td>
