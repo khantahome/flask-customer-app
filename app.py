@@ -1564,23 +1564,23 @@ def edit_customer_data(row_index):
                 customer_id = request.form.get('customer_id', '')
 
                 # Get the 'approove' worksheet
-                client = gspread.authorize(creds)
-                approve_worksheet = client.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+                approve_worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
 
                 # Get the next available customer ID
                 all_records = approve_worksheet.get_all_records()
                 next_id_number = len(all_records) + 1
                 customer_id = f'SL{next_id_number}'
 
-                # Create the row data for the 'approove' worksheet
+                # --- FIX: Use current date for approval and add placeholder for contract photos ---
                 approved_data_row = [
                     "รอปิดจ๊อบ", # Status ที่บันทึก
                     customer_id,
                     f"{updated_data.get('ชื่อ', '')} {updated_data.get('นามสกุล', '')}".strip(),
                     updated_data.get('เบอร์มือถือ', ''),
-                    updated_data.get('วันที่ขอเข้ามา', ''),
+                    datetime.now().strftime('%Y-%m-%d'), # Use current date for 'วันที่อนุมัติ'
                     updated_data.get('วงเงินที่อนุมัติ', ''),
-                    logged_in_user
+                    logged_in_user,
+                    '-' # Add a placeholder for 'รูปถ่ายสัญญา' to match the number of headers
                 ]
 
                 # Append the new approved record to the 'approove' worksheet
