@@ -1130,6 +1130,16 @@ def save_approved_data():
         df = pd.DataFrame(all_records)
         if not df.empty:
             df.columns = [c.strip() for c in df.columns]
+            # --- FIX: Create a proper datetime column for sorting ---
+            # This ensures we always find the chronologically latest record.
+            if 'Date' in df.columns and 'Time' in df.columns:
+                df['DateTime'] = pd.to_datetime(df['Date'] + ' ' + df['Time'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+                # Fallback for rows where the time part might be missing
+                df.loc[df['DateTime'].isna(), 'DateTime'] = pd.to_datetime(df.loc[df['DateTime'].isna(), 'Date'], errors='coerce')
+            else:
+                # If date/time columns are missing, we cannot sort reliably.
+                # Add a placeholder column to prevent errors later.
+                df['DateTime'] = pd.NaT
 
         def to_float(val):
             return float(str(val).replace(',', '')) if val else 0.0
@@ -1146,7 +1156,10 @@ def save_approved_data():
             if not df.empty and 'CustomerID' in df.columns and 'CompanyName' in df.columns:
                 customer_company_df = df[(df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()) & \
                                          (df['CompanyName'].astype(str).str.strip() == str(company).strip())]
+                # --- FIX: Sort by the new DateTime column to find the actual latest record ---
                 if not customer_company_df.empty:
+                    # Sort by DateTime to ensure iloc[-1] gets the latest transaction
+                    customer_company_df = customer_company_df.sort_values(by='DateTime', ascending=True, na_position='first')
                     latest_record_for_company = customer_company_df.iloc[-1].to_dict()
 
             # Prepare the NEW row data, inheriting from the company-specific latest record
