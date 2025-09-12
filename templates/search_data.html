@@ -586,7 +586,6 @@
             margin-top: 20px;
             font-size: 0.9em;
             min-width: 1200px; /* Prevent wrapping on small viewports, allow scroll */
-            table-layout: fixed; /* NEW: Force columns to respect widths */
         }
 
         .results-table th, .results-table td {
@@ -594,9 +593,7 @@
             padding: 10px 12px;
             text-align: left;
             vertical-align: middle;
-            white-space: nowrap; /* Prevent text from wrapping by default */
-            overflow: hidden; /* Hide overflowing content */
-            text-overflow: ellipsis; /* Add '...' to overflowing content */
+            white-space: nowrap; /* Other columns should not wrap */
         }
 
         .results-table th {
@@ -671,11 +668,8 @@
         /* NEW: Style for business name cell to allow wrapping */
         .business-name-cell {
             white-space: normal; /* Override nowrap to allow wrapping */
-            word-break: break-word; /* Break long words to prevent overflow */
-            min-width: 150px; /* Give it a reasonable minimum width */
-            max-width: 250px; /* Set a max-width to trigger wrapping */
-            overflow: visible; /* Allow content to be visible and wrap */
-            text-overflow: clip; /* Do not show ellipsis */
+            word-break: break-word; /* Break long words if needed */
+            width: 250px; /* Suggest a width to encourage wrapping */
         }
 
 
