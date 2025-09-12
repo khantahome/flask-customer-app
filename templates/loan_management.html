@@ -1404,40 +1404,50 @@
     <table class="closejob-table">
       <thead>
         <tr>
-          {% for header in approove[0].keys() if header != 'รูปถ่ายสัญญา' %}
-              <th>{{ header }}</th>
-          {% endfor %}
+          <th>สถานะ</th>
+          <th>Customer ID</th>
+          <th>ชื่อ-นามสกุล</th>
+          <th>หมายเลขโทรศัพท์</th>
+          <th>วันที่อนุมัติ</th>
+          <th>วงเงินที่อนุมัติ</th>
+          <th>บริษัทที่รับงาน</th>
+          <th>ชื่อผู้ลงทะเบียน</th>
           <th>การกระทำ</th>
         </tr>
       </thead>
       <tbody id="closejob-tbody">
         {% for record in approove %}
         <tr 
-          data-status="{{ record['สถานะ'] }}" 
-          data-customer-id="{{ record['Customer ID'] }}" 
-          data-customer-name="{{ record['ชื่อลูกค้า'] }}"
+          data-status="{{ record.get('สถานะ', '') }}" 
+          data-customer-id="{{ record.get('Customer ID', '') }}" 
+          data-customer-name="{{ record.get('ชื่อ-นามสกุล', '') }}"
         >
-          {% for key, value in record.items() if key != 'รูปถ่ายสัญญา' %}
-              <td>{{ value }}</td>
-          {% endfor %}
+          <td>{{ record.get('สถานะ', '-') }}</td>
+          <td>{{ record.get('Customer ID', '-') }}</td>
+          <td>{{ record.get('ชื่อ-นามสกุล', '-') }}</td>
+          <td>{{ record.get('หมายเลขโทรศัพท์', '-') }}</td>
+          <td>{{ record.get('วันที่อนุมัติ', '-') }}</td>
+          <td>{{ record.get('วงเงินที่อนุมัติ', '-') }}</td>
+          <td>{{ record.get('บริษัทที่รับงาน', '-') }}</td>
+          <td>{{ record.get('ชื่อผู้ลงทะเบียน', '-') }}</td>
           <td>
-            <button class="action-table-btn closejob-action-btn" data-id="{{ record['Customer ID'] }}">ปิดจ๊อบ</button>
+            <button class="action-table-btn closejob-action-btn" data-id="{{ record.get('Customer ID', '') }}">ปิดจ๊อบ</button>
             <button class="action-table-btn btn-danger bad-debt-btn" 
-                    data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
-                    data-phone="{{ record['หมายเลขโทรศัพท์'] }}">
+                    data-id="{{ record.get('Customer ID', '') }}" 
+                    data-name="{{ record.get('ชื่อ-นามสกุล', '') }}"
+                    data-phone="{{ record.get('หมายเลขโทรศัพท์', '') }}">
                 หนี้เสีย
             </button>
             <button class="action-table-btn btn-warning pull-plug-btn" 
-                    data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
-                    data-phone="{{ record['หมายเลขโทรศัพท์'] }}">
+                    data-id="{{ record.get('Customer ID', '') }}" 
+                    data-name="{{ record.get('ชื่อ-นามสกุล', '') }}"
+                    data-phone="{{ record.get('หมายเลขโทรศัพท์', '') }}">
                 ชั๊กปลั๊ก
             </button>
             <button class="action-table-btn btn-return-principal return-principal-btn" 
-                    data-id="{{ record['Customer ID'] }}" 
-                    data-name="{{ record['ชื่อ-นามสกุล'] }}"
-                    data-phone="{{ record['หมายเลขโทรศัพท์'] }}">
+                    data-id="{{ record.get('Customer ID', '') }}" 
+                    data-name="{{ record.get('ชื่อ-นามสกุล', '') }}"
+                    data-phone="{{ record.get('หมายเลขโทรศัพท์', '') }}">
                 คืนต้น
             </button>
           </td>
