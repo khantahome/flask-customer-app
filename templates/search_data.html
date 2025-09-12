@@ -672,6 +672,88 @@
             min-width: 250px; /* Force a minimum width to allow wrapping */
         }
 
+        /* NEW: Modal Styles for Customer Details */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.visible {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: var(--card-background);
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            color: var(--light-text-color);
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s ease;
+        }
+        .modal-close:hover {
+            color: var(--text-color);
+        }
+        #modal-body h3 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .detail-item {
+            background-color: var(--background-color);
+            padding: 12px 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--secondary-color);
+        }
+        .detail-item.full-width {
+            grid-column: 1 / -1;
+        }
+        .modal-actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
 
         /* --- NEW: Collapsible Sidebar & Full-width Layout Styles --- */
         .sidebar-toggle-btn {
@@ -951,6 +1033,7 @@
                                 </td>
                                 <td>{{ record.get('Logged In User', '-') }}</td>
                                 <td>
+                                    <button type="button" class="record-button view-details-btn" data-record='{{ record | tojson | safe }}'>ดูข้อมูล</button>
                                     <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไข</a>
                                 </td>
                             </tr>
@@ -998,11 +1081,20 @@
 
         </div>
     </div>
+    
+    <!-- NEW: Details Modal -->
+    <div id="detailsModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close" id="modalCloseBtn">&times;</span>
+            <div id="modal-body">
+                <!-- Customer details will be injected here by JS -->
+            </div>
+        </div>
+    </div>
 
     <div class="lightbox-overlay" id="lightboxOverlay">
         <div class="lightbox-content">
-            {# Use Flask proxy route for lightbox image src #}
-            <img src="" alt="Full size image" class="lightbox-image" id="lightboxImage" onerror="console.error('Lightbox image load error. src:', this.src, '. Please check Flask proxy setup and Google Drive permissions.'); this.src='https://placehold.co/600x400/FF0000/FFFFFF?text=Error';">
+            <img src="" alt="Full size image" class="lightbox-image" id="lightboxImage" onerror="console.error('Lightbox image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/600x400/FF0000/FFFFFF?text=Error';">
             <span class="lightbox-nav prev" id="lightboxPrev">&lt;</span>
             <span class="lightbox-nav next" id="lightboxNext">&gt;</span>
             <span class="lightbox-close" id="lightboxClose">X</span>
@@ -1050,6 +1142,12 @@
             const searchForm = document.querySelector('.search-form');
             const searchKeywordInput = document.getElementById('search_keyword');
 
+            // --- NEW: Details Modal ---
+            const detailsModal = document.getElementById('detailsModal');
+            const modalBody = document.getElementById('modal-body');
+            const modalCloseBtn = document.getElementById('modalCloseBtn');
+            const resultsTableBody = document.querySelector('.results-table tbody');
+
             if (clearSearchButton) {
                 clearSearchButton.addEventListener('click', function() {
                     searchKeywordInput.value = '';
@@ -1057,7 +1155,7 @@
                 });
             }
 
-            // --- Lightbox/Modal Logic ---
+            // --- Lightbox Logic (for image thumbnails in modal) ---
             const lightboxOverlay = document.getElementById('lightboxOverlay');
             const lightboxImage = document.getElementById('lightboxImage');
             const lightboxPrev = document.getElementById('lightboxPrev');
@@ -1080,8 +1178,6 @@
 
             function updateLightboxImage() {
                 if (currentImageUrls.length > 0) {
-                    // Corrected: Use Flask proxy route for lightbox image src
-                    // ใช้ URL ของ Cloudinary โดยตรง ไม่ต้องผ่าน proxy แล้ว
                     lightboxImage.src = currentImageUrls[currentImageIndex];
                     lightboxImage.style.transform = `scale(${currentZoom})`; // Apply zoom
                     lightboxPrev.style.display = currentImageUrls.length > 1 ? 'block' : 'none';
@@ -1094,19 +1190,98 @@
                 lightboxImage.src = ''; // Clear image source
             }
 
-            // Event listeners for thumbnails
-            document.querySelectorAll('.image-thumbnails').forEach(container => {
-                const urlsString = container.dataset.imageUrls;
-                console.log('data-image-urls string from HTML:', urlsString); // Debugging: Check raw data-attribute
-                if (urlsString) {
-                    const urls = urlsString.split(', ').filter(url => url.trim() !== '');
-                    console.log('Parsed image URLs array in JS:', urls); // Debugging: Check parsed array
-                    container.querySelectorAll('.image-thumbnail').forEach((thumbnail, index) => {
+            // --- NEW: Details Modal Logic ---
+            if (resultsTableBody) {
+                resultsTableBody.addEventListener('click', function(event) {
+                    const viewBtn = event.target.closest('.view-details-btn');
+                    if (viewBtn) {
+                        const recordData = JSON.parse(viewBtn.dataset.record);
+                        populateModal(recordData);
+                        detailsModal.classList.add('visible');
+                    }
+                });
+            }
+
+            function populateModal(record) {
+                const createDetailItem = (label, value, isLink = false, isFullWidth = false) => {
+                    if (!value || value === '-') return '';
+                    let valueHTML = isLink ? `<a href="${value}" target="_blank" rel="noopener noreferrer">${value}</a>` : value;
+                    return `<div class="detail-item ${isFullWidth ? 'full-width' : ''}"><div class="detail-label">${label}</div><div class="detail-value">${valueHTML}</div></div>`;
+                };
+
+                let imagesHTML = '';
+                const imageUrls = (record['Image URLs'] || '').split(',').map(url => url.trim()).filter(url => url && url !== '-');
+                if (imageUrls.length > 0) {
+                    imagesHTML += '<div class="detail-item full-width"><div class="detail-label">รูปภาพ</div><div class="image-thumbnails">';
+                    imageUrls.forEach(url => {
+                        imagesHTML += `<img src="${url}" alt="Thumbnail" class="image-thumbnail" onerror="this.src='https://placehold.co/90x90/FF0000/FFFFFF?text=Error';">`;
+                    });
+                    imagesHTML += '</div></div>';
+                }
+
+                modalBody.innerHTML = `
+                    <h3>รายละเอียดลูกค้า: ${record['ชื่อ'] || ''} ${record['นามสกุล'] || ''}</h3>
+                    <div class="detail-grid">
+                        ${createDetailItem('ชื่อ-นามสกุล', `${record['ชื่อ'] || ''} ${record['นามสกุล'] || ''}`)}
+                        ${createDetailItem('เบอร์มือถือ', record['เบอร์มือถือ'])}
+                        ${createDetailItem('เลขบัตรประชาชน', record['เลขบัตรประชาชน'])}
+                        ${createDetailItem('LINE ID', record['LINE ID'])}
+                        ${createDetailItem('กลุ่มลูกค้าหลัก', record['กลุ่มลูกค้าหลัก'])}
+                        ${createDetailItem('กลุ่มอาชีพย่อย', record['กลุ่มอาชีพย่อย'])}
+                        ${createDetailItem('จดทะเบียน', record['จดทะเบียน'])}
+                        ${createDetailItem('ชื่อกิจการ', record['ชื่อกิจการ'], false, true)}
+                        ${createDetailItem('จังหวัดที่อยู่', record['จังหวัดที่อยู่'])}
+                        ${createDetailItem('ที่อยู่จดทะเบียน', record['ที่อยู่จดทะเบียน'], false, true)}
+                        ${createDetailItem('สถานะ', record['สถานะ'])}
+                        ${createDetailItem('วงเงินที่ต้องการ', record['วงเงินที่ต้องการ'])}
+                        ${createDetailItem('วงเงินที่อนุมัติ', record['วงเงินที่อนุมัติ'])}
+                        ${createDetailItem('เคยขอเข้ามาในเครือหรือยัง', record['เคยขอเข้ามาในเครือหรือยัง'])}
+                        ${createDetailItem('เช็ค', record['เช็ค'])}
+                        ${createDetailItem('ขอเข้ามาทางไหน', record['ขอเข้ามาทางไหน'])}
+                        ${createDetailItem('หักดอกหัวท้าย', record['หักดอกหัวท้าย'])}
+                        ${createDetailItem('ค่าดำเนินการ', record['ค่าดำเนินการ'])}
+                        ${createDetailItem('วันที่ขอเข้ามา', record['วันที่ขอเข้ามา'])}
+                        ${createDetailItem('ลิงค์โลเคชั่นบ้าน', record['ลิงค์โลเคชั่นบ้าน'], true)}
+                        ${createDetailItem('ลิงค์โลเคชั่นที่ทำงาน', record['ลิงค์โลเคชั่นที่ทำงาน'], true)}
+                        ${createDetailItem('หมายเหตุ', record['หมายเหตุ'], false, true)}
+                        ${createDetailItem('บันทึกโดย', record['Logged In User'])}
+                        ${imagesHTML}
+                    </div>
+                    <div class="modal-actions">
+                        <a href="/edit_customer_data/${record.row_index}" class="record-button edit">แก้ไขข้อมูล</a>
+                    </div>
+                `;
+
+                // Add event listeners for new thumbnails inside the modal
+                const thumbnailContainer = modalBody.querySelector('.image-thumbnails');
+                if (thumbnailContainer) {
+                    thumbnailContainer.querySelectorAll('.image-thumbnail').forEach((thumbnail, index) => {
                         thumbnail.addEventListener('click', () => {
-                            openLightbox(urls, index);
+                            openLightbox(imageUrls, index);
                         });
                     });
                 }
+            }
+
+            if (modalCloseBtn) {
+                modalCloseBtn.addEventListener('click', () => {
+                    detailsModal.classList.remove('visible');
+                });
+            }
+
+            if (detailsModal) {
+                detailsModal.addEventListener('click', (event) => {
+                    if (event.target === detailsModal) {
+                        detailsModal.classList.remove('visible');
+                    }
+                });
+            }
+
+            // Lightbox Navigation and Close
+            lightboxPrev.addEventListener('click', () => {
+                currentImageIndex = (currentImageIndex - 1 + currentImageUrls.length) % currentImageUrls.length;
+                currentZoom = 1;
+                updateLightboxImage();
             });
 
             // Navigation and Close
