@@ -70,6 +70,7 @@ APPROVE_WORKSHEET_HEADERS = [
     'หมายเลขโทรศัพท์', 
     'วันที่อนุมัติ', 
     'วงเงินที่อนุมัติ', 
+    'บริษัทที่รับงาน',
     'ชื่อผู้ลงทะเบียน',
     'รูปถ่ายสัญญา'
 ]
@@ -122,6 +123,13 @@ CUSTOMER_DATA_WORKSHEET_HEADERS = [
 ]
 DATA1_SHEET_NAME = "data1"
 ALLPIDJOB_WORKSHEET = "allpidjob"
+ALLPIDJOB_HEADERS = [
+    "Date", "CompanyName", "CustomerID", "Time", "CustomerName", "interest",
+    "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
+    "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
+    "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount",
+    "บริษัทที่รับงาน"
+]
 
 # --- Cloudinary Configuration ---
 cloudinary.config(
@@ -1118,6 +1126,7 @@ def save_approved_data():
         fullname = data.get('fullname')
         # --- FIX: Use the current date for the transaction, not the original approval date ---
         transaction_date = datetime.now().strftime('%Y-%m-%d')
+        assigned_company = data.get('assigned_company') # NEW: Get assigned company
         interest_str = data.get('interest', '0')
         transactions = data.get('transactions', [])
 
@@ -1128,7 +1137,9 @@ def save_approved_data():
             return jsonify({'error': 'Invalid amount or interest format.'}), 400
 
         # --- 2. Get worksheet and data ---
-        worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
+        worksheet = get_worksheet(DATA1_SHEET_NAME, ALLPIDJOB_WORKSHEET, ALLPIDJOB_HEADERS)
+        if not worksheet:
+            return jsonify({'error': 'Could not access allpidjob worksheet'}), 500
         all_records = worksheet.get_all_records()
         df = pd.DataFrame(all_records)
         if not df.empty:
@@ -1222,6 +1233,7 @@ def save_approved_data():
                 new_row_data['Table1_OpeningBalance'], new_row_data['Table1_NetOpening'], new_row_data['Table1_PrincipalReturned'], new_row_data['Table1_LostAmount'],
                 new_row_data['Table2_OpeningBalance'], new_row_data['Table2_NetOpening'], new_row_data['Table2_PrincipalReturned'], new_row_data['Table2_LostAmount'],
                 new_row_data['Table3_OpeningBalance'], new_row_data['Table3_NetOpening'], new_row_data['Table3_PrincipalReturned'], new_row_data['Table3_LostAmount'],
+                assigned_company
             ]
             worksheet.append_row(final_row_list)
 
@@ -1619,6 +1631,7 @@ def edit_customer_data(row_index):
                     updated_data.get('เบอร์มือถือ', ''),
                     datetime.now().strftime('%Y-%m-%d'), # Use current date for 'วันที่อนุมัติ'
                     updated_data.get('วงเงินที่อนุมัติ', ''),
+                    updated_data.get('บริษัทที่รับงาน', ''),
                     logged_in_user,
                     '-' # Add a placeholder for 'รูปถ่ายสัญญา' to match the number of headers
                 ]

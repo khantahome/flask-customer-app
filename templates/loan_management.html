@@ -1359,6 +1359,7 @@
         <th>หมายเลขโทรศัพท์</th>
         <th>วันที่อนุมัติ</th>
         <th>วงเงินที่อนุมัติ</th>
+        <th>บริษัทที่รับงาน</th>
         <th>ชื่อผู้ลงทะเบียน</th>
         <th>การกระทำ</th>
       </tr>
@@ -1372,6 +1373,7 @@
         <td>{{ record['หมายเลขโทรศัพท์'] }}</td>
         <td>{{ record['วันที่อนุมัติ'] }}</td>
         <td>{{ record['วงเงินที่อนุมัติ'] }}</td>
+        <td>{{ record['บริษัทที่รับงาน'] }}</td>
         <td>{{ record['ชื่อผู้ลงทะเบียน'] }}</td>
         <td>
             <button class="action-table-btn btn-add-doc add-doc-btn" data-id="{{ record['Customer ID'] }}" data-name="{{ record['ชื่อ-นามสกุล'] }}"><i class="fas fa-file-upload"></i> เพิ่มเอกสาร</button>
@@ -1556,12 +1558,14 @@
           <th rowspan="2">รหัสลูกค้า</th>
           <th rowspan="2">เวลา</th>
           <th rowspan="2">ชื่อลูกค้า</th>
+          <th rowspan="2">บริษัทที่รับงาน</th>
           <th rowspan="2">ดอกเบี้ย %</th>
           <th colspan="4" style="background:#3f51b5; color:#fff;">โต๊ะ1</th>
           <th colspan="4" style="background:#009688; color:#fff;">โต๊ะ2</th>
           <th colspan="4" style="background:#ff9800; color:#fff;">โต๊ะ3</th>
         </tr>
         <tr>
+          
           <th style="background:#47a7d3;">ยอดเปิดโต๊ะ</th>
           <th style="background:#df8a29;">สุทธิ</th>
           <th style="background:#7de76a;">คืนต้น</th>
@@ -1605,6 +1609,7 @@
             <label class="form-label">รหัสลูกค้า:</label>
             <input type="text" id="customer_id" name="customer_id" class="form-input" readonly value="C-123456">
         </div>
+        <input type="hidden" id="assigned_company_hidden" name="assigned_company_hidden">
         <div class="form-group">
             <label class="form-label">ชื่อ-นามสกุล:</label>
             <input type="text" id="fullname" name="fullname" class="form-input" readonly value="สมชาย ใจดี">
@@ -2700,6 +2705,7 @@ if (returnPrincipalModal) {
       document.getElementById('fullname').value = safe(infoData['ชื่อ-นามสกุล']);
       document.getElementById('phone').value = safe(infoData['หมายเลขโทรศัพท์']);
       document.getElementById('approve_date').value = safe(infoData['วันที่อนุมัติ']);
+      document.getElementById('assigned_company_hidden').value = safe(infoData['บริษัทที่รับงาน']);
       // --- FIX: Set readonly state when opening modal ---
       const approvedAmountInput = document.getElementById('approved_amount');
       approvedAmountInput.value = safe(infoData['วงเงินที่อนุมัติ']);
@@ -2933,6 +2939,7 @@ if (approveForm) {
         fullname: formData.get('fullname'),
         phone: formData.get('phone'),
         approve_date: formData.get('approve_date'),
+        assigned_company: formData.get('assigned_company_hidden'),
         approved_amount: formData.get('approved_amount'),
         open_balance: formData.get('open_balance'),
         interest: formData.get('interest'),
@@ -3172,9 +3179,9 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
         // ปิดการใช้งานปุ่มดูรายงานเมื่อเกิดข้อผิดพลาด
         const viewReportBtn = document.getElementById('view-report-btn');
         if (viewReportBtn) {
-            viewReportBtn.disabled = true;
+            viewReportBtn.disabled = true; 
         }
-        tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">${data.error || 'เกิดข้อผิดพลาด'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="19" style="text-align:center;">${data.error || 'เกิดข้อผิดพลาด'}</td></tr>`;
     } else if (data.length === 0) {
         // ปิดการใช้งานปุ่มดูรายงานเมื่อไม่พบข้อมูล
         const viewReportBtn = document.getElementById('view-report-btn');
@@ -3186,7 +3193,7 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
         if (dailyJobSection) {
             dailyJobSection.querySelector('h3').textContent = `ไม่พบธุรกรรมในวันที่ ${dateValue}`;
         }
-        tbody.innerHTML = `<tr><td colspan="18" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="19" style="text-align:center;">ไม่พบข้อมูล</td></tr>`;
     } else {
         data.forEach(row => {
             tbody.innerHTML += `
@@ -3196,6 +3203,7 @@ document.querySelectorAll('.dropdown-item[data-table]').forEach(item => { // Mak
                 <td>${row.CustomerID || ''}</td>
                 <td>${row.Time || ''}</td>
                 <td>${row.CustomerName || ''}</td>
+                <td>${row['บริษัทที่รับงาน'] || ''}</td>
                 <td>${row.interest || ''}</td>
                 <td>${row.Table1_OpeningBalance || ''}</td>
                 <td>${row.Table1_NetOpening || ''}</td>
