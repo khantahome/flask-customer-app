@@ -627,8 +627,8 @@
         .status-pending { background-color: #FFC107; color: #333; } /* Yellow */
         .status-approved { background-color: #28A745; } /* Green */
         .status-rejected { background-color: #DC3545; } /* Red */
-        .status-cancelled { background-color: #FD7E14; } /* Orange */
-        .status-unknown { background-color: #6c757d; } /* Grey */
+        .status-cancelled { background-color: #9d9d9d; } /* Orange */
+        .status-unknown { background-color: #a500b8; } /* Grey */
 
         .pagination-controls {
             display: flex;
@@ -669,7 +669,7 @@
         .business-name-cell {
             white-space: normal; /* Override nowrap to allow wrapping */
             word-break: break-word; /* Break long words if needed */
-            width: 250px; /* Suggest a width to encourage wrapping */
+            min-width: 250px; /* Force a minimum width to allow wrapping */
         }
 
 
