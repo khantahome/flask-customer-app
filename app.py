@@ -936,10 +936,12 @@ def api_daily_jobs():
         # .fillna(df[numeric_cols]) ensures the first transaction of a group keeps its original value
         transaction_df = df.groupby(['CustomerID', 'CompanyName'])[numeric_cols].diff().fillna(df[numeric_cols])
 
-        # Set negative values to 0, as they represent the "debit" side of an internal transfer (like 'คืนต้น')
-        # The user only wants to see the positive "credit" side of the transaction.
-        transaction_df[transaction_df < 0] = 0
-        
+        # --- FIX: Correctly handle negative diffs ---
+        # Only zero out negative diffs in Opening/NetOpening columns.
+        # Negative diffs in PrincipalReturned/LostAmount are valid (e.g., correction) and should be kept.
+        opening_cols_to_zero = [col for col in numeric_cols if 'OpeningBalance' in col or 'NetOpening' in col]
+        transaction_df[opening_cols_to_zero] = transaction_df[opening_cols_to_zero].clip(lower=0)
+
         # Assign the calculated transactional values back to the main dataframe
         df[numeric_cols] = transaction_df
 
@@ -1147,7 +1149,7 @@ def save_approved_data():
         # --- 3. Loop through each transaction to create a SEPARATE record ---
         for trx in transactions:
             company = trx.get('company', '')
-            action = trx.get('action_type', '')
+            action = trx.get('action_type', '').strip() # Add strip() for robustness
             table = trx.get('table_select', '')
             amount = to_float(trx.get('amount', '0'))
 
@@ -1190,14 +1192,19 @@ def save_approved_data():
                 if amount > table_balance:
                     error_msg = f'ยอดคืนต้น ({amount:,.2f}) ของบริษัท {company} โต๊ะ {table} มากกว่ายอดคงเหลือ ({table_balance:,.2f})'
                     return jsonify({'error': error_msg}), 400
-
+                
                 # Now, update the values for the new row
                 pr_val = to_float(new_row_data.get(principal_returned_col, 0))
                 new_row_data[principal_returned_col] = pr_val + amount
-                if no_val != 0:
+
+                # --- FIX: Correctly decrement balance ---
+                # Prioritize reducing NetOpening first. If it's not enough, reduce OpeningBalance.
+                if no_val >= amount:
                     new_row_data[net_opening_col] = no_val - amount
                 else:
-                    new_row_data[opening_balance_col] = ob_val - amount
+                    remaining_amount = amount - no_val
+                    new_row_data[net_opening_col] = 0
+                    new_row_data[opening_balance_col] = ob_val - remaining_amount
             else:
                 action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
                 column_suffix = action_map.get(action)
