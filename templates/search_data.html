@@ -631,7 +631,7 @@
             border-collapse: collapse;
             margin-top: 20px;
             font-size: 0.9em;
-            min-width: 1200px; /* Prevent wrapping on small viewports, allow scroll */
+            min-width: 1500px; /* Prevent wrapping on small viewports, allow scroll */
         }
 
         .results-table th, .results-table td {
@@ -1121,6 +1121,9 @@
                                 <th>วันที่ขอเข้ามา</th>
                                 <th>บริษัทที่รับงาน</th>
                                 <th>ขอเข้ามาทางไหน</th>
+                                <th>วันที่นัดตรวจ</th>
+                                <th>เวลานัดตรวจ</th>
+                                <th>ผู้รับงานตรวจ</th>
                                 <th>สถานะ</th>
                                 <th>ผู้บันทึก</th>
                                 <th>การกระทำ</th>
@@ -1139,6 +1142,9 @@
                                 <td>{{ record.get('วันที่ขอเข้ามา', '-') }}</td>
                                 <td>{{ record.get('บริษัทที่รับงาน', '-') }}</td>
                                 <td>{{ record.get('ขอเข้ามาทางไหน', '-') }}</td>
+                                <td>{{ record.get('วันที่นัดตรวจ', '-') }}</td>
+                                <td>{{ record.get('เวลานัดตรวจ', '-') }}</td>
+                                <td>{{ record.get('ผู้รับงานตรวจ', '-') }}</td>
                                 <td id="status-cell-{{ record.row_index }}">
                                     {% set status = record.get('สถานะ', 'unknown') | string | lower %}
                                     {% if 'รอติดต่อ' in status %}
@@ -1167,8 +1173,8 @@
                                         <button type="button" class="record-button schedule-inspection-btn" data-row-index="{{ record.row_index }}">นัดตรวจ</button>
                                         <button type="button" class="record-button statement-failed-btn" data-row-index="{{ record.row_index }}">ไม่อนุมัติ</button>
                                     {% elif record.get('สถานะ') == 'รอตรวจ' %}
-                                        <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button approve-btn">อนุมัติ</a>
                                         <button type="button" class="record-button reschedule-inspection-btn" data-row-index="{{ record.row_index }}" data-record='{{ record | tojson | safe }}'>เลื่อนนัด</button>
+                                        <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button approve-btn">อนุมัติ</a>
                                         <button type="button" class="record-button inspection-failed-btn" data-row-index="{{ record.row_index }}">ตรวจไม่ผ่าน</button>
                                     {% endif %}
                                 </td>
@@ -1406,6 +1412,9 @@
                         ${createDetailItem('หักดอกหัวท้าย', record['หักดอกหัวท้าย'])}
                         ${createDetailItem('ค่าดำเนินการ', record['ค่าดำเนินการ'])}
                         ${createDetailItem('วันที่ขอเข้ามา', record['วันที่ขอเข้ามา'])}
+                        ${createDetailItem('วันที่นัดตรวจ', record['วันที่นัดตรวจ'])}
+                        ${createDetailItem('เวลานัดตรวจ', record['เวลานัดตรวจ'])}
+                        ${createDetailItem('ผู้รับงานตรวจ', record['ผู้รับงานตรวจ'])}
                         ${createDetailItem('ลิงค์โลเคชั่นบ้าน', record['ลิงค์โลเคชั่นบ้าน'], true)}
                         ${createDetailItem('ลิงค์โลเคชั่นที่ทำงาน', record['ลิงค์โลเคชั่นที่ทำงาน'], true)}
                         ${createDetailItem('หมายเหตุ', record['หมายเหตุ'])}
