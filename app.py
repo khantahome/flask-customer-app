@@ -1903,6 +1903,54 @@ def schedule_inspection():
         print(f"Error in schedule_inspection: {traceback.format_exc()}")
         return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
 
+@app.route('/reject_inspection', methods=['POST'])
+def reject_inspection():
+    """
+    Updates a customer's status to 'ไม่อนุมัติ' and adds a note.
+    Triggered when an on-site inspection fails.
+    """
+    if 'username' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        note = data.get('note', '')
+        try:
+            row_index = int(data.get('row_index'))
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
+
+        if not row_index or not note:
+            return jsonify({'success': False, 'message': 'Row index and note are required.'}), 400
+        
+        worksheet = get_customer_data_worksheet()
+        if not worksheet:
+            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
+
+        updates_to_perform = []
+        headers = worksheet.row_values(1)
+        try:
+            status_col_index = headers.index('สถานะ') + 1
+            note_col_index = headers.index('หมายเหตุ') + 1
+        except ValueError as e:
+            return jsonify({'success': False, 'message': f"Column not found: {e}"}), 500
+
+        updates_to_perform.append({'range': gspread.utils.rowcol_to_a1(row_index, status_col_index), 'values': [['ไม่อนุมัติ']]})
+
+        existing_note = worksheet.cell(row_index, note_col_index).value or ''
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
+        formatted_note = f"[{timestamp} - ตรวจไม่ผ่าน]: {note.strip()}"
+        final_note = f"{existing_note}\n{formatted_note}".strip() if existing_note and existing_note.strip() != '-' else formatted_note
+        
+        updates_to_perform.append({'range': gspread.utils.rowcol_to_a1(row_index, note_col_index), 'values': [[final_note]]})
+
+        worksheet.batch_update(updates_to_perform)
+        return jsonify({'success': True, 'message': 'Status updated to Rejected after inspection.'})
+
+    except Exception as e:
+        print(f"Error in reject_inspection: {traceback.format_exc()}")
+        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
+
 # --- Main execution block ---
 if __name__ == '__main__':
     # This block is intended for local development.

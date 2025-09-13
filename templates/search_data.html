@@ -604,6 +604,20 @@
             background-color: #ffc107; /* Orange */
             color: #333;
         }
+        .record-button.approve-btn {
+            background-color: #28a745; /* Green */
+            color: white;
+        }
+        .record-button.approve-btn:hover {
+            background-color: #218838;
+        }
+        .record-button.inspection-failed-btn {
+            background-color: #dc3545; /* Red */
+            color: white;
+        }
+        .record-button.inspection-failed-btn:hover {
+            background-color: #c82333;
+        }
 
         /* NEW: Table and Pagination Styles */
         .table-responsive {
@@ -1146,7 +1160,6 @@
                                 <td>{{ record.get('Logged In User', '-') }}</td>
                                 <td id="action-cell-{{ record.row_index }}">
                                     <button type="button" class="record-button view-details-btn" data-record='{{ record | tojson | safe }}'>ดูข้อมูล</button>
-                                    <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไข</a>
                                     {% if record.get('สถานะ') == 'รอติดต่อ' %}
                                         <button type="button" class="record-button contacted contacted-btn" data-row-index="{{ record.row_index }}">ติดต่อแล้ว</button>
                                         <button type="button" class="record-button not-interested not-interested-btn" data-row-index="{{ record.row_index }}">ไม่สนใจ</button>
@@ -1154,7 +1167,9 @@
                                         <button type="button" class="record-button schedule-inspection-btn" data-row-index="{{ record.row_index }}">นัดตรวจ</button>
                                         <button type="button" class="record-button statement-failed-btn" data-row-index="{{ record.row_index }}">ไม่อนุมัติ</button>
                                     {% elif record.get('สถานะ') == 'รอตรวจ' %}
+                                        <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button approve-btn">อนุมัติ</a>
                                         <button type="button" class="record-button reschedule-inspection-btn" data-row-index="{{ record.row_index }}" data-record='{{ record | tojson | safe }}'>เลื่อนนัด</button>
+                                        <button type="button" class="record-button inspection-failed-btn" data-row-index="{{ record.row_index }}">ตรวจไม่ผ่าน</button>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -1436,6 +1451,7 @@
                     const scheduleBtn = event.target.closest('.schedule-inspection-btn');
                     const rescheduleBtn = event.target.closest('.reschedule-inspection-btn');
                     const statementFailedBtn = event.target.closest('.statement-failed-btn');
+                    const inspectionFailedBtn = event.target.closest('.inspection-failed-btn');
 
                     if (notInterestedBtn) {
                         const rowIndex = notInterestedBtn.dataset.rowIndex;
@@ -1615,6 +1631,59 @@
                         }
                         
                         modal.classList.add('visible');
+                        return;
+                    }
+
+                    // --- NEW: Inspection Failed button logic ---
+                    if (inspectionFailedBtn) {
+                        const rowIndex = inspectionFailedBtn.dataset.rowIndex;
+                        if (!rowIndex) return;
+
+                        const reason = prompt('ยืนยันการ "ตรวจไม่ผ่าน" และระบุเหตุผล (จำเป็น):', '');
+
+                        if (reason === null) { // User clicked cancel
+                            return;
+                        }
+                        if (!reason.trim()) {
+                            alert('กรุณาระบุเหตุผลที่ตรวจไม่ผ่าน');
+                            return;
+                        }
+
+                        const actionCell = inspectionFailedBtn.closest('td');
+                        const buttonsInCell = actionCell.querySelectorAll('.approve-btn, .reschedule-inspection-btn, .inspection-failed-btn');
+                        buttonsInCell.forEach(btn => {
+                            btn.disabled = true;
+                            if (btn.tagName === 'BUTTON') {
+                                btn.textContent = 'กำลังอัปเดต...';
+                            } else {
+                                btn.style.pointerEvents = 'none'; // Disable link
+                            }
+                        });
+
+                        try {
+                            const response = await fetch('/reject_inspection', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ row_index: rowIndex, note: reason })
+                            });
+                            const result = await response.json();
+                            if (response.ok && result.success) {
+                                const statusCell = document.getElementById(`status-cell-${rowIndex}`);
+                                if (statusCell) {
+                                    statusCell.innerHTML = `<span class="status-badge status-rejected">ไม่อนุมัติ</span>`;
+                                }
+                                buttonsInCell.forEach(btn => btn.remove());
+                            } else {
+                                throw new Error(result.message || 'Failed to update status.');
+                            }
+                        } catch (error) {
+                            console.error('Error updating status to rejected after inspection:', error);
+                            alert('เกิดข้อผิดพลาด: ' + error.message);
+                            buttonsInCell.forEach(btn => {
+                                btn.disabled = false;
+                                // Restore button text/state here if needed
+                            });
+                        }
                         return;
                     }
 
