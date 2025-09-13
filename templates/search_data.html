@@ -640,16 +640,17 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            font-size: 0.9em;
-            min-width: 1500px; /* Prevent wrapping on small viewports, allow scroll */
+            font-size: 0.85em; /* ลดขนาดฟอนต์เล็กน้อยเพื่อประหยัดพื้นที่ */
+            /* ลบ min-width เพื่อให้ตารางปรับขนาดตามหน้าจอได้ */
         }
 
         .results-table th, .results-table td {
             border: 1px solid var(--border-color);
-            padding: 10px 12px;
+            padding: 8px 10px; /* ลด padding ในเซลล์ */
             text-align: left;
             vertical-align: middle;
-            white-space: nowrap; /* Other columns should not wrap */
+            white-space: normal; /* อนุญาตให้ข้อความขึ้นบรรทัดใหม่เป็นค่าเริ่มต้น */
+            word-break: break-word; /* ตัดคำยาวๆ เพื่อไม่ให้ล้นเซลล์ */
         }
 
         .results-table th {
@@ -730,33 +731,36 @@
             border-color: var(--border-color);
         }
 
-        /* NEW: Style for business name cell to allow wrapping */
-        .business-name-cell {
-            white-space: normal; /* Override nowrap to allow wrapping */
-            word-break: break-word; /* Break long words if needed */
-            min-width: 250px; /* Force a minimum width to allow wrapping */
+        /* NEW: จัดการการตัดคำและความกว้างของแต่ละคอลัมน์ */
+        /* คอลัมน์ที่ไม่ต้องการให้ตัดคำขึ้นบรรทัดใหม่ */
+        .results-table th:nth-child(1), .results-table td:nth-child(1),   /* รหัสลูกค้า */
+        .results-table th:nth-child(3), .results-table td:nth-child(3),   /* เบอร์มือถือ */
+        .results-table th:nth-child(5), .results-table td:nth-child(5),   /* จังหวัด */
+        .results-table th:nth-child(6), .results-table td:nth-child(6),   /* วงเงิน */
+        .results-table th:nth-child(7), .results-table td:nth-child(7),   /* ดอกเบี้ย */
+        .results-table th:nth-child(8), .results-table td:nth-child(8),   /* วันที่ขอเข้ามา */
+        .results-table th:nth-child(11), .results-table td:nth-child(11), /* วันที่นัดตรวจ */
+        .results-table th:nth-child(12), .results-table td:nth-child(12), /* เวลานัดตรวจ */
+        .results-table th:nth-child(14), .results-table td:nth-child(14), /* สถานะ */
+        .results-table th:nth-child(16), .results-table td:nth-child(16)  /* การกระทำ */
+        {
+            white-space: nowrap;
         }
 
-        /* NEW: Styles for sticky first column */
-        .results-table th:first-child,
-        .results-table td:first-child {
-            position: -webkit-sticky; /* For Safari */
-            position: sticky;
-            left: 0;
-            z-index: 2; /* Ensure it's above other scrolling cells */
+        /* กำหนดความกว้างขั้นต่ำให้คอลัมน์ที่ตัดคำได้ เพื่อไม่ให้แคบเกินไป */
+        .results-table th:nth-child(2), .results-table td:nth-child(2),   /* ชื่อ-นามสกุล */
+        .results-table th:nth-child(4), .results-table td:nth-child(4),   /* ชื่อกิจการ */
+        .results-table th:nth-child(9), .results-table td:nth-child(9),   /* บริษัทที่รับงาน */
+        .results-table th:nth-child(10), .results-table td:nth-child(10), /* ขอเข้ามาทางไหน */
+        .results-table th:nth-child(13), .results-table td:nth-child(13), /* ผู้รับงานตรวจ */
+        .results-table th:nth-child(15), .results-table td:nth-child(15)  /* ผู้บันทึก */
+        {
+            min-width: 120px;
         }
 
-        /* Ensure the sticky header has the correct background to hide scrolling content */
-        .results-table thead th:first-child {
-            background-color: var(--record-bg-odd);
-        }
-
-        .results-table tbody tr:nth-child(odd) td:first-child {
-            background-color: var(--record-bg-odd);
-        }
-
-        .results-table tbody tr:nth-child(even) td:first-child {
-            background-color: var(--record-bg-even);
+        /* ให้พื้นที่คอลัมน์ 'ชื่อกิจการ' มากเป็นพิเศษ */
+        .results-table th:nth-child(4), .results-table td:nth-child(4) {
+            min-width: 180px;
         }
 
         /* NEW: Modal Styles for Customer Details */
@@ -1152,7 +1156,7 @@
                                 <td>{{ record.get('Customer ID', '-') }}</td>
                                 <td>{{ record.get('ชื่อ', '') }} {{ record.get('นามสกุล', '') }}</td>
                                 <td>{{ record.get('เบอร์มือถือ', '-') }}</td>
-                                <td class="business-name-cell">{{ record.get('ชื่อกิจการ', '-') }}</td>
+                                <td>{{ record.get('ชื่อกิจการ', '-') }}</td>
                                 <td>{{ record.get('จังหวัดที่อยู่', '-') }}</td>
                                 <td>{{ record.get('วงเงินที่ต้องการ', '-') }}</td>
                                 <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td>
