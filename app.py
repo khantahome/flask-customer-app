@@ -1711,6 +1711,98 @@ def edit_customer_data(row_index):
                            customer_data=customer_data,
                            row_index=row_index)
 
+# NEW ROUTE FOR UPDATING CONTACT STATUS
+@app.route('/update_contact_status', methods=['POST'])
+def update_contact_status():
+    """
+    Updates a customer's status from 'รอติดต่อ' to 'รอดำเนินการ'.
+    This is triggered via an AJAX call from the search page.
+    """
+    if 'username' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        row_index = data.get('row_index')
+
+        if not row_index:
+            return jsonify({'success': False, 'message': 'Row index is required.'}), 400
+
+        worksheet = get_customer_data_worksheet()
+        if not worksheet:
+            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
+
+        headers = worksheet.row_values(1)
+        try:
+            status_col_index = headers.index('สถานะ') + 1
+        except ValueError:
+            return jsonify({'success': False, 'message': "'สถานะ' column not found."}), 500
+
+        worksheet.update_cell(row_index, status_col_index, 'รอดำเนินการ')
+        return jsonify({'success': True, 'message': 'Status updated successfully.'})
+    except Exception as e:
+        print(f"Error in update_contact_status: {traceback.format_exc()}")
+        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
+
+@app.route('/update_status_to_cancelled', methods=['POST'])
+def update_status_to_cancelled():
+    """
+    Updates a customer's status to 'ยกเลิก'.
+    This is triggered via an AJAX call from the search page for customers who are not interested.
+    """
+    if 'username' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        row_index = data.get('row_index')
+        note = data.get('note', '') # Get the note from the request
+
+        if not row_index:
+            return jsonify({'success': False, 'message': 'Row index is required.'}), 400
+
+        worksheet = get_customer_data_worksheet()
+        if not worksheet:
+            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
+
+        # Prepare a list of cells to update in a batch for efficiency
+        updates_to_perform = []
+
+        headers = worksheet.row_values(1)
+        try:
+            status_col_index = headers.index('สถานะ') + 1
+            note_col_index = headers.index('หมายเหตุ') + 1
+        except ValueError as e:
+            return jsonify({'success': False, 'message': f"Column not found: {e}"}), 500
+
+        # 1. Add status update to the batch
+        updates_to_perform.append({
+            'range': gspread.utils.rowcol_to_a1(row_index, status_col_index),
+            'values': [['ยกเลิก']],
+        })
+
+        # 2. Add note update to the batch if a note was provided
+        new_note_entry = note.strip()
+        if new_note_entry:
+            # First, get the existing note from the sheet
+            existing_note = worksheet.cell(row_index, note_col_index).value or ''
+            
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
+            formatted_note = f"[{timestamp} - ไม่สนใจ]: {new_note_entry}"
+            
+            final_note = f"{existing_note}\n{formatted_note}".strip() if existing_note and existing_note.strip() != '-' else formatted_note
+            
+            updates_to_perform.append({
+                'range': gspread.utils.rowcol_to_a1(row_index, note_col_index),
+                'values': [[final_note]],
+            })
+
+        worksheet.batch_update(updates_to_perform)
+        return jsonify({'success': True, 'message': 'Status updated to Cancelled.'})
+    except Exception as e:
+        print(f"Error in update_status_to_cancelled: {traceback.format_exc()}")
+        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
+
 # --- Main execution block ---
 if __name__ == '__main__':
     # This block is intended for local development.

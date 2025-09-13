@@ -572,6 +572,20 @@
             transform: translateY(0);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
         }
+        .record-button.contacted {
+            background-color: #28a745; /* Green */
+            color: white;
+        }
+        .record-button.contacted:hover {
+            background-color: #218838;
+        }
+        .record-button.not-interested {
+            background-color: #6c757d; /* Grey */
+            color: white;
+        }
+        .record-button.not-interested:hover {
+            background-color: #5a6268;
+        }
 
         /* NEW: Table and Pagination Styles */
         .table-responsive {
@@ -622,12 +636,14 @@
             font-size: 0.8em;
             text-align: center;
             display: inline-block;
+            white-space: nowrap;
         }
         .status-pending { background-color: #FFC107; color: #333; } /* Yellow */
         .status-approved { background-color: #28A745; } /* Green */
         .status-rejected { background-color: #DC3545; } /* Red */
-        .status-cancelled { background-color: #b2b2b2; } /* Orange */
+        .status-cancelled { background-color: #b2b2b2; } /* Grey */
         .status-unknown { background-color: #ae008e; } /* Grey */
+        .status-contact-needed { background-color: #17A2B8; } /* Blue/Info color */
 
         .pagination-controls {
             display: flex;
@@ -1060,16 +1076,18 @@
                                 <td>{{ record.get('วันที่ขอเข้ามา', '-') }}</td>
                                 <td>{{ record.get('บริษัทที่รับงาน', '-') }}</td>
                                 <td>{{ record.get('ขอเข้ามาทางไหน', '-') }}</td>
-                                <td>
+                                <td id="status-cell-{{ record.row_index }}">
                                     {% set status = record.get('สถานะ', 'unknown') | string | lower %}
-                                    {% if 'รอดำเนินการ' in status %}
+                                    {% if 'รอติดต่อ' in status %}
+                                        <span class="status-badge status-contact-needed">รอติดต่อ</span>
+                                    {% elif 'รอดำเนินการ' in status %}
                                         <span class="status-badge status-pending">รอดำเนินการ</span>
                                     {% elif 'ไม่อนุมัติ' in status %}
                                         <span class="status-badge status-rejected">ไม่อนุมัติ</span>
                                     {% elif 'อนุมัติ' in status %}
                                         <span class="status-badge status-approved">อนุมัติ</span>
                                     {% elif 'ยกเลิก' in status %}
-                                        <span class="status-badge status-cancelled">ยกเลิก</span>
+                                        <span class="status-badge status-cancelled">ยกเลิก</span>                                    
                                     {% else %}
                                         <span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
                                     {% endif %}
@@ -1078,6 +1096,10 @@
                                 <td>
                                     <button type="button" class="record-button view-details-btn" data-record='{{ record | tojson | safe }}'>ดูข้อมูล</button>
                                     <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไข</a>
+                                    {% if record.get('สถานะ') == 'รอติดต่อ' %}
+                                        <button type="button" class="record-button contacted contacted-btn" data-row-index="{{ record.row_index }}" id="contact-btn-{{ record.row_index }}">ติดต่อแล้ว</button>
+                                        <button type="button" class="record-button not-interested not-interested-btn" data-row-index="{{ record.row_index }}" id="cancel-btn-{{ record.row_index }}">ไม่สนใจ</button>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -1319,6 +1341,112 @@
                 detailsModal.addEventListener('click', (event) => {
                     if (event.target === detailsModal) {
                         detailsModal.classList.remove('visible');
+                    }
+                });
+            }
+
+            // --- NEW: "Contacted" button logic ---
+            const resultsContainer = document.querySelector('.results-container');
+            if (resultsContainer) {
+                resultsContainer.addEventListener('click', async function(event) {
+                    const contactedBtn = event.target.closest('.contacted-btn');
+                    const notInterestedBtn = event.target.closest('.not-interested-btn');
+
+                    if (notInterestedBtn) {
+                        const rowIndex = notInterestedBtn.dataset.rowIndex;
+                        if (!rowIndex) return;
+                        
+                        const note = prompt('ยืนยันการเปลี่ยนสถานะเป็น "ยกเลิก" และระบุเหตุผล (ถ้ามี):', '');
+
+                        if (note === null) {
+                            return; // User clicked Cancel, do nothing
+                        }
+
+                        // Disable all related action buttons in the cell
+                        const actionCell = notInterestedBtn.closest('td');
+                        const buttonsInCell = actionCell.querySelectorAll('.contacted-btn, .not-interested-btn');
+                        buttonsInCell.forEach(btn => {
+                            btn.disabled = true;
+                            btn.textContent = 'กำลังอัปเดต...';
+                        });
+
+                        try {
+                            const response = await fetch('/update_status_to_cancelled', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    row_index: rowIndex,
+                                    note: note // Send the note to the backend
+                                })
+                            });
+
+                            const result = await response.json();
+
+                            if (response.ok && result.success) {
+                                const statusCell = document.getElementById(`status-cell-${rowIndex}`);
+                                if (statusCell) {
+                                    statusCell.innerHTML = `<span class="status-badge status-cancelled">ยกเลิก</span>`;
+                                }
+                                // Remove the buttons that were just used
+                                buttonsInCell.forEach(btn => btn.remove());
+                            } else {
+                                throw new Error(result.message || 'Failed to update status.');
+                            }
+                        } catch (error) {
+                            console.error('Error updating status to cancelled:', error);
+                            alert('เกิดข้อผิดพลาด: ' + error.message);
+                            // Re-enable buttons on failure
+                            buttonsInCell.forEach(btn => {
+                                btn.disabled = false;
+                                if (btn.classList.contains('contacted-btn')) btn.textContent = 'ติดต่อแล้ว';
+                                if (btn.classList.contains('not-interested-btn')) btn.textContent = 'ไม่สนใจ';
+                            });
+                        }
+                        return; // Stop further execution since we handled the click
+                    }
+
+                    if (!contactedBtn) {
+                        return; // If it's neither button, do nothing
+                    }
+
+                    // Logic for "ติดต่อแล้ว" button
+                    const rowIndex = contactedBtn.dataset.rowIndex;
+                    if (!rowIndex) return;
+
+                    // Disable button to prevent multiple clicks
+                    contactedBtn.disabled = true;
+                    contactedBtn.textContent = 'กำลังอัปเดต...';
+
+                    try {
+                        const response = await fetch('/update_contact_status', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ row_index: rowIndex })
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok && result.success) {
+                            // Update status text and badge on the page
+                            const statusCell = document.getElementById(`status-cell-${rowIndex}`);
+                            if (statusCell) {
+                                statusCell.innerHTML = `<span class="status-badge status-pending">รอดำเนินการ</span>`;
+                            }
+                            
+                            // Remove both "Contacted" and "Not Interested" buttons
+                            const actionCell = contactedBtn.closest('td');
+                            actionCell.querySelectorAll('.contacted-btn, .not-interested-btn').forEach(btn => btn.remove());
+                        } else {
+                            throw new Error(result.message || 'Failed to update status.');
+                        }
+                    } catch (error) {
+                        console.error('Error updating contact status:', error);
+                        alert('เกิดข้อผิดพลาด: ' + error.message);
+                        // Re-enable button on failure
+                        contactedBtn.disabled = false;
+                        contactedBtn.textContent = 'ติดต่อแล้ว';
                     }
                 });
             }
