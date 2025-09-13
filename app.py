@@ -1717,12 +1717,15 @@ def edit_customer_data(row_index):
                            customer_data=customer_data,
                            row_index=row_index)
 
-# NEW ROUTE FOR UPDATING CONTACT STATUS
-@app.route('/update_contact_status', methods=['POST'])
-def update_contact_status():
+# NEW: UNIFIED ENDPOINT FOR STATUS UPDATES FROM SEARCH PAGE
+@app.route('/update_customer_status', methods=['POST'])
+def update_customer_status():
     """
-    Updates a customer's status from 'รอติดต่อ' to 'รอดำเนินการ'.
-    This is triggered via an AJAX call from the search page.
+    Handles all status updates from the search page's universal status modal.
+    - 'รอดำเนินการ'
+    - 'ยกเลิก' (with note)
+    - 'ไม่อนุมัติ' (with note)
+    - 'รอตรวจ' / 'เลื่อนนัด' (with inspection details)
     """
     if 'username' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -1733,222 +1736,101 @@ def update_contact_status():
             row_index = int(data.get('row_index'))
         except (ValueError, TypeError):
             return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
- 
+        
+        new_status = data.get('new_status')
+        if not new_status:
+            return jsonify({'success': False, 'message': 'New status is required.'}), 400
+
         worksheet = get_customer_data_worksheet()
         if not worksheet:
             return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
 
         headers = worksheet.row_values(1)
-        try:
-            status_col_index = headers.index('สถานะ') + 1
-        except ValueError:
-            return jsonify({'success': False, 'message': "'สถานะ' column not found."}), 500
-
-        worksheet.update_cell(row_index, status_col_index, 'รอดำเนินการ')
-        return jsonify({'success': True, 'message': 'Status updated successfully.'})
-    except Exception as e:
-        print(f"Error in update_contact_status: {traceback.format_exc()}")
-        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
-
-@app.route('/update_status_to_cancelled', methods=['POST'])
-def update_status_to_cancelled():
-    """
-    Updates a customer's status to 'ยกเลิก'.
-    This is triggered via an AJAX call from the search page for customers who are not interested.
-    """
-    if 'username' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-
-    try:
-        data = request.get_json()
-        note = data.get('note', '')
-        try:
-            row_index = int(data.get('row_index'))
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
- 
-        worksheet = get_customer_data_worksheet()
-        if not worksheet:
-            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
-
-        # Prepare a list of cells to update in a batch for efficiency
         updates_to_perform = []
 
-        headers = worksheet.row_values(1)
+        # Find column indices dynamically
         try:
-            status_col_index = headers.index('สถานะ') + 1
-            note_col_index = headers.index('หมายเหตุ') + 1
+            status_col = headers.index('สถานะ') + 1
+            note_col = headers.index('หมายเหตุ') + 1
+            date_col = headers.index('วันที่นัดตรวจ') + 1
+            time_col = headers.index('เวลานัดตรวจ') + 1
+            inspector_col = headers.index('ผู้รับงานตรวจ') + 1
         except ValueError as e:
-            return jsonify({'success': False, 'message': f"Column not found: {e}"}), 500
+            return jsonify({'success': False, 'message': f"Required column not found in sheet: {e}"}), 500
 
-        # 1. Add status update to the batch
-        updates_to_perform.append({
-            'range': gspread.utils.rowcol_to_a1(row_index, status_col_index),
-            'values': [['ยกเลิก']],
-        })
+        # --- Logic for different statuses ---
 
-        # 2. Add note update to the batch if a note was provided
-        new_note_entry = note.strip()
-        if new_note_entry:
-            # First, get the existing note from the sheet
-            existing_note = worksheet.cell(row_index, note_col_index).value or ''
+        # 1. Simple status update
+        if new_status == 'รอดำเนินการ':
+            updates_to_perform.append({
+                'range': gspread.utils.rowcol_to_a1(row_index, status_col),
+                'values': [[new_status]],
+            })
+
+        # 2. Status update with a required note
+        elif new_status in ['ยกเลิก', 'ไม่อนุมัติ']:
+            note = data.get('note', '').strip()
+            if not note:
+                return jsonify({'success': False, 'message': 'A note/reason is required for this status.'}), 400
             
+            # Update status
+            updates_to_perform.append({
+                'range': gspread.utils.rowcol_to_a1(row_index, status_col),
+                'values': [[new_status]],
+            })
+
+            # Append note
+            existing_note = worksheet.cell(row_index, note_col).value or ''
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
-            formatted_note = f"[{timestamp} - ไม่สนใจ]: {new_note_entry}"
-            
+            note_prefix = "ยกเลิก" if new_status == 'ยกเลิก' else "ไม่อนุมัติ"
+            formatted_note = f"[{timestamp} - {note_prefix}]: {note}"
             final_note = f"{existing_note}\n{formatted_note}".strip() if existing_note and existing_note.strip() != '-' else formatted_note
             
             updates_to_perform.append({
-                'range': gspread.utils.rowcol_to_a1(row_index, note_col_index),
+                'range': gspread.utils.rowcol_to_a1(row_index, note_col),
                 'values': [[final_note]],
             })
 
-        worksheet.batch_update(updates_to_perform)
-        return jsonify({'success': True, 'message': 'Status updated to Cancelled.'})
-    except Exception as e:
-        print(f"Error in update_status_to_cancelled: {traceback.format_exc()}")
-        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
+        # 3. Status update for inspection scheduling/rescheduling
+        elif new_status in ['รอตรวจ', 'เลื่อนนัด']:
+            inspection_date = data.get('inspection_date')
+            inspection_time = data.get('inspection_time')
+            inspector = data.get('inspector')
 
-@app.route('/update_status_to_rejected', methods=['POST'])
-def update_status_to_rejected():
-    """
-    Updates a customer's status to 'ไม่อนุมัติ' and adds a note.
-    Triggered when a statement check fails.
-    """
-    if 'username' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+            if not all([inspection_date, inspector]): # Time can be optional
+                return jsonify({'success': False, 'message': 'Inspection date and inspector name are required.'}), 400
 
-    try:
-        data = request.get_json()
-        note = data.get('note', '')
-        try:
-            row_index = int(data.get('row_index'))
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
+            # Update status to 'รอตรวจ' for both cases
+            updates_to_perform.append({
+                'range': gspread.utils.rowcol_to_a1(row_index, status_col),
+                'values': [['รอตรวจ']],
+            })
+            # Update inspection details
+            updates_to_perform.append({
+                'range': gspread.utils.rowcol_to_a1(row_index, date_col),
+                'values': [[inspection_date]],
+            })
+            updates_to_perform.append({
+                'range': gspread.utils.rowcol_to_a1(row_index, time_col),
+                'values': [[inspection_time or '']],
+            })
+            updates_to_perform.append({
+                'range': gspread.utils.rowcol_to_a1(row_index, inspector_col),
+                'values': [[inspector]],
+            })
 
-        if not row_index or not note:
-            return jsonify({'success': False, 'message': 'Row index and note are required.'}), 400
-        worksheet = get_customer_data_worksheet()
-        if not worksheet:
-            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
+        else:
+            return jsonify({'success': False, 'message': f'Invalid status update: {new_status}'}), 400
 
-        updates_to_perform = []
-        headers = worksheet.row_values(1)
-        try:
-            status_col_index = headers.index('สถานะ') + 1
-            note_col_index = headers.index('หมายเหตุ') + 1
-        except ValueError as e:
-            return jsonify({'success': False, 'message': f"Column not found: {e}"}), 500
-
-        # 1. Update status to 'ไม่อนุมัติ'
-        updates_to_perform.append({
-            'range': gspread.utils.rowcol_to_a1(row_index, status_col_index),
-            'values': [['ไม่อนุมัติ']],
-        })
-
-        # 2. Append the rejection note
-        existing_note = worksheet.cell(row_index, note_col_index).value or ''
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
-        formatted_note = f"[{timestamp} - ไม่อนุมัติ]: {note.strip()}"
-        final_note = f"{existing_note}\n{formatted_note}".strip() if existing_note and existing_note.strip() != '-' else formatted_note
-        
-        updates_to_perform.append({
-            'range': gspread.utils.rowcol_to_a1(row_index, note_col_index),
-            'values': [[final_note]],
-        })
-
-        worksheet.batch_update(updates_to_perform)
-        return jsonify({'success': True, 'message': 'Status updated to Rejected.'})
+        # Perform batch update if there are changes
+        if updates_to_perform:
+            worksheet.batch_update(updates_to_perform)
+            return jsonify({'success': True, 'message': 'Status updated successfully.'})
+        else:
+            return jsonify({'success': False, 'message': 'No update was performed.'}), 400
 
     except Exception as e:
-        print(f"Error in update_status_to_rejected: {traceback.format_exc()}")
-        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
-
-@app.route('/schedule_inspection', methods=['POST'])
-def schedule_inspection():
-    """
-    Schedules an inspection, updates status to 'รอตรวจ', and saves appointment details.
-    """
-    if 'username' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-
-    try:
-        data = request.get_json()
-        inspection_date = data.get('inspection_date')
-        inspection_time = data.get('inspection_time')
-        inspector = data.get('inspector')
-        try:
-            row_index = int(data.get('row_index'))
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
-
-        if not all([row_index, inspection_date, inspection_time, inspector]):
-            return jsonify({'success': False, 'message': 'All appointment fields are required.'}), 400
-        worksheet = get_customer_data_worksheet()
-        if not worksheet:
-            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
-
-        headers = worksheet.row_values(1)
-        status_col, date_col, time_col, inspector_col = (headers.index(h) + 1 for h in ['สถานะ', 'วันที่นัดตรวจ', 'เวลานัดตรวจ', 'ผู้รับงานตรวจ'])
-
-        worksheet.batch_update([
-            {'range': gspread.utils.rowcol_to_a1(row_index, status_col), 'values': [['รอตรวจ']]},
-            {'range': gspread.utils.rowcol_to_a1(row_index, date_col), 'values': [[inspection_date]]},
-            {'range': gspread.utils.rowcol_to_a1(row_index, time_col), 'values': [[inspection_time]]},
-            {'range': gspread.utils.rowcol_to_a1(row_index, inspector_col), 'values': [[inspector]]}
-        ])
-        return jsonify({'success': True, 'message': 'Inspection scheduled successfully.'})
-
-    except Exception as e:
-        print(f"Error in schedule_inspection: {traceback.format_exc()}")
-        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
-
-@app.route('/reject_inspection', methods=['POST'])
-def reject_inspection():
-    """
-    Updates a customer's status to 'ไม่อนุมัติ' and adds a note.
-    Triggered when an on-site inspection fails.
-    """
-    if 'username' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-
-    try:
-        data = request.get_json()
-        note = data.get('note', '')
-        try:
-            row_index = int(data.get('row_index'))
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
-
-        if not row_index or not note:
-            return jsonify({'success': False, 'message': 'Row index and note are required.'}), 400
-        
-        worksheet = get_customer_data_worksheet()
-        if not worksheet:
-            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
-
-        updates_to_perform = []
-        headers = worksheet.row_values(1)
-        try:
-            status_col_index = headers.index('สถานะ') + 1
-            note_col_index = headers.index('หมายเหตุ') + 1
-        except ValueError as e:
-            return jsonify({'success': False, 'message': f"Column not found: {e}"}), 500
-
-        updates_to_perform.append({'range': gspread.utils.rowcol_to_a1(row_index, status_col_index), 'values': [['ไม่อนุมัติ']]})
-
-        existing_note = worksheet.cell(row_index, note_col_index).value or ''
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
-        formatted_note = f"[{timestamp} - ตรวจไม่ผ่าน]: {note.strip()}"
-        final_note = f"{existing_note}\n{formatted_note}".strip() if existing_note and existing_note.strip() != '-' else formatted_note
-        
-        updates_to_perform.append({'range': gspread.utils.rowcol_to_a1(row_index, note_col_index), 'values': [[final_note]]})
-
-        worksheet.batch_update(updates_to_perform)
-        return jsonify({'success': True, 'message': 'Status updated to Rejected after inspection.'})
-
-    except Exception as e:
-        print(f"Error in reject_inspection: {traceback.format_exc()}")
+        print(f"Error in update_customer_status: {traceback.format_exc()}")
         return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
 
 # --- Main execution block ---
