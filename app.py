@@ -201,40 +201,47 @@ def get_worksheet(spreadsheet_name, worksheet_name, headers=None):
     
 def generate_next_customer_id(worksheet):
     """
-    Generates the next customer ID (e.g., SL1, SL2) by finding the highest existing ID.
-    This is more robust than simply counting rows.
+    Generates the next numeric customer ID by finding the highest existing ID.
+    It handles both old ('SL123') and new ('123') formats.
     """
     try:
-        # Get all values from the 'Customer ID' column.
-        # Find the column index dynamically to be safe.
         headers = worksheet.row_values(1)
         try:
             id_col_index = headers.index('Customer ID') + 1
         except ValueError:
             print("ERROR: 'Customer ID' column not found in the sheet.")
-            # Fallback to a simple count if column is missing, though this is not ideal.
-            return f"SL{len(worksheet.get_all_records()) + 1}"
+            # Fallback to a simple count.
+            return str(len(worksheet.get_all_records()) + 1)
 
         customer_ids = worksheet.col_values(id_col_index)
         
         max_num = 0
         # Start from the second item to skip the header
         for an_id in customer_ids[1:]:
-            if an_id and an_id.upper().startswith('SL'):
-                try:
+            if not an_id:
+                continue
+            
+            num = 0
+            try:
+                # Check for old 'SL' format first
+                if an_id.upper().startswith('SL'):
                     num = int(an_id[2:])
-                    if num > max_num:
-                        max_num = num
-                except ValueError:
-                    # Ignore malformed IDs
-                    continue
+                # Then check for new numeric format
+                else:
+                    num = int(an_id)
+            except ValueError:
+                # Ignore malformed IDs
+                continue
+            
+            if num > max_num:
+                max_num = num
         
         next_id = max_num + 1
-        return f"SL{next_id}"
+        return str(next_id) # Return as a string
     except Exception as e:
         print(f"Error generating next customer ID: {e}")
         # Fallback to a simple count in case of any error
-        return f"SL{len(worksheet.get_all_records()) + 1}"
+        return str(len(worksheet.get_all_records()) + 1)
 
 def get_user_worksheet():
     return get_worksheet(USER_LOGIN_SPREADSHEET_NAME, USER_LOGIN_WORKSHEET_NAME)
