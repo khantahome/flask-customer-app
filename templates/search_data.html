@@ -110,10 +110,6 @@
             color: var(--text-color);
             line-height: 1.6; /* Improve readability */
             box-sizing: border-box; /* Include padding in element's total width and height */
-            background-image: url('/static/images/your_background_image.jpg'); /* Keep background image */
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
         }
 
         /* Dashboard Layout (New) */
@@ -152,7 +148,7 @@
         /* Main content area (New) */
         .main-content-area {
             flex-grow: 1;
-            padding: 30px;
+            padding: 30px 30px 30px 15px; /* ขยับเนื้อหาไปชิดเมนูซ้าย */
             display: flex;
             flex-direction: column;
             gap: 30px; /* Space between main-container and results-container */
