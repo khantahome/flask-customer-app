@@ -1729,11 +1729,11 @@ def update_contact_status():
 
     try:
         data = request.get_json()
-        row_index = data.get('row_index')
-
-        if not row_index:
-            return jsonify({'success': False, 'message': 'Row index is required.'}), 400
-
+        try:
+            row_index = int(data.get('row_index'))
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
+ 
         worksheet = get_customer_data_worksheet()
         if not worksheet:
             return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
@@ -1761,12 +1761,12 @@ def update_status_to_cancelled():
 
     try:
         data = request.get_json()
-        row_index = data.get('row_index')
-        note = data.get('note', '') # Get the note from the request
-
-        if not row_index:
-            return jsonify({'success': False, 'message': 'Row index is required.'}), 400
-
+        note = data.get('note', '')
+        try:
+            row_index = int(data.get('row_index'))
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
+ 
         worksheet = get_customer_data_worksheet()
         if not worksheet:
             return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
@@ -1820,12 +1820,14 @@ def update_status_to_rejected():
 
     try:
         data = request.get_json()
-        row_index = data.get('row_index')
         note = data.get('note', '')
+        try:
+            row_index = int(data.get('row_index'))
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
 
         if not row_index or not note:
             return jsonify({'success': False, 'message': 'Row index and note are required.'}), 400
-
         worksheet = get_customer_data_worksheet()
         if not worksheet:
             return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
@@ -1872,14 +1874,16 @@ def schedule_inspection():
 
     try:
         data = request.get_json()
-        row_index = data.get('row_index')
         inspection_date = data.get('inspection_date')
         inspection_time = data.get('inspection_time')
         inspector = data.get('inspector')
+        try:
+            row_index = int(data.get('row_index'))
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
 
         if not all([row_index, inspection_date, inspection_time, inspector]):
             return jsonify({'success': False, 'message': 'All appointment fields are required.'}), 400
-
         worksheet = get_customer_data_worksheet()
         if not worksheet:
             return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
