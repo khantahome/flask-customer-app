@@ -471,8 +471,15 @@ body {
     </div>
     <div class="form-container">
         <h2>แก้ไขข้อมูลลูกค้า</h2>
-        <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
-
+        
+        {% if customer_data.get('Customer ID') and customer_data.get('Customer ID') != '-' %}
+        <div class="input-group" style="margin-top: 15px;">
+            <label for="customer_id" style="color: var(--primary-color); font-weight: 600;">รหัสลูกค้า</label>
+            <input type="text" id="customer_id" name="customer_id" value="{{ customer_data.get('Customer ID', '') }}" readonly style="background-color: #2D3A50; cursor: not-allowed; text-align: center; font-size: 1.1em; color: var(--secondary-color);">
+        </div>
+        {% endif %}
+        
+        <p class="logged-in-user" style="margin-top: 15px;">เข้าสู่ระบบโดย: {{ username }}</p>
         {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}

@@ -110,7 +110,7 @@ ALL_CHANNELS = [
 # Original Customer Records Sheet (uses เลขบัตรประชาชน)
 WORKSHEET_NAME = 'customer_records'
 CUSTOMER_DATA_WORKSHEET_HEADERS = [
-    'Timestamp', 'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
+    'Timestamp', 'Customer ID', 'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
     'กลุ่มลูกค้าหลัก',
     'กลุ่มอาชีพย่อย',
     'ระบุอาชีพย่อยอื่นๆ', 
@@ -196,6 +196,43 @@ def get_worksheet(spreadsheet_name, worksheet_name, headers=None):
         print(f"Error accessing/creating worksheet '{worksheet_name}': {e}")
         return None
     
+def generate_next_customer_id(worksheet):
+    """
+    Generates the next customer ID (e.g., SL1, SL2) by finding the highest existing ID.
+    This is more robust than simply counting rows.
+    """
+    try:
+        # Get all values from the 'Customer ID' column.
+        # Find the column index dynamically to be safe.
+        headers = worksheet.row_values(1)
+        try:
+            id_col_index = headers.index('Customer ID') + 1
+        except ValueError:
+            print("ERROR: 'Customer ID' column not found in the sheet.")
+            # Fallback to a simple count if column is missing, though this is not ideal.
+            return f"SL{len(worksheet.get_all_records()) + 1}"
+
+        customer_ids = worksheet.col_values(id_col_index)
+        
+        max_num = 0
+        # Start from the second item to skip the header
+        for an_id in customer_ids[1:]:
+            if an_id and an_id.upper().startswith('SL'):
+                try:
+                    num = int(an_id[2:])
+                    if num > max_num:
+                        max_num = num
+                except ValueError:
+                    # Ignore malformed IDs
+                    continue
+        
+        next_id = max_num + 1
+        return f"SL{next_id}"
+    except Exception as e:
+        print(f"Error generating next customer ID: {e}")
+        # Fallback to a simple count in case of any error
+        return f"SL{len(worksheet.get_all_records()) + 1}"
+
 def get_user_worksheet():
     return get_worksheet(USER_LOGIN_SPREADSHEET_NAME, USER_LOGIN_WORKSHEET_NAME)
 
@@ -782,9 +819,13 @@ def enter_customer_data():
             worksheet = get_customer_data_worksheet()
             if worksheet:
                 try:
+                    # Generate the new customer ID
+                    new_customer_id = generate_next_customer_id(worksheet)
+
                     row_data = {
                         'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        'ชื่อ': customer_name,
+                        'Customer ID': new_customer_id,
+                        'ชื่อ': customer_name, 
                         'นามสกุล': last_name,
                         'เลขบัตรประชาชน': id_card_number,
                         'เบอร์มือถือ': mobile_phone_number,
@@ -814,7 +855,11 @@ def enter_customer_data():
 
                     row_to_append = [row_data.get(header, '-') for header in CUSTOMER_DATA_WORKSHEET_HEADERS]
                     worksheet.append_row(row_to_append)
-                    return jsonify({'success': True, 'message': 'บันทึกข้อมูลลูกค้าเรียบร้อยแล้ว!'})
+                    return jsonify({
+                        'success': True, 
+                        'message': f'บันทึกข้อมูลลูกค้าเรียบร้อยแล้ว! รหัสลูกค้าใหม่คือ {new_customer_id}',
+                        'customer_id': new_customer_id
+                    })
                 except Exception as e:
                     print(f"Error saving data to Google Sheet: {e}")
                     return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาดในการบันทึกข้อมูลลง Google Sheet: {e}'}), 500
@@ -1564,6 +1609,7 @@ def edit_customer_data(row_index):
         final_sub_profession_value = other_sub_profession if sub_profession_group == "อื่นๆ" else sub_profession_group
         updated_data = {
             'Timestamp': customer_data.get('Timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+            'Customer ID': customer_data.get('Customer ID', '-'), # Preserve existing ID
             'ชื่อ': request.form.get('customer_name', '') or '-',
             'นามสกุล': request.form.get('last_name', '') or '-',
             'เลขบัตรประชาชน': request.form.get('id_card_number', '') or '-',
@@ -1612,47 +1658,46 @@ def edit_customer_data(row_index):
         # ----------------------------------------------------
         if updated_data.get('สถานะ') == 'อนุมัติ':
             try:
-                # New logic: Get customer ID from form, or keep the existing one if not 'อนุมัติ'
-                customer_id = request.form.get('customer_id', '')
-
-                # Get the 'approove' worksheet
-                approve_worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-
-                # Get the next available customer ID
-                all_records = approve_worksheet.get_all_records()
-                next_id_number = len(all_records) + 1
-                customer_id = f'SL{next_id_number}'
-
-                # --- FIX: Use current date for approval and add placeholder for contract photos ---
-                approved_data_row = [
-                    "รอปิดจ๊อบ", # Status ที่บันทึก
-                    customer_id,
-                    f"{updated_data.get('ชื่อ', '')} {updated_data.get('นามสกุล', '')}".strip(),
-                    updated_data.get('เบอร์มือถือ', ''),
-                    datetime.now().strftime('%Y-%m-%d'), # Use current date for 'วันที่อนุมัติ'
-                    updated_data.get('วงเงินที่อนุมัติ', ''),
-                    updated_data.get('บริษัทที่รับงาน', ''),
-                    logged_in_user,
-                    '-' # Add a placeholder for 'รูปถ่ายสัญญา' to match the number of headers
-                ]
-
-                # Append the new approved record to the 'approove' worksheet
-                approve_worksheet.append_row(approved_data_row)
-
-                flash(f'ข้อมูลลูกค้าได้รับการอนุมัติและบันทึกในเวิร์คชีท "{APPROVE_WORKSHEET_NAME}" แล้ว ด้วยรหัสลูกค้า {customer_id}', 'success')
-
+                 # Get the 'approove' worksheet
+                 approve_worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
+                 
+                 # Use the existing Customer ID from the record being edited
+                 customer_id_to_approve = updated_data.get('Customer ID', '-').strip()
+ 
+                 if not customer_id_to_approve or customer_id_to_approve == '-':
+                     flash('ไม่สามารถอนุมัติได้เนื่องจากไม่มีรหัสลูกค้า', 'error')
+                 else:
+                     # Check if this ID already exists in the approove sheet to prevent duplicates
+                     all_approve_records = approve_worksheet.get_all_records()
+                     existing_ids = [str(r.get('Customer ID', '')).strip() for r in all_approve_records]
+ 
+                     if customer_id_to_approve in existing_ids:
+                         flash(f'ลูกค้า ID {customer_id_to_approve} มีข้อมูลอนุมัติในระบบแล้ว', 'info')
+                     else:
+                         # Build the row for the 'approove' sheet
+                         approved_data_row = [
+                             "รอปิดจ๊อบ",
+                             customer_id_to_approve,
+                             f"{updated_data.get('ชื่อ', '')} {updated_data.get('นามสกุล', '')}".strip(),
+                             updated_data.get('เบอร์มือถือ', ''),
+                             datetime.now().strftime('%Y-%m-%d'),
+                             updated_data.get('วงเงินที่อนุมัติ', ''),
+                             updated_data.get('บริษัทที่รับงาน', ''),
+                             logged_in_user,
+                             '-'
+                         ]
+                         approve_worksheet.append_row(approved_data_row)
+                         flash(f'ข้อมูลลูกค้า ID {customer_id_to_approve} ได้รับการอนุมัติและบันทึกในชีท "{APPROVE_WORKSHEET_NAME}" แล้ว', 'success')
+                         
             except gspread.WorksheetNotFound:
                 flash(f'ไม่พบเวิร์คชีท "{APPROVE_WORKSHEET_NAME}" กรุณาสร้างเวิร์คชีทดังกล่าว', 'error')
             except Exception as e:
                 flash(f'เกิดข้อผิดพลาดในการบันทึกข้อมูลอนุมัติ: {e}', 'error')
                 print(f"Error saving to approve worksheet: {e}")
 
-        # Finalize the data to update the original customer_records worksheet
-        # updated_data['Customer ID'] = customer_id if customer_id else customer_data.get('Customer ID', '-')
-        
         # Prepare the row to update in the correct order of headers
         try:
-            worksheet_headers = CUSTOMER_DATA_WORKSHEET_HEADERS  # ไม่มี Customer ID
+            worksheet_headers = CUSTOMER_DATA_WORKSHEET_HEADERS
             row_to_update = [updated_data.get(header, '-') for header in worksheet_headers]
             worksheet.update(f'A{row_index}', [row_to_update])
             flash('บันทึกการแก้ไขข้อมูลลูกค้าเรียบร้อยแล้ว!', 'success')

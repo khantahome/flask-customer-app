@@ -1013,7 +1013,7 @@
 
                 <form method="GET" action="{{ url_for('search_customer_data') }}" class="search-form">
                     <div class="input-group">
-                        <label for="search_keyword">คำค้นหา (ชื่อ, นามสกุล, เบอร์มือถือ, เลขบัตรประชาชน, ชื่อกิจการ)</label>
+                        <label for="search_keyword">คำค้นหา (รหัสลูกค้า, ชื่อ, นามสกุล, เบอร์มือถือ, เลขบัตรประชาชน, ชื่อกิจการ)</label>
                         <input type="text" id="search_keyword" name="search_keyword" placeholder="กรอกคำค้นหา" value="{{ search_keyword if search_keyword else '' }}">
                     </div>
                     
@@ -1032,6 +1032,7 @@
                     <table class="results-table">
                         <thead>
                             <tr>
+                                <th>รหัสลูกค้า</th>
                                 <th>ชื่อ-นามสกุล</th>
                                 <th>เบอร์มือถือ</th>
                                 <th>ชื่อกิจการ</th>
@@ -1049,6 +1050,7 @@
                         <tbody>
                             {% for record in customer_records %}
                             <tr>
+                                <td>{{ record.get('Customer ID', '-') }}</td>
                                 <td>{{ record.get('ชื่อ', '') }} {{ record.get('นามสกุล', '') }}</td>
                                 <td>{{ record.get('เบอร์มือถือ', '-') }}</td>
                                 <td class="business-name-cell">{{ record.get('ชื่อกิจการ', '-') }}</td>
@@ -1265,6 +1267,7 @@
                 modalBody.innerHTML = `
                     <h3>รายละเอียดลูกค้า: ${record['ชื่อ'] || ''} ${record['นามสกุล'] || ''}</h3>
                     <div class="detail-list">
+                        ${createDetailItem('รหัสลูกค้า', record['Customer ID'])}
                         ${createDetailItem('ชื่อ-นามสกุล', `${record['ชื่อ'] || ''} ${record['นามสกุล'] || ''}`)}
                         ${createDetailItem('เบอร์มือถือ', record['เบอร์มือถือ'])}
                         ${createDetailItem('เลขบัตรประชาชน', record['เลขบัตรประชาชน'])}
