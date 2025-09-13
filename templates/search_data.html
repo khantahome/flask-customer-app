@@ -1519,7 +1519,14 @@
                             
                             // Remove both "Contacted" and "Not Interested" buttons
                             const actionCell = contactedBtn.closest('td');
-                            actionCell.querySelectorAll('.contacted-btn, .not-interested-btn').forEach(btn => btn.remove());
+                            if (actionCell) {
+                                actionCell.querySelectorAll('.contacted-btn, .not-interested-btn').forEach(btn => btn.remove());
+
+                                // Dynamically add the new buttons for "รอดำเนินการ"
+                                const scheduleBtnHTML = `<button type="button" class="record-button schedule-inspection-btn" data-row-index="${rowIndex}">นัดตรวจ</button>`;
+                                const rejectBtnHTML = `<button type="button" class="record-button statement-failed-btn" data-row-index="${rowIndex}">ไม่อนุมัติ</button>`;
+                                actionCell.insertAdjacentHTML('beforeend', ' ' + scheduleBtnHTML + ' ' + rejectBtnHTML);
+                            }
                         } else {
                             throw new Error(result.message || 'Failed to update status.');
                         }
