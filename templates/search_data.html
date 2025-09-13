@@ -747,20 +747,24 @@
             white-space: nowrap;
         }
 
+        /* NEW: กำหนดความกว้างเฉพาะสำหรับคอลัมน์ที่ต้องการให้แคบเป็นพิเศษ */
+        .results-table th:nth-child(1), .results-table td:nth-child(1) { /* รหัสลูกค้า */
+            width: 70px;
+        }
+
         /* กำหนดความกว้างขั้นต่ำให้คอลัมน์ที่ตัดคำได้ เพื่อไม่ให้แคบเกินไป */
         .results-table th:nth-child(2), .results-table td:nth-child(2),   /* ชื่อ-นามสกุล */
-        .results-table th:nth-child(4), .results-table td:nth-child(4),   /* ชื่อกิจการ */
         .results-table th:nth-child(9), .results-table td:nth-child(9),   /* บริษัทที่รับงาน */
         .results-table th:nth-child(10), .results-table td:nth-child(10), /* ขอเข้ามาทางไหน */
         .results-table th:nth-child(13), .results-table td:nth-child(13), /* ผู้รับงานตรวจ */
         .results-table th:nth-child(15), .results-table td:nth-child(15)  /* ผู้บันทึก */
         {
-            min-width: 120px;
+            min-width: 100px; /* ลดจาก 120px */
         }
 
         /* ให้พื้นที่คอลัมน์ 'ชื่อกิจการ' มากเป็นพิเศษ */
         .results-table th:nth-child(4), .results-table td:nth-child(4) {
-            min-width: 180px;
+            min-width: 150px; /* ลดจาก 180px */
         }
 
         /* NEW: Modal Styles for Customer Details */
