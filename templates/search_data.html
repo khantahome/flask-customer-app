@@ -129,7 +129,7 @@
 
         /* Sidebar styles (New) */
         .sidebar {
-            width: 250px;
+            width: 200px; /* ลดความกว้างของเมนู */
             background-color: var(--card-background);
             padding: 30px 20px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
@@ -304,12 +304,12 @@
         /* Individual action button style (for sidebar) */
         .action-button {
             display: block; /* Make buttons take full width */
-            padding: 10px 15px;
+            padding: 8px 12px; /* ลดช่องไฟในปุ่มเมนู */
             background-color: var(--primary-color);
             color: white;
             text-decoration: none;
             border-radius: 8px;
-            font-size: 0.9em;
+            font-size: 0.85em; /* ลดขนาดตัวอักษรในปุ่มเมนู */
             font-weight: 500;
             transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Darker shadow for dark mode */
@@ -348,10 +348,10 @@
         /* Styles for search results container */
         .results-container {
             /* Inherits styles from .main-container for consistency */
-            background-color: var(--card-background); /* Explicitly set for clarity */
-            padding: 30px; /* Adjust padding for results */
-            border-radius: 12px;
-            box-shadow: var(--shadow-light);
+            background-color: transparent; /* ทำให้พื้นหลังโปร่งใส */
+            padding: 0; /* ลบช่องไฟภายใน */
+            border-radius: 0; /* ลบมุมโค้ง */
+            box-shadow: none; /* ลบเงา */
             width: 100%;
             max-width: none; /* Handled by main-content-area */
             box-sizing: border-box;
@@ -640,13 +640,13 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            font-size: 0.8em; /* ลดขนาดฟอนต์ลงอีก */
+            font-size: 0.75em; /* ลดขนาดตัวอักษรในตารางลงอีก */
             /* ลบ min-width เพื่อให้ตารางปรับขนาดตามหน้าจอได้ */
         }
 
         .results-table th, .results-table td {
             border: 1px solid var(--border-color);
-            padding: 5px 8px; /* ลด padding ในเซลล์ให้ชิดขึ้น */
+            padding: 4px 6px; /* ลดช่องไฟในเซลล์ให้ชิดที่สุด */
             text-align: left;
             vertical-align: middle;
             white-space: normal; /* อนุญาตให้ข้อความขึ้นบรรทัดใหม่เป็นค่าเริ่มต้น */
@@ -927,7 +927,7 @@
         }
 
         .sidebar.collapsed {
-            width: 85px;
+            width: 65px; /* ลดความกว้างของเมนูตอนพับ */
         }
         .sidebar.collapsed .sidebar-toggle-btn i {
             transform: rotate(180deg);
