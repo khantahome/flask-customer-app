@@ -120,6 +120,9 @@ CUSTOMER_DATA_WORKSHEET_HEADERS = [
     'วันที่ขอเข้ามา', 'ลิงค์โลเคชั่นบ้าน', 'ลิงค์โลเคชั่นที่ทำงาน', 'หมายเหตุ',
     'Image URLs',
     'Logged In User'
+    , 'วันที่นัดตรวจ',
+    'เวลานัดตรวจ',
+    'ผู้รับงานตรวจ'
 ]
 DATA1_SHEET_NAME = "data1"
 ALLPIDJOB_WORKSHEET = "allpidjob"
@@ -1634,6 +1637,9 @@ def edit_customer_data(row_index):
             'ลิงค์โลเคชั่นบ้าน': request.form.get('home_location_link', '') or '-',
             'ลิงค์โลเคชั่นที่ทำงาน': request.form.get('work_location_link', '') or '-',
             'หมายเหตุ': request.form.get('remarks', '') or '-',
+            'วันที่นัดตรวจ': request.form.get('inspection_date', '') or '-',
+            'เวลานัดตรวจ': request.form.get('inspection_time', '') or '-',
+            'ผู้รับงานตรวจ': request.form.get('inspector', '') or '-',
         }
         
         # --- MODIFIED PART for Direct Cloudinary Upload ---
@@ -1801,6 +1807,96 @@ def update_status_to_cancelled():
         return jsonify({'success': True, 'message': 'Status updated to Cancelled.'})
     except Exception as e:
         print(f"Error in update_status_to_cancelled: {traceback.format_exc()}")
+        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
+
+@app.route('/update_status_to_rejected', methods=['POST'])
+def update_status_to_rejected():
+    """
+    Updates a customer's status to 'ไม่อนุมัติ' and adds a note.
+    Triggered when a statement check fails.
+    """
+    if 'username' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        row_index = data.get('row_index')
+        note = data.get('note', '')
+
+        if not row_index or not note:
+            return jsonify({'success': False, 'message': 'Row index and note are required.'}), 400
+
+        worksheet = get_customer_data_worksheet()
+        if not worksheet:
+            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
+
+        updates_to_perform = []
+        headers = worksheet.row_values(1)
+        try:
+            status_col_index = headers.index('สถานะ') + 1
+            note_col_index = headers.index('หมายเหตุ') + 1
+        except ValueError as e:
+            return jsonify({'success': False, 'message': f"Column not found: {e}"}), 500
+
+        # 1. Update status to 'ไม่อนุมัติ'
+        updates_to_perform.append({
+            'range': gspread.utils.rowcol_to_a1(row_index, status_col_index),
+            'values': [['ไม่อนุมัติ']],
+        })
+
+        # 2. Append the rejection note
+        existing_note = worksheet.cell(row_index, note_col_index).value or ''
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
+        formatted_note = f"[{timestamp} - ไม่อนุมัติ]: {note.strip()}"
+        final_note = f"{existing_note}\n{formatted_note}".strip() if existing_note and existing_note.strip() != '-' else formatted_note
+        
+        updates_to_perform.append({
+            'range': gspread.utils.rowcol_to_a1(row_index, note_col_index),
+            'values': [[final_note]],
+        })
+
+        worksheet.batch_update(updates_to_perform)
+        return jsonify({'success': True, 'message': 'Status updated to Rejected.'})
+
+    except Exception as e:
+        print(f"Error in update_status_to_rejected: {traceback.format_exc()}")
+        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
+
+@app.route('/schedule_inspection', methods=['POST'])
+def schedule_inspection():
+    """
+    Schedules an inspection, updates status to 'รอตรวจ', and saves appointment details.
+    """
+    if 'username' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        row_index = data.get('row_index')
+        inspection_date = data.get('inspection_date')
+        inspection_time = data.get('inspection_time')
+        inspector = data.get('inspector')
+
+        if not all([row_index, inspection_date, inspection_time, inspector]):
+            return jsonify({'success': False, 'message': 'All appointment fields are required.'}), 400
+
+        worksheet = get_customer_data_worksheet()
+        if not worksheet:
+            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
+
+        headers = worksheet.row_values(1)
+        status_col, date_col, time_col, inspector_col = (headers.index(h) + 1 for h in ['สถานะ', 'วันที่นัดตรวจ', 'เวลานัดตรวจ', 'ผู้รับงานตรวจ'])
+
+        worksheet.batch_update([
+            {'range': gspread.utils.rowcol_to_a1(row_index, status_col), 'values': [['รอตรวจ']]},
+            {'range': gspread.utils.rowcol_to_a1(row_index, date_col), 'values': [[inspection_date]]},
+            {'range': gspread.utils.rowcol_to_a1(row_index, time_col), 'values': [[inspection_time]]},
+            {'range': gspread.utils.rowcol_to_a1(row_index, inspector_col), 'values': [[inspector]]}
+        ])
+        return jsonify({'success': True, 'message': 'Inspection scheduled successfully.'})
+
+    except Exception as e:
+        print(f"Error in schedule_inspection: {traceback.format_exc()}")
         return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
 
 # --- Main execution block ---

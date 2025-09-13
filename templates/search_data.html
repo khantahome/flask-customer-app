@@ -586,6 +586,24 @@
         .record-button.not-interested:hover {
             background-color: #5a6268;
         }
+        .record-button.schedule-inspection-btn {
+            background-color: #007bff; /* Blue */
+            color: white;
+        }
+        .record-button.schedule-inspection-btn:hover {
+            background-color: #0056b3;
+        }
+        .record-button.statement-failed-btn {
+            background-color: #dc3545; /* Red */
+            color: white;
+        }
+        .record-button.statement-failed-btn:hover {
+            background-color: #c82333;
+        }
+        .record-button.reschedule-inspection-btn {
+            background-color: #ffc107; /* Orange */
+            color: #333;
+        }
 
         /* NEW: Table and Pagination Styles */
         .table-responsive {
@@ -643,6 +661,7 @@
         .status-rejected { background-color: #DC3545; } /* Red */
         .status-cancelled { background-color: #b2b2b2; } /* Grey */
         .status-unknown { background-color: #ae008e; } /* Grey */
+        .status-inspection-needed { background-color: #fd7e14; } /* Orange for inspection */
         .status-contact-needed { background-color: #17A2B8; } /* Blue/Info color */
 
         .pagination-controls {
@@ -804,6 +823,36 @@
         .modal-actions {
             margin-top: 30px;
             padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        .modal-content .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            background-color: #2D3A50;
+            color: var(--text-color);
+            border-radius: 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        body.light-mode .modal-content .form-control {
+            background-color: #FFFFFF;
+        }
+        .modal-content .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.3);
+            outline: none;
+        }
+        #inspectionModal h3 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 1.8em;
             border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: flex-end;
@@ -1079,26 +1128,33 @@
                                 <td id="status-cell-{{ record.row_index }}">
                                     {% set status = record.get('สถานะ', 'unknown') | string | lower %}
                                     {% if 'รอติดต่อ' in status %}
-                                        <span class="status-badge status-contact-needed">รอติดต่อ</span>
+                                        <span class="status-badge status-contact-needed">รอติดต่อ</span>                                    
                                     {% elif 'รอดำเนินการ' in status %}
                                         <span class="status-badge status-pending">รอดำเนินการ</span>
+                                    {% elif 'รอตรวจ' in status %}
+                                        <span class="status-badge status-inspection-needed">รอตรวจ</span>
                                     {% elif 'ไม่อนุมัติ' in status %}
                                         <span class="status-badge status-rejected">ไม่อนุมัติ</span>
                                     {% elif 'อนุมัติ' in status %}
                                         <span class="status-badge status-approved">อนุมัติ</span>
                                     {% elif 'ยกเลิก' in status %}
-                                        <span class="status-badge status-cancelled">ยกเลิก</span>                                    
+                                        <span class="status-badge status-cancelled">ยกเลิก</span>
                                     {% else %}
                                         <span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ record.get('Logged In User', '-') }}</td>
-                                <td>
+                                <td id="action-cell-{{ record.row_index }}">
                                     <button type="button" class="record-button view-details-btn" data-record='{{ record | tojson | safe }}'>ดูข้อมูล</button>
                                     <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button edit">แก้ไข</a>
                                     {% if record.get('สถานะ') == 'รอติดต่อ' %}
-                                        <button type="button" class="record-button contacted contacted-btn" data-row-index="{{ record.row_index }}" id="contact-btn-{{ record.row_index }}">ติดต่อแล้ว</button>
-                                        <button type="button" class="record-button not-interested not-interested-btn" data-row-index="{{ record.row_index }}" id="cancel-btn-{{ record.row_index }}">ไม่สนใจ</button>
+                                        <button type="button" class="record-button contacted contacted-btn" data-row-index="{{ record.row_index }}">ติดต่อแล้ว</button>
+                                        <button type="button" class="record-button not-interested not-interested-btn" data-row-index="{{ record.row_index }}">ไม่สนใจ</button>
+                                    {% elif record.get('สถานะ') == 'รอดำเนินการ' %}
+                                        <button type="button" class="record-button schedule-inspection-btn" data-row-index="{{ record.row_index }}">นัดตรวจ</button>
+                                        <button type="button" class="record-button statement-failed-btn" data-row-index="{{ record.row_index }}">ไม่อนุมัติ</button>
+                                    {% elif record.get('สถานะ') == 'รอตรวจ' %}
+                                        <button type="button" class="record-button reschedule-inspection-btn" data-row-index="{{ record.row_index }}" data-record='{{ record | tojson | safe }}'>เลื่อนนัด</button>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -1154,6 +1210,32 @@
             <div id="modal-body">
                 <!-- Customer details will be injected here by JS -->
             </div>
+        </div>
+    </div>
+
+    <!-- NEW: Inspection Scheduling Modal -->
+    <div id="inspectionModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close" id="inspectionModalCloseBtn">&times;</span>
+            <form id="inspectionForm">
+                <h3 id="inspectionModalTitle">นัดตรวจกิจการ</h3>
+                <input type="hidden" id="inspectionRowIndex" name="row_index">
+                <div class="input-group">
+                    <label for="inspection_date">วันที่นัดตรวจ</label>
+                    <input type="date" id="inspection_date" name="inspection_date" class="form-control" required>
+                </div>
+                <div class="input-group">
+                    <label for="inspection_time">เวลานัดตรวจ</label>
+                    <input type="time" id="inspection_time" name="inspection_time" class="form-control" required>
+                </div>
+                <div class="input-group">
+                    <label for="inspector">ผู้รับงานตรวจ</label>
+                    <input type="text" id="inspector" name="inspector" class="form-control" placeholder="กรอกชื่อผู้ตรวจ" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="record-button schedule-inspection-btn">บันทึกการนัดหมาย</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1351,6 +1433,9 @@
                 resultsContainer.addEventListener('click', async function(event) {
                     const contactedBtn = event.target.closest('.contacted-btn');
                     const notInterestedBtn = event.target.closest('.not-interested-btn');
+                    const scheduleBtn = event.target.closest('.schedule-inspection-btn');
+                    const rescheduleBtn = event.target.closest('.reschedule-inspection-btn');
+                    const statementFailedBtn = event.target.closest('.statement-failed-btn');
 
                     if (notInterestedBtn) {
                         const rowIndex = notInterestedBtn.dataset.rowIndex;
@@ -1405,11 +1490,8 @@
                         return; // Stop further execution since we handled the click
                     }
 
-                    if (!contactedBtn) {
-                        return; // If it's neither button, do nothing
-                    }
-
-                    // Logic for "ติดต่อแล้ว" button
+                    if (contactedBtn) {
+                        // Logic for "ติดต่อแล้ว" button
                     const rowIndex = contactedBtn.dataset.rowIndex;
                     if (!rowIndex) return;
 
@@ -1448,6 +1530,87 @@
                         contactedBtn.disabled = false;
                         contactedBtn.textContent = 'ติดต่อแล้ว';
                     }
+                        return;
+                    }
+
+                    // --- NEW: Statement Failed button logic ---
+                    if (statementFailedBtn) {
+                        const rowIndex = statementFailedBtn.dataset.rowIndex;
+                        if (!rowIndex) return;
+
+                        const reason = prompt('ยืนยันการ "ไม่อนุมัติ" และระบุเหตุผล (จำเป็น):', '');
+
+                        if (reason === null) { // User clicked cancel
+                            return;
+                        }
+                        if (!reason.trim()) {
+                            alert('กรุณาระบุเหตุผลที่ไม่อนุมัติ');
+                            return;
+                        }
+
+                        const actionCell = statementFailedBtn.closest('td');
+                        const buttonsInCell = actionCell.querySelectorAll('.schedule-inspection-btn, .statement-failed-btn');
+                        buttonsInCell.forEach(btn => {
+                            btn.disabled = true;
+                            btn.textContent = 'กำลังอัปเดต...';
+                        });
+
+                        try {
+                            const response = await fetch('/update_status_to_rejected', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ row_index: rowIndex, note: reason })
+                            });
+                            const result = await response.json();
+                            if (response.ok && result.success) {
+                                const statusCell = document.getElementById(`status-cell-${rowIndex}`);
+                                if (statusCell) {
+                                    statusCell.innerHTML = `<span class="status-badge status-rejected">ไม่อนุมัติ</span>`;
+                                }
+                                buttonsInCell.forEach(btn => btn.remove());
+                            } else {
+                                throw new Error(result.message || 'Failed to update status.');
+                            }
+                        } catch (error) {
+                            console.error('Error updating status to rejected:', error);
+                            alert('เกิดข้อผิดพลาด: ' + error.message);
+                            buttonsInCell.forEach(btn => {
+                                btn.disabled = false;
+                                if (btn.classList.contains('schedule-inspection-btn')) btn.textContent = 'นัดตรวจ';
+                                if (btn.classList.contains('statement-failed-btn')) btn.textContent = 'ไม่อนุมัติ';
+                            });
+                        }
+                        return;
+                    }
+
+                    // --- NEW: Schedule/Reschedule button logic ---
+                    if (scheduleBtn || rescheduleBtn) {
+                        const isReschedule = !!rescheduleBtn;
+                        const button = isReschedule ? rescheduleBtn : scheduleBtn;
+                        const rowIndex = button.dataset.rowIndex;
+
+                        const modal = document.getElementById('inspectionModal');
+                        const form = document.getElementById('inspectionForm');
+                        const title = document.getElementById('inspectionModalTitle');
+                        
+                        // Set form values
+                        document.getElementById('inspectionRowIndex').value = rowIndex;
+                        title.textContent = isReschedule ? 'เลื่อนนัดตรวจกิจการ' : 'นัดตรวจกิจการ';
+
+                        if (isReschedule) {
+                            const record = JSON.parse(button.dataset.record);
+                            document.getElementById('inspection_date').value = record['วันที่นัดตรวจ'] || '';
+                            document.getElementById('inspection_time').value = record['เวลานัดตรวจ'] || '';
+                            document.getElementById('inspector').value = record['ผู้รับงานตรวจ'] || '';
+                        } else {
+                            form.reset(); // Clear form for new schedule
+                            document.getElementById('inspectionRowIndex').value = rowIndex; // re-set hidden input
+                        }
+                        
+                        modal.classList.add('visible');
+                        return;
+                    }
+
                 });
             }
 
@@ -1503,6 +1666,57 @@
                 }
             });
         });
+
+        // --- NEW: Inspection Modal Logic ---
+        const inspectionModal = document.getElementById('inspectionModal');
+        if (inspectionModal) {
+            const inspectionForm = document.getElementById('inspectionForm');
+            const inspectionModalCloseBtn = document.getElementById('inspectionModalCloseBtn');
+
+            // Close modal
+            const closeInspectionModal = () => inspectionModal.classList.remove('visible');
+            inspectionModalCloseBtn.addEventListener('click', closeInspectionModal);
+            inspectionModal.addEventListener('click', (e) => {
+                if (e.target === inspectionModal) {
+                    closeInspectionModal();
+                }
+            });
+
+            // Handle form submission
+            inspectionForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const submitBtn = inspectionForm.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'กำลังบันทึก...';
+
+                const formData = new FormData(inspectionForm);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/schedule_inspection', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        alert('บันทึกการนัดหมายสำเร็จ');
+                        closeInspectionModal();
+                        // Reload page to show updated status and buttons
+                        window.location.reload();
+                    } else {
+                        throw new Error(result.message || 'Failed to schedule inspection.');
+                    }
+                } catch (error) {
+                    console.error('Error scheduling inspection:', error);
+                    alert('เกิดข้อผิดพลาด: ' + error.message);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'บันทึกการนัดหมาย';
+                }
+            });
+        }
 
         // --- Collapsible Sidebar Logic ---
         const sidebar = document.querySelector('.sidebar');

@@ -736,6 +736,21 @@ body {
     </div>
 
     <div class="input-group">
+        <label for="inspection_date">วันที่นัดตรวจ</label>
+        <input type="date" id="inspection_date" name="inspection_date" value="{{ customer_data.get('วันที่นัดตรวจ', '') }}">
+    </div>
+
+    <div class="input-group">
+        <label for="inspection_time">เวลานัดตรวจ</label>
+        <input type="time" id="inspection_time" name="inspection_time" value="{{ customer_data.get('เวลานัดตรวจ', '') }}">
+    </div>
+
+    <div class="input-group">
+        <label for="inspector">ผู้รับงานตรวจ</label>
+        <input type="text" id="inspector" name="inspector" placeholder="กรอกชื่อผู้ตรวจ" value="{{ customer_data.get('ผู้รับงานตรวจ', '') }}">
+    </div>
+
+    <div class="input-group">
         <label for="logged_in_user">ลงทะเบียนโดย</label>
         <input type="text" id="logged_in_user" name="logged_in_user" value="{{ customer_data.get('Logged In User', '') if customer_data.get('Logged In User', '') != '-' else '' }}" readonly>
     </div>
