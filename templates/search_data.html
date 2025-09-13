@@ -43,6 +43,10 @@
         body.light-mode .input-group input[type="text"] {
             background-color: #FFFFFF;
         }
+        /* NEW: Set dashboard layout background to white in light mode */
+        body.light-mode .dashboard-layout {
+            background-color: #FFFFFF;
+        }
 
         /* --- Theme Switch Styles --- */
         .theme-switch-wrapper {
@@ -125,7 +129,7 @@
 
         /* Sidebar styles (New) */
         .sidebar {
-            width: 180px; /* ลดความกว้างของเมนูลงอีก */
+            width: 160px; /* ลดความกว้างของเมนูลงอีก */
             background-color: var(--card-background);
             padding: 30px 20px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
@@ -300,12 +304,12 @@
         /* Individual action button style (for sidebar) */
         .action-button {
             display: block; /* Make buttons take full width */
-            padding: 6px 10px; /* ลดช่องไฟในปุ่มเมนูลงอีก */
+            padding: 5px 8px; /* ลดช่องไฟในปุ่มเมนูลงอีก */
             background-color: var(--primary-color);
             color: white;
             text-decoration: none;
             border-radius: 8px;
-            font-size: 0.8em; /* ลดขนาดตัวอักษรในปุ่มเมนูลงอีก */
+            font-size: 0.75em; /* ลดขนาดตัวอักษรในปุ่มเมนูลงอีก */
             font-weight: 500;
             transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Darker shadow for dark mode */
@@ -344,10 +348,10 @@
         /* Styles for search results container */
         .results-container {
             /* Inherits styles from .main-container for consistency */
-            background-color: transparent; /* This is now just a structural container */
-            padding: 0;
-            border-radius: 0;
-            box-shadow: none;
+            background-color: var(--card-background);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
             width: 100%;
             max-width: none; /* Handled by main-content-area */
             box-sizing: border-box;
@@ -360,13 +364,7 @@
             margin-bottom: 25px; /* More space below heading */
             font-weight: 600;
             font-size: 1.8em; /* Larger heading */
-            /* NEW: กรอบสำหรับหัวข้อ */
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
-            padding: 8px 25px;
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
+            text-align: center;
         }
 
         /* Styles for individual customer records (cards) */
@@ -636,18 +634,13 @@
             width: 100%;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            /* NEW: Apply card styles here so table fills the card */
-            background-color: var(--card-background);
-            border-radius: 12px;
-            box-shadow: var(--shadow-light);
-            overflow: hidden; /* This is crucial to clip the table corners */
         }
 
         .results-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            font-size: 0.75em; /* ลดขนาดตัวอักษรในตารางลงอีก */
+            font-size: 0.7em; /* ลดขนาดตัวอักษรในตารางลงอีก */
             /* ลบ min-width เพื่อให้ตารางปรับขนาดตามหน้าจอได้ */
         }
 
@@ -934,7 +927,7 @@
         }
 
         .sidebar.collapsed {
-            width: 55px; /* ลดความกว้างของเมนูตอนพับลงอีก */
+            width: 50px; /* ลดความกว้างของเมนูตอนพับลงอีก */
         }
         .sidebar.collapsed .sidebar-toggle-btn i {
             transform: rotate(180deg);
