@@ -543,6 +543,16 @@
             justify-content: flex-end; /* Align buttons to the right */
         }
 
+        /* NEW: Specific style for the new update status button */
+        .record-button.update-status-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 5px 8px; /* Smaller padding */
+            font-size: 0.8em;
+            line-height: 1;
+            border-radius: 50%; /* Make it a circle */
+        }
+
         .record-button {
             background-color: var(--secondary-color);
             color: var(--card-background); /* Dark text for light button */
@@ -658,6 +668,13 @@
 
         .results-table tbody tr:hover {
             background-color: rgba(138, 43, 226, 0.15);
+        }
+
+        /* NEW: Styles for status cell layout */
+        .status-cell-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .status-badge {
@@ -1146,37 +1163,27 @@
                                 <td>{{ record.get('เวลานัดตรวจ', '-') }}</td>
                                 <td>{{ record.get('ผู้รับงานตรวจ', '-') }}</td>
                                 <td id="status-cell-{{ record.row_index }}">
-                                    {% set status = record.get('สถานะ', 'unknown') | string | lower %}
-                                    {% if 'รอติดต่อ' in status %}
-                                        <span class="status-badge status-contact-needed">รอติดต่อ</span>                                    
-                                    {% elif 'รอดำเนินการ' in status %}
-                                        <span class="status-badge status-pending">รอดำเนินการ</span>
-                                    {% elif 'รอตรวจ' in status %}
-                                        <span class="status-badge status-inspection-needed">รอตรวจ</span>
-                                    {% elif 'ไม่อนุมัติ' in status %}
-                                        <span class="status-badge status-rejected">ไม่อนุมัติ</span>
-                                    {% elif 'อนุมัติ' in status %}
-                                        <span class="status-badge status-approved">อนุมัติ</span>
-                                    {% elif 'ยกเลิก' in status %}
-                                        <span class="status-badge status-cancelled">ยกเลิก</span>
-                                    {% else %}
-                                        <span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
-                                    {% endif %}
+                                    <div class="status-cell-content">
+                                        {% set status = record.get('สถานะ', 'unknown') | string | lower %}
+                                        {% if 'รอติดต่อ' in status %}<span class="status-badge status-contact-needed">รอติดต่อ</span>
+                                        {% elif 'รอดำเนินการ' in status %}<span class="status-badge status-pending">รอดำเนินการ</span>
+                                        {% elif 'รอตรวจ' in status %}<span class="status-badge status-inspection-needed">รอตรวจ</span>
+                                        {% elif 'ไม่อนุมัติ' in status %}<span class="status-badge status-rejected">ไม่อนุมัติ</span>
+                                        {% elif 'อนุมัติ' in status %}<span class="status-badge status-approved">อนุมัติ</span>
+                                        {% elif 'ยกเลิก' in status %}<span class="status-badge status-cancelled">ยกเลิก</span>
+                                        {% else %}<span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
+                                        {% endif %}
+                                        <button type="button" class="record-button update-status-btn" 
+                                                data-row-index="{{ record.row_index }}" 
+                                                data-current-status="{{ record.get('สถานะ') }}"
+                                                data-record='{{ record | tojson | safe }}'>
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+                                    </div>
                                 </td>
                                 <td>{{ record.get('Logged In User', '-') }}</td>
                                 <td id="action-cell-{{ record.row_index }}">
                                     <button type="button" class="record-button view-details-btn" data-record='{{ record | tojson | safe }}'>ดูข้อมูล</button>
-                                    {% if record.get('สถานะ') == 'รอติดต่อ' %}
-                                        <button type="button" class="record-button contacted contacted-btn" data-row-index="{{ record.row_index }}">ติดต่อแล้ว</button>
-                                        <button type="button" class="record-button not-interested not-interested-btn" data-row-index="{{ record.row_index }}">ไม่สนใจ</button>
-                                    {% elif record.get('สถานะ') == 'รอดำเนินการ' %}
-                                        <button type="button" class="record-button schedule-inspection-btn" data-row-index="{{ record.row_index }}">นัดตรวจ</button>
-                                        <button type="button" class="record-button statement-failed-btn" data-row-index="{{ record.row_index }}">ไม่อนุมัติ</button>
-                                    {% elif record.get('สถานะ') == 'รอตรวจ' %}
-                                        <button type="button" class="record-button reschedule-inspection-btn" data-row-index="{{ record.row_index }}" data-record='{{ record | tojson | safe }}'>เลื่อนนัด</button>
-                                        <a href="{{ url_for('edit_customer_data', row_index=record.row_index) }}" class="record-button approve-btn">อนุมัติ</a>
-                                        <button type="button" class="record-button inspection-failed-btn" data-row-index="{{ record.row_index }}">ตรวจไม่ผ่าน</button>
-                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -1260,6 +1267,40 @@
         </div>
     </div>
 
+    <!-- NEW: Universal Update Status Modal -->
+    <div id="updateStatusModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close" id="updateStatusModalCloseBtn">&times;</span>
+            <form id="updateStatusForm">
+                <h3 id="updateStatusModalTitle">อัปเดตสถานะ</h3>
+                <input type="hidden" id="updateStatusRowIndex" name="row_index">
+                
+                <div class="input-group">
+                    <label>สถานะปัจจุบัน</label>
+                    <input type="text" id="currentStatusDisplay" class="form-control" readonly>
+                </div>
+
+                <div class="input-group">
+                    <label for="updateStatusSelect">เปลี่ยนสถานะเป็น</label>
+                    <select id="updateStatusSelect" name="new_status" class="form-control" required></select>
+                </div>
+
+                <div id="noteInputGroup" class="input-group" style="display: none;">
+                    <label for="status_note">เหตุผล/หมายเหตุ (จำเป็น)</label>
+                    <textarea id="status_note" name="note" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div id="inspectionInputGroup" style="display: none;">
+                    <div class="input-group"><label for="status_inspection_date">วันที่นัดตรวจ</label><input type="date" id="status_inspection_date" name="inspection_date" class="form-control"></div>
+                    <div class="input-group"><label for="status_inspection_time">เวลานัดตรวจ</label><input type="time" id="status_inspection_time" name="inspection_time" class="form-control"></div>
+                    <div class="input-group"><label for="status_inspector">ผู้รับงานตรวจ</label><input type="text" id="status_inspector" name="inspector" class="form-control" placeholder="กรอกชื่อผู้ตรวจ"></div>
+                </div>
+
+                <div class="modal-actions"><button type="submit" class="record-button approve-btn">ยืนยันการอัปเดต</button></div>
+            </form>
+        </div>
+    </div>
+
     <div class="lightbox-overlay" id="lightboxOverlay">
         <div class="lightbox-content">
             <img src="" alt="Full size image" class="lightbox-image" id="lightboxImage" onerror="console.error('Lightbox image load error. src:', this.src, '. Please check Cloudinary URL and permissions.'); this.src='https://placehold.co/600x400/FF0000/FFFFFF?text=Error';">
@@ -1315,6 +1356,12 @@
             const modalBody = document.getElementById('modal-body');
             const modalCloseBtn = document.getElementById('modalCloseBtn');
             const resultsTableBody = document.querySelector('.results-table tbody');
+
+            // --- NEW: Universal Status Update Modal ---
+            const updateStatusModal = document.getElementById('updateStatusModal');
+            const updateStatusForm = document.getElementById('updateStatusForm');
+            const updateStatusModalCloseBtn = document.getElementById('updateStatusModalCloseBtn');
+            const updateStatusSelect = document.getElementById('updateStatusSelect');
 
             if (clearSearchButton) {
                 clearSearchButton.addEventListener('click', function() {
@@ -1451,251 +1498,136 @@
                 });
             }
 
-            // --- NEW: "Contacted" button logic ---
+            // --- REFACTORED: Central Event Listener for Action Buttons ---
             const resultsContainer = document.querySelector('.results-container');
             if (resultsContainer) {
                 resultsContainer.addEventListener('click', async function(event) {
-                    const contactedBtn = event.target.closest('.contacted-btn');
-                    const notInterestedBtn = event.target.closest('.not-interested-btn');
-                    const scheduleBtn = event.target.closest('.schedule-inspection-btn');
-                    const rescheduleBtn = event.target.closest('.reschedule-inspection-btn');
-                    const statementFailedBtn = event.target.closest('.statement-failed-btn');
-                    const inspectionFailedBtn = event.target.closest('.inspection-failed-btn');
+                    const updateBtn = event.target.closest('.update-status-btn');
 
-                    if (notInterestedBtn) {
-                        const rowIndex = notInterestedBtn.dataset.rowIndex;
+                    if (updateBtn) {
+                        const rowIndex = updateBtn.dataset.rowIndex;
+                        const currentStatus = updateBtn.dataset.currentStatus;
+                        const record = JSON.parse(updateBtn.dataset.record);
                         if (!rowIndex) return;
-                        
-                        const note = prompt('ยืนยันการเปลี่ยนสถานะเป็น "ยกเลิก" และระบุเหตุผล (ถ้ามี):', '');
 
-                        if (note === null) {
-                            return; // User clicked Cancel, do nothing
+                        // Define the possible next statuses for each current status
+                        const nextStatusMap = {
+                            'รอติดต่อ': ['รอดำเนินการ', 'ยกเลิก'],
+                            'รอดำเนินการ': ['รอตรวจ', 'ไม่อนุมัติ'],
+                            'รอตรวจ': ['อนุมัติ', 'ไม่อนุมัติ', 'เลื่อนนัด']
+                        };
+
+                        const availableOptions = nextStatusMap[currentStatus] || [];
+
+                        if (availableOptions.length === 0) {
+                            alert(`สถานะ "${currentStatus}" ไม่สามารถเปลี่ยนแปลงได้ในหน้านี้`);
+                            return;
                         }
 
-                        // Disable all related action buttons in the cell
-                        const actionCell = notInterestedBtn.closest('td');
-                        const buttonsInCell = actionCell.querySelectorAll('.contacted-btn, .not-interested-btn');
-                        buttonsInCell.forEach(btn => {
-                            btn.disabled = true;
-                            btn.textContent = 'กำลังอัปเดต...';
+                        // Populate and show the modal
+                        updateStatusForm.reset();
+                        document.getElementById('updateStatusRowIndex').value = rowIndex;
+                        document.getElementById('currentStatusDisplay').value = currentStatus;
+
+                        updateStatusSelect.innerHTML = '<option value="">-- เลือกสถานะใหม่ --</option>';
+                        availableOptions.forEach(option => {
+                            updateStatusSelect.innerHTML += `<option value="${option}">${option}</option>`;
                         });
 
-                        try {
-                            const response = await fetch('/update_status_to_cancelled', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ 
-                                    row_index: rowIndex,
-                                    note: note // Send the note to the backend
-                                })
-                            });
-
-                            const result = await response.json();
-
-                            if (response.ok && result.success) {
-                                const statusCell = document.getElementById(`status-cell-${rowIndex}`);
-                                if (statusCell) {
-                                    statusCell.innerHTML = `<span class="status-badge status-cancelled">ยกเลิก</span>`;
-                                }
-                                // Remove the buttons that were just used
-                                buttonsInCell.forEach(btn => btn.remove());
-                            } else {
-                                throw new Error(result.message || 'Failed to update status.');
-                            }
-                        } catch (error) {
-                            console.error('Error updating status to cancelled:', error);
-                            alert('เกิดข้อผิดพลาด: ' + error.message);
-                            // Re-enable buttons on failure
-                            buttonsInCell.forEach(btn => {
-                                btn.disabled = false;
-                                if (btn.classList.contains('contacted-btn')) btn.textContent = 'ติดต่อแล้ว';
-                                if (btn.classList.contains('not-interested-btn')) btn.textContent = 'ไม่สนใจ';
-                            });
+                        // Pre-fill data for "เลื่อนนัด"
+                        if (currentStatus === 'รอตรวจ') {
+                            document.getElementById('status_inspection_date').value = record['วันที่นัดตรวจ'] || '';
+                            document.getElementById('status_inspection_time').value = record['เวลานัดตรวจ'] || '';
+                            document.getElementById('status_inspector').value = record['ผู้รับงานตรวจ'] || '';
                         }
-                        return; // Stop further execution since we handled the click
+
+                        // Trigger change event to set initial visibility of extra fields
+                        updateStatusSelect.dispatchEvent(new Event('change'));
+
+                        updateStatusModal.classList.add('visible');
                     }
 
-                    if (contactedBtn) {
-                        // Logic for "ติดต่อแล้ว" button
-                    const rowIndex = contactedBtn.dataset.rowIndex;
-                    if (!rowIndex) return;
+                });
+            }
 
-                    // Disable button to prevent multiple clicks
-                    contactedBtn.disabled = true;
-                    contactedBtn.textContent = 'กำลังอัปเดต...';
+            // --- NEW: Logic for the Universal Status Update Modal ---
+            if (updateStatusModal) {
+                const closeUpdateModal = () => updateStatusModal.classList.remove('visible');
+                updateStatusModalCloseBtn.addEventListener('click', closeUpdateModal);
+                updateStatusModal.addEventListener('click', (e) => {
+                    if (e.target === updateStatusModal) closeUpdateModal();
+                });
 
+                // Show/hide extra fields based on selection
+                updateStatusSelect.addEventListener('change', function() {
+                    const selectedStatus = this.value;
+                    const noteGroup = document.getElementById('noteInputGroup');
+                    const inspectionGroup = document.getElementById('inspectionInputGroup');
+                    const noteTextarea = document.getElementById('status_note');
+                    const inspectionDate = document.getElementById('status_inspection_date');
+
+                    // Hide all conditional groups first
+                    noteGroup.style.display = 'none';
+                    inspectionGroup.style.display = 'none';
+                    noteTextarea.required = false;
+                    inspectionDate.required = false;
+
+                    if (['ยกเลิก', 'ไม่อนุมัติ'].includes(selectedStatus)) {
+                        noteGroup.style.display = 'block';
+                        noteTextarea.required = true;
+                    } else if (['รอตรวจ', 'เลื่อนนัด'].includes(selectedStatus)) {
+                        inspectionGroup.style.display = 'block';
+                        inspectionDate.required = true;
+                    } else if (selectedStatus === 'อนุมัติ') {
+                        // For 'อนุมัติ', we redirect to the edit page.
+                        // This logic is handled in the form submission.
+                    }
+                });
+
+                // Handle form submission
+                updateStatusForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const newStatus = updateStatusSelect.value;
+                    const rowIndex = document.getElementById('updateStatusRowIndex').value;
+
+                    // Special case for 'อนุมัติ': redirect to edit page
+                    if (newStatus === 'อนุมัติ') {
+                        window.location.href = `/edit_customer_data/${rowIndex}`;
+                        return;
+                    }
+
+                    const submitBtn = updateStatusForm.querySelector('button[type="submit"]');
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'กำลังบันทึก...';
+
+                    const formData = new FormData(updateStatusForm);
+                    const data = Object.fromEntries(formData.entries());
+
+                    // We will need a new, unified endpoint in app.py
+                    // For now, let's assume it's '/update_customer_status'
                     try {
-                        const response = await fetch('/update_contact_status', {
+                        // This endpoint needs to be created in app.py
+                        const response = await fetch('/update_customer_status', {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ row_index: rowIndex })
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
                         });
-
                         const result = await response.json();
 
                         if (response.ok && result.success) {
-                            // Update status text and badge on the page
-                            const statusCell = document.getElementById(`status-cell-${rowIndex}`);
-                            if (statusCell) {
-                                statusCell.innerHTML = `<span class="status-badge status-pending">รอดำเนินการ</span>`;
-                            }
-                            
-                            // Remove both "Contacted" and "Not Interested" buttons
-                            const actionCell = contactedBtn.closest('td');
-                            if (actionCell) {
-                                actionCell.querySelectorAll('.contacted-btn, .not-interested-btn').forEach(btn => btn.remove());
-
-                                // Dynamically add the new buttons for "รอดำเนินการ"
-                                const scheduleBtnHTML = `<button type="button" class="record-button schedule-inspection-btn" data-row-index="${rowIndex}">นัดตรวจ</button>`;
-                                const rejectBtnHTML = `<button type="button" class="record-button statement-failed-btn" data-row-index="${rowIndex}">ไม่อนุมัติ</button>`;
-                                actionCell.insertAdjacentHTML('beforeend', ' ' + scheduleBtnHTML + ' ' + rejectBtnHTML);
-                            }
+                            alert('อัปเดตสถานะเรียบร้อยแล้ว');
+                            window.location.reload(); // Easiest way to reflect all changes
                         } else {
                             throw new Error(result.message || 'Failed to update status.');
                         }
                     } catch (error) {
-                        console.error('Error updating contact status:', error);
+                        console.error('Error updating status:', error);
                         alert('เกิดข้อผิดพลาด: ' + error.message);
-                        // Re-enable button on failure
-                        contactedBtn.disabled = false;
-                        contactedBtn.textContent = 'ติดต่อแล้ว';
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'ยืนยันการอัปเดต';
+                        closeUpdateModal();
                     }
-                        return;
-                    }
-
-                    // --- NEW: Statement Failed button logic ---
-                    if (statementFailedBtn) {
-                        const rowIndex = statementFailedBtn.dataset.rowIndex;
-                        if (!rowIndex) return;
-
-                        const reason = prompt('ยืนยันการ "ไม่อนุมัติ" และระบุเหตุผล (จำเป็น):', '');
-
-                        if (reason === null) { // User clicked cancel
-                            return;
-                        }
-                        if (!reason.trim()) {
-                            alert('กรุณาระบุเหตุผลที่ไม่อนุมัติ');
-                            return;
-                        }
-
-                        const actionCell = statementFailedBtn.closest('td');
-                        const buttonsInCell = actionCell.querySelectorAll('.schedule-inspection-btn, .statement-failed-btn');
-                        buttonsInCell.forEach(btn => {
-                            btn.disabled = true;
-                            btn.textContent = 'กำลังอัปเดต...';
-                        });
-
-                        try {
-                            const response = await fetch('/update_status_to_rejected', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ row_index: rowIndex, note: reason })
-                            });
-                            const result = await response.json();
-                            if (response.ok && result.success) {
-                                const statusCell = document.getElementById(`status-cell-${rowIndex}`);
-                                if (statusCell) {
-                                    statusCell.innerHTML = `<span class="status-badge status-rejected">ไม่อนุมัติ</span>`;
-                                }
-                                buttonsInCell.forEach(btn => btn.remove());
-                            } else {
-                                throw new Error(result.message || 'Failed to update status.');
-                            }
-                        } catch (error) {
-                            console.error('Error updating status to rejected:', error);
-                            alert('เกิดข้อผิดพลาด: ' + error.message);
-                            buttonsInCell.forEach(btn => {
-                                btn.disabled = false;
-                                if (btn.classList.contains('schedule-inspection-btn')) btn.textContent = 'นัดตรวจ';
-                                if (btn.classList.contains('statement-failed-btn')) btn.textContent = 'ไม่อนุมัติ';
-                            });
-                        }
-                        return;
-                    }
-
-                    // --- NEW: Schedule/Reschedule button logic ---
-                    if (scheduleBtn || rescheduleBtn) {
-                        const isReschedule = !!rescheduleBtn;
-                        const button = isReschedule ? rescheduleBtn : scheduleBtn;
-                        const rowIndex = button.dataset.rowIndex;
-
-                        const modal = document.getElementById('inspectionModal');
-                        const form = document.getElementById('inspectionForm');
-                        const title = document.getElementById('inspectionModalTitle');
-                        
-                        // Set form values
-                        document.getElementById('inspectionRowIndex').value = rowIndex;
-                        title.textContent = isReschedule ? 'เลื่อนนัดตรวจกิจการ' : 'นัดตรวจกิจการ';
-
-                        if (isReschedule) {
-                            const record = JSON.parse(button.dataset.record);
-                            document.getElementById('inspection_date').value = record['วันที่นัดตรวจ'] || '';
-                            document.getElementById('inspection_time').value = record['เวลานัดตรวจ'] || '';
-                            document.getElementById('inspector').value = record['ผู้รับงานตรวจ'] || '';
-                        } else {
-                            form.reset(); // Clear form for new schedule
-                            document.getElementById('inspectionRowIndex').value = rowIndex; // re-set hidden input
-                        }
-                        
-                        modal.classList.add('visible');
-                        return;
-                    }
-
-                    // --- NEW: Inspection Failed button logic ---
-                    if (inspectionFailedBtn) {
-                        const rowIndex = inspectionFailedBtn.dataset.rowIndex;
-                        if (!rowIndex) return;
-
-                        const reason = prompt('ยืนยันการ "ตรวจไม่ผ่าน" และระบุเหตุผล (จำเป็น):', '');
-
-                        if (reason === null) { // User clicked cancel
-                            return;
-                        }
-                        if (!reason.trim()) {
-                            alert('กรุณาระบุเหตุผลที่ตรวจไม่ผ่าน');
-                            return;
-                        }
-
-                        const actionCell = inspectionFailedBtn.closest('td');
-                        const buttonsInCell = actionCell.querySelectorAll('.approve-btn, .reschedule-inspection-btn, .inspection-failed-btn');
-                        buttonsInCell.forEach(btn => {
-                            btn.disabled = true;
-                            if (btn.tagName === 'BUTTON') {
-                                btn.textContent = 'กำลังอัปเดต...';
-                            } else {
-                                btn.style.pointerEvents = 'none'; // Disable link
-                            }
-                        });
-
-                        try {
-                            const response = await fetch('/reject_inspection', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ row_index: rowIndex, note: reason })
-                            });
-                            const result = await response.json();
-                            if (response.ok && result.success) {
-                                const statusCell = document.getElementById(`status-cell-${rowIndex}`);
-                                if (statusCell) {
-                                    statusCell.innerHTML = `<span class="status-badge status-rejected">ไม่อนุมัติ</span>`;
-                                }
-                                buttonsInCell.forEach(btn => btn.remove());
-                            } else {
-                                throw new Error(result.message || 'Failed to update status.');
-                            }
-                        } catch (error) {
-                            console.error('Error updating status to rejected after inspection:', error);
-                            alert('เกิดข้อผิดพลาด: ' + error.message);
-                            buttonsInCell.forEach(btn => {
-                                btn.disabled = false;
-                                // Restore button text/state here if needed
-                            });
-                        }
-                        return;
-                    }
-
                 });
             }
 
