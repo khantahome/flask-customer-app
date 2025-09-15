@@ -44,7 +44,7 @@
             height: 400%;
             top: -150%;
             left: -150%;
-            background: linear-gradient(45deg, #00f5ff, #ff0077);
+            background: conic-gradient(from 0deg, #00f5ff, #ff0077, #00f5ff);
             filter: drop-shadow(0 15px 50px #000);
             animation: rotating 6s linear infinite;
             z-index: -1; /* Put it behind the ::after element */
@@ -139,6 +139,23 @@
         .login-button:active {
             transform: translateY(0); /* Return to original position on click */
         }
+        
+        /* === CSS for Links (Added) === */
+        .links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .links a {
+            color: #00f5ff;
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            color: #ff0077;
+        }
 
         /* Responsive adjustments for smaller screens (e.g., mobile phones) */
         @media (max-width: 600px) {
@@ -180,6 +197,11 @@
     
                 <button type="submit" class="login-button">Sign in</button>
             </form>
+
+            <div class="links">
+                <a href="#">ลืมรหัสผ่าน</a>
+                <a href="#">สมัครสมาชิก</a>
+            </div>
         </div>
     </div>
 </body>
