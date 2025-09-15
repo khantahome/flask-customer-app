@@ -6,19 +6,17 @@
     <title>เข้าสู่ระบบ</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* Basic styles for the body to center content and set font */
         body {
-            font-family: 'Kanit', sans-serif; /* Use Kanit font */
+            font-family: 'Kanit', sans-serif;
             background: #111;
-            display: flex; /* Use Flexbox for centering */
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
-            min-height: 100vh; /* Ensure body takes full viewport height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             margin: 0;
-            line-height: 1.6; /* Improve readability */
+            line-height: 1.6;
         }
 
-        /* --- New styles for the rotating border effect --- */
         @keyframes rotating {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -31,7 +29,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: transparent; /* ทำให้โปร่งใสเพื่อให้ ::before แสดงผล */
+            background: transparent;
             border-radius: 20px;
             overflow: hidden;
         }
@@ -39,15 +37,15 @@
         .box::before {
             content: "";
             position: absolute;
-            /* Make it larger to rotate without clipping corners */
+            /* === ปรับขนาดกลับมาเท่าเดิมเพื่อให้แสงขาดที่มุม === */
             width: 400%; 
             height: 400%;
             top: -150%;
             left: -150%;
-            background: conic-gradient(from 0deg, #00f5ff, #ff0077, #00f5ff);
+            background: linear-gradient(45deg, #00f5ff, #ff0077);
             filter: drop-shadow(0 15px 50px #000);
             animation: rotating 6s linear infinite;
-            z-index: -1; /* Put it behind the ::after element */
+            z-index: -1;
         }
 
         .box::after {
@@ -60,62 +58,56 @@
             z-index: -1;
         }
 
-        /* Styles for the main login container (the "card") */
         .login-container {
-            background-color: transparent; /* Make transparent to see the ::after element */
+            background-color: transparent;
             padding: 40px 30px;
             border-radius: 12px;
-            box-shadow: none; /* Shadow is now on the ::before element */
+            box-shadow: none;
             text-align: center;
             width: 100%;
-            box-sizing: border-box; /* Include padding and border in element's total width and height */
-            position: relative; /* Required to sit on top of the ::after element */
+            box-sizing: border-box;
+            position: relative;
             z-index: 1;
         }
 
-        /* Styles for the heading */
         .login-container h2 {
-            color: #FFFFFF; /* White text for dark background */
+            color: #FFFFFF;
             margin-bottom: 20px;
             letter-spacing: 2px;
         }
 
-        /* Styles for input groups (label + input) */
         .input-group {
             margin-bottom: 20px;
             text-align: left;
         }
 
         .input-group label {
-            display: block; /* Make label appear on its own line */
+            display: block;
             margin-bottom: 5px;
             font-weight: 400; 
-            color: #fff; /* Light grey for labels */
+            color: #fff;
             font-size: 0.9em;
         }
 
-        /* Styles for text and password input fields */
         .input-group input[type="text"],
         .input-group input[type="password"] {
-            width: 100%; /* Make input fields take full width of their container */
+            width: 100%;
             padding: 12px 15px;
             border: none;
-            border-radius: 8px; /* Rounded corners for inputs */
+            border-radius: 8px;
             font-size: 1em;
             box-sizing: border-box;
             background: #2d2d39;
-            color: #fff; /* White input text */
+            color: #fff;
             outline: none;
         }
 
-        /* Styles for error messages */
         .error-message {
             color: #ff0077;
             margin-bottom: 20px;
             font-size: 0.9em;
         }
 
-        /* Styles for the login button */
         .login-button {
             background: #00f5ff;
             color: #111;
@@ -125,22 +117,19 @@
             font-size: 1em;
             cursor: pointer;
             transition: 0.3s;
-            width: 100%; /* Make button take full width */
+            width: 100%;
             font-weight: bold;
         }
 
-        /* Styles for the login button on hover */
         .login-button:hover {
             background: #ff0077;
             color: #fff;
         }
 
-        /* Styles for the login button when active (clicked) */
         .login-button:active {
-            transform: translateY(0); /* Return to original position on click */
+            transform: translateY(0);
         }
 
-        /* Responsive adjustments for smaller screens (e.g., mobile phones) */
         @media (max-width: 600px) {
             .box {
                 width: 90vw;
