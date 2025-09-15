@@ -6,28 +6,15 @@
     <title>เข้าสู่ระบบ</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* Define CSS variables for easy theme customization */
-        :root {
-            --primary-color: #3363ff; /* A more vibrant blue to match the new effect */
-            --secondary-color: #50E3C2; /* Secondary mint green color (optional) */
-            --background-color: #1c1c22; /* Dark background to make the effect pop */
-            --card-background: #FFFFFF; /* Background color for the login card */
-            --text-color: #333333; /* General text color */
-            --error-color: #fd004c; /* A vibrant red from the new effect */
-            --border-color: #DDDDDD; /* Border color for input fields */
-            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08); /* Light shadow for the card */
-        }
-
         /* Basic styles for the body to center content and set font */
         body {
             font-family: 'Kanit', sans-serif; /* Use Kanit font */
-            background-color: var(--background-color); /* Use a solid dark color */
+            background: #111;
             display: flex; /* Use Flexbox for centering */
             justify-content: center; /* Center horizontally */
             align-items: center; /* Center vertically */
             min-height: 100vh; /* Ensure body takes full viewport height */
             margin: 0;
-            color: var(--text-color);
             line-height: 1.6; /* Improve readability */
         }
 
@@ -39,12 +26,12 @@
 
         .box {
             position: relative;
-            width: 400px;
-            height: 480px; /* Adjusted height for content */
+            width: 320px;
+            height: 420px;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #2d2d39; /* Fallback background */
+            background: #1c1c1c;
             border-radius: 20px;
             overflow: hidden;
         }
@@ -52,30 +39,35 @@
         .box::before {
             content: "";
             position: absolute;
-            width: 150%; /* Larger to avoid clipping during rotation */
-            height: 150%;
-            background: conic-gradient(from 0deg, #fd004c, #fe9000, #fff020, #3edf4b, #3363ff, #b102b7, #fd004c);
+            /* Make it larger to rotate without clipping corners */
+            width: 400%; 
+            height: 400%;
+            top: -150%;
+            left: -150%;
+            background: conic-gradient(from 0deg, #00f5ff, #ff0077, #00f5ff);
             filter: drop-shadow(0 15px 50px #000);
-            animation: rotating 4s linear infinite;
+            animation: rotating 6s linear infinite;
+            z-index: -1; /* Put it behind the ::after element */
         }
 
         .box::after {
             content: "";
             position: absolute;
-            inset: 4px;
-            background: #2d2d39;
+            inset: 6px;
+            background: #1c1c1c;
             border-radius: 15px;
+            border: 2px solid #25252b;
+            z-index: -1;
         }
 
         /* Styles for the main login container (the "card") */
         .login-container {
             background-color: transparent; /* Make transparent to see the ::after element */
-            padding: 40px;
+            padding: 40px 30px;
             border-radius: 12px;
             box-shadow: none; /* Shadow is now on the ::before element */
             text-align: center;
             width: 100%;
-            max-width: 400px; /* Max width for larger screens */
             box-sizing: border-box; /* Include padding and border in element's total width and height */
             position: relative; /* Required to sit on top of the ::after element */
             z-index: 1;
@@ -84,9 +76,8 @@
         /* Styles for the heading */
         .login-container h2 {
             color: #FFFFFF; /* White text for dark background */
-            margin-bottom: 30px;
-            font-weight: 600;
-            font-size: 2em;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
         }
 
         /* Styles for input groups (label + input) */
@@ -97,10 +88,10 @@
 
         .input-group label {
             display: block; /* Make label appear on its own line */
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             font-weight: 400; 
-            color: #CCCCCC; /* Light grey for labels */
-            font-size: 0.95em;
+            color: #fff; /* Light grey for labels */
+            font-size: 0.9em;
         }
 
         /* Styles for text and password input fields */
@@ -108,49 +99,40 @@
         .input-group input[type="password"] {
             width: 100%; /* Make input fields take full width of their container */
             padding: 12px 15px;
-            border: 1px solid #3a3a5a; /* Darker border */
+            border: none;
             border-radius: 8px; /* Rounded corners for inputs */
             font-size: 1em;
             box-sizing: border-box;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition on focus */
-            background-color: #25252b; /* Dark input background */
-            color: #FFFFFF; /* White input text */
-        }
-
-        /* Styles for input fields when focused */
-        .input-group input[type="text"]:focus,
-        .input-group input[type="password"]:focus {
-            border-color: var(--primary-color); /* Change border color on focus */
-            box-shadow: 0 0 0 3px rgba(51, 99, 255, 0.3); /* Adjusted shadow color */
-            outline: none; /* Remove default browser outline */
+            background: #2d2d39;
+            color: #fff; /* White input text */
+            outline: none;
         }
 
         /* Styles for error messages */
         .error-message {
-            color: var(--error-color);
+            color: #ff0077;
             margin-bottom: 20px;
             font-size: 0.9em;
         }
 
         /* Styles for the login button */
         .login-button {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 14px 25px;
+            background: #00f5ff;
+            color: #111;
+            padding: 12px;
             border: none;
             border-radius: 8px;
-            font-size: 1.1em;
+            font-size: 1em;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transitions for hover/active */
+            transition: 0.3s;
             width: 100%; /* Make button take full width */
-            font-weight: 600;
-            letter-spacing: 0.5px;
+            font-weight: bold;
         }
 
         /* Styles for the login button on hover */
         .login-button:hover {
-            background-color: #3A7BBF; /* Darker shade on hover */
-            transform: translateY(-2px); /* Slight lift effect on hover */
+            background: #ff0077;
+            color: #fff;
         }
 
         /* Styles for the login button when active (clicked) */
@@ -160,8 +142,10 @@
 
         /* Responsive adjustments for smaller screens (e.g., mobile phones) */
         @media (max-width: 600px) {
+            .box {
+                width: 90vw;
+            }
             .login-container {
-                margin: 20px; /* Add margin on smaller screens */
                 padding: 30px;
             }
             .login-container h2 {
@@ -177,7 +161,7 @@
 <body>
     <div class="box">
         <div class="login-container">
-            <h2>เข้าสู่ระบบ</h2>
+            <h2>LOGIN</h2>
     
             {% if error %}
                 <p class="error-message">{{ error }}</p>
@@ -194,7 +178,7 @@
                     <input type="password" id="password" name="password" placeholder="กรอกรหัสผ่านของคุณ" required>
                 </div>
     
-                <button type="submit" class="login-button">เข้าสู่ระบบ</button>
+                <button type="submit" class="login-button">Sign in</button>
             </form>
         </div>
     </div>
