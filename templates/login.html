@@ -1,154 +1,183 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เข้าสู่ระบบ</title>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
-  <style>
-    /* ใช้ CSS ทั้งหมดจากไฟล์ login_form_demo.html */
-    body {
-      background: #111;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      /* กำหนดฟอนต์หลักเป็น 'Kanit' */
-      font-family: 'Kanit', sans-serif;
-    }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Basic styles for the body to center content and set font */
+        body {
+            font-family: 'Kanit', sans-serif; /* Use Kanit font */
+            background: #111;
+            display: flex; /* Use Flexbox for centering */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            margin: 0;
+            line-height: 1.6; /* Improve readability */
+        }
 
-    .box {
-      position: relative;
-      width: 320px;
-      /* ปรับความสูงเล็กน้อยเพื่อให้พอดีกับเนื้อหาภาษาไทย */
-      height: 440px; 
-      background: #1c1c1c;
-      border-radius: 20px;
-      overflow: hidden;
-    }
+        /* --- New styles for the rotating border effect --- */
+        @keyframes rotating {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-    .box::before {
-      content: "";
-      position: absolute;
-      width: 400%;
-      height: 400%;
-      top: -150%;
-      left: -150%;
-      /* อนิเมชันแบบใหม่จากไฟล์ demo */
-      background: linear-gradient(45deg, #00f5ff, #ff0077);
-      animation: rotating 6s linear infinite;
-      z-index: -1;
-    }
+        .box {
+            position: relative;
+            width: 320px;
+            height: 420px;
+            background: #1c1c1c;
+            border-radius: 20px;
+            overflow: hidden;
+            z-index: 1;
+        }
 
-    .box::after {
-      content: "";
-      position: absolute;
-      inset: 6px;
-      background: #1c1c1c;
-      border-radius: 15px;
-      border: 2px solid #25252b;
-    }
-    
-    /* เปลี่ยนชื่อ .form เป็น .login-container เพื่อความสอดคล้อง */
-    .login-container {
-      position: relative;
-      padding: 40px 30px;
-      color: #fff;
-      text-align: center;
-      z-index: 1;
-    }
+        .box::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+            border: 3px solid transparent;
+            background: linear-gradient(90deg, #00f5ff, #ff0077) border-box;
+            animation: rotating 6s linear infinite;
+            filter: drop-shadow(0 15px 50px #000);
+            z-index: -1;
+        }
 
-    .login-container h2 {
-      margin-bottom: 20px;
-      letter-spacing: 2px;
-    }
+        .box::after {
+            content: "";
+            position: absolute;
+            inset: 6px;
+            background: #1c1c1c;
+            border-radius: 15px;
+            border: 2px solid #25252b;
+            z-index: -1;
+        }
 
-    /* รวม .input-group จากโค้ดเก่าเข้ากับดีไซน์ใหม่ */
-    .input-group {
-      position: relative;
-      margin-bottom: 25px;
-      text-align: left;
-    }
+        /* Styles for the main login container (the "card") */
+        .login-container {
+            background-color: transparent; /* Make transparent to see the ::after element */
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: none; /* Shadow is now on the ::before element */
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+            position: relative; /* Required to sit on top of the ::after element */
+            z-index: 1;
+        }
 
-    .input-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 400;
-        color: #fff;
-        font-size: 0.9em;
-    }
+        /* Styles for the heading */
+        .login-container h2 {
+            color: #FFFFFF; /* White text for dark background */
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
 
-    .input-group input {
-      width: 100%;
-      padding: 12px 15px;
-      border: none;
-      outline: none;
-      background: #2d2d39;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 1em;
-      /* เพิ่ม box-sizing เพื่อให้ padding ไม่ทำให้ input ล้นกรอบ */
-      box-sizing: border-box;
-    }
+        /* Styles for input groups (label + input) */
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
 
-    /* ปุ่ม Login */
-    .login-button {
-      display: inline-block;
-      padding: 12px;
-      width: 100%;
-      border: none;
-      outline: none;
-      background: #00f5ff;
-      color: #111;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-      font-size: 1em;
-    }
+        .input-group label {
+            display: block; /* Make label appear on its own line */
+            margin-bottom: 5px;
+            font-weight: 400; 
+            color: #fff; /* Light grey for labels */
+            font-size: 0.9em;
+        }
 
-    .login-button:hover {
-      background: #ff0077;
-      color: #fff;
-    }
+        /* Styles for text and password input fields */
+        .input-group input[type="text"],
+        .input-group input[type="password"] {
+            width: 100%; /* Make input fields take full width of their container */
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px; /* Rounded corners for inputs */
+            font-size: 1em;
+            box-sizing: border-box;
+            background: #2d2d39;
+            color: #fff; /* White input text */
+            outline: none;
+        }
 
-    /* ส่วนแสดงข้อความ Error */
-    .error-message {
-        color: #ff0077;
-        margin-bottom: 20px;
-        font-size: 0.9em;
-    }
+        /* Styles for error messages */
+        .error-message {
+            color: #ff0077;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
 
-    @keyframes rotating {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-  </style>
+        /* Styles for the login button */
+        .login-button {
+            background: #00f5ff;
+            color: #111;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%; /* Make button take full width */
+            font-weight: bold;
+        }
+
+        /* Styles for the login button on hover */
+        .login-button:hover {
+            background: #ff0077;
+            color: #fff;
+        }
+
+        /* Styles for the login button when active (clicked) */
+        .login-button:active {
+            transform: translateY(0); /* Return to original position on click */
+        }
+
+        /* Responsive adjustments for smaller screens (e.g., mobile phones) */
+        @media (max-width: 600px) {
+            .box {
+                width: 90vw;
+            }
+            .login-container {
+                padding: 30px;
+            }
+            .login-container h2 {
+                font-size: 1.8em;
+            }
+            .login-button {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="box">
-    <div class="login-container">
-      <h2>LOGIN</h2>
-
-      {% if error %}
-          <p class="error-message">{{ error }}</p>
-      {% endif %}
-
-      <form method="post">
-          <div class="input-group">
-              <label for="username">ชื่อผู้ใช้</label>
-              <input type="text" id="username" name="username" placeholder="กรอกชื่อผู้ใช้ของคุณ" required>
-          </div>
-
-          <div class="input-group">
-              <label for="password">รหัสผ่าน</label>
-              <input type="password" id="password" name="password" placeholder="กรอกรหัสผ่านของคุณ" required>
-          </div>
-
-          <button type="submit" class="login-button">Sign in</button>
-      </form>
+    <div class="box">
+        <div class="login-container">
+            <h2>LOGIN</h2>
+    
+            {% if error %}
+                <p class="error-message">{{ error }}</p>
+            {% endif %}
+    
+            <form method="post">
+                <div class="input-group">
+                    <label for="username">ชื่อผู้ใช้</label>
+                    <input type="text" id="username" name="username" placeholder="กรอกชื่อผู้ใช้ของคุณ" required>
+                </div>
+    
+                <div class="input-group">
+                    <label for="password">รหัสผ่าน</label>
+                    <input type="password" id="password" name="password" placeholder="กรอกรหัสผ่านของคุณ" required>
+                </div>
+    
+                <button type="submit" class="login-button">Sign in</button>
+            </form>
+        </div>
     </div>
-  </div>
 </body>
 </html>
