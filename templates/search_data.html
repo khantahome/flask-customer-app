@@ -757,11 +757,21 @@
         /* กำหนดความกว้างขั้นต่ำให้คอลัมน์ที่ตัดคำได้ เพื่อไม่ให้แคบเกินไป */
         .results-table th:nth-child(2), .results-table td:nth-child(2),   /* ชื่อ-นามสกุล */
         .results-table th:nth-child(9), .results-table td:nth-child(9),   /* บริษัทที่รับงาน */
-        .results-table th:nth-child(10), .results-table td:nth-child(10), /* ขอเข้ามาทางไหน */
-        .results-table th:nth-child(15), .results-table td:nth-child(15)  /* ผู้บันทึก */
+        .results-table th:nth-child(10), .results-table td:nth-child(10) /* ขอเข้ามาทางไหน */
         {
             min-width: 100px; /* ลดจาก 120px */
         }
+        .results-table th:nth-child(15), .results-table td:nth-child(15)  /* ผู้บันทึก */
+        {
+            min-width: 80px;    
+            max-width: 100px; 
+        }
+        .results-table th:nth-child(9), .results-table td:nth-child(9)  /* บริษัทที่รับงาน */
+        {
+            min-width: 80px;
+            max-width: 100px; 
+        }
+        
 
         /* ให้พื้นที่คอลัมน์ 'ชื่อกิจการ' มากเป็นพิเศษ */
         .results-table th:nth-child(4), .results-table td:nth-child(4) {
