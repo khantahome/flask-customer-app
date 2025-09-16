@@ -765,7 +765,14 @@
 
         /* ให้พื้นที่คอลัมน์ 'ชื่อกิจการ' มากเป็นพิเศษ */
         .results-table th:nth-child(4), .results-table td:nth-child(4) {
-            min-width: 150px; /* ลดจาก 180px */
+        min-width: 80px;      /* หรือขนาดที่ต้องการ */
+        max-width: 120px;      /* จำกัดความกว้างสูงสุด */
+        white-space: nowrap;   /* ไม่ขึ้นบรรทัดใหม่ */
+        overflow: hidden;      /* ซ่อนข้อความที่เกิน */
+        text-overflow: ellipsis; /* แสดง ... */
+        }
+        .results-table th:nth-child(13), .results-table td:nth-child(13) {
+        min-width: 60px; 
         }
 
         /* NEW: Modal Styles for Customer Details */
@@ -1161,7 +1168,7 @@
                                 <td>{{ record.get('Customer ID', '-') }}</td>
                                 <td>{{ record.get('ชื่อ', '') }} {{ record.get('นามสกุล', '') }}</td>
                                 <td>{{ record.get('เบอร์มือถือ', '-') }}</td>
-                                <td>{{ record.get('ชื่อกิจการ', '-') }}</td>
+                                <td title="{{ record.get('ชื่อกิจการ', '-') }}">{{ record.get('ชื่อกิจการ', '-') }}</td>
                                 <td>{{ record.get('จังหวัดที่อยู่', '-') }}</td>
                                 <td>{{ record.get('วงเงินที่ต้องการ', '-') }}</td>
                                 <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td>
