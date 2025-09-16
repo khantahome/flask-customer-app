@@ -999,7 +999,7 @@ body {
     document.addEventListener('DOMContentLoaded', function() {
     const mainCustomerGroupSelect = document.getElementById('main_customer_group');
     const subProfessionGroupSelect = document.getElementById('sub_profession_group');
-    const otherSubProfessionInputGroup = document.getElementById('otherSubProfessionInputGroup');
+    const otherSubProfessionInputGroup = document.getElementById('otherSubProfessionInputGroup'); // This line is duplicated in the original file, which is fine.
     const otherSubProfessionInput = document.getElementById('other_sub_profession');
 
     const subProfessionData = {
@@ -1060,51 +1060,58 @@ body {
             "อื่นๆ": []
         };
 
-       function updateSubProfessionOptions() {
-    const selectedMainGroup = mainCustomerGroupSelect.value;
-    const subProfessions = subProfessionData[selectedMainGroup] || [];
-    const currentSubProfession = "{{ customer_data.get('กลุ่มอาชีพย่อย', '') }}";
+        function updateSubProfessionOptions(isInitialLoad = false) {
+            const selectedMainGroup = mainCustomerGroupSelect.value;
+            const subProfessions = subProfessionData[selectedMainGroup] || [];
+            const currentDbValue = "{{ customer_data.get('กลุ่มอาชีพย่อย', '') }}";
 
-    subProfessionGroupSelect.innerHTML = '<option value="">--- เลือกกลุ่มอาชีพย่อย ---</option>';
-    subProfessionGroupSelect.disabled = true;
+            subProfessionGroupSelect.innerHTML = '<option value="">--- เลือกกลุ่มอาชีพย่อย ---</option>';
+            subProfessionGroupSelect.disabled = true;
 
-    if (selectedMainGroup) {
-        let found = false;
-        subProfessions.forEach(prof => {
-            const option = document.createElement('option');
-            option.value = prof;
-            option.textContent = prof;
-            if (prof === currentSubProfession) {
-                option.selected = true;
-                found = true;
+            if (selectedMainGroup) {
+                subProfessions.forEach(prof => {
+                    const option = document.createElement('option');
+                    option.value = prof;
+                    option.textContent = prof;
+                    subProfessionGroupSelect.appendChild(option);
+                });
+                
+                const otherOption = document.createElement('option');
+                otherOption.value = "อื่นๆ";
+                otherOption.textContent = "อื่นๆ";
+                subProfessionGroupSelect.appendChild(otherOption);
+
+                if (isInitialLoad) {
+                    // On page load, try to set the saved value
+                    let valueExistsInList = subProfessions.includes(currentDbValue) || currentDbValue === 'อื่นๆ';
+                    if (currentDbValue && valueExistsInList) {
+                        subProfessionGroupSelect.value = currentDbValue;
+                    } else if (currentDbValue) {
+                        // If value is not in the standard list, add it as a special option and select it
+                        const customOption = document.createElement('option');
+                        customOption.value = currentDbValue;
+                        customOption.textContent = currentDbValue + " (ข้อมูลเดิม)";
+                        customOption.selected = true;
+                        subProfessionGroupSelect.appendChild(customOption);
+                    }
+                }
+                
+                subProfessionGroupSelect.disabled = false;
             }
-            subProfessionGroupSelect.appendChild(option);
-        });
-        // เพิ่ม "อื่นๆ"
-        const otherOption = document.createElement('option');
-        otherOption.value = "อื่นๆ";
-        otherOption.textContent = "อื่นๆ";
-        if (currentSubProfession === "อื่นๆ") {
-            otherOption.selected = true;
-            found = true;
-        }
-        subProfessionGroupSelect.appendChild(otherOption);
-
-        // ถ้าค่าเดิมไม่อยู่ใน list ให้เติม option พิเศษ
-        if (currentSubProfession && !found) {
-            const customOption = document.createElement('option');
-            customOption.value = currentSubProfession;
-            customOption.textContent = currentSubProfession + " (ข้อมูลเดิม)";
-            customOption.selected = true;
-            subProfessionGroupSelect.appendChild(customOption);
         }
 
-        subProfessionGroupSelect.disabled = false;
-    } else {
-        otherSubProfessionInputGroup.style.display = 'none';
-        otherSubProfessionInput.value = '';
-    }
-}
+        function toggleOtherSubProfessionInput() {
+            const isOtherSelected = subProfessionGroupSelect.value === "อื่นๆ";
+            otherSubProfessionInputGroup.style.display = isOtherSelected ? 'block' : 'none';
+            otherSubProfessionInput.required = isOtherSelected;
+        }
+
+        mainCustomerGroupSelect.addEventListener('change', () => updateSubProfessionOptions(false));
+        subProfessionGroupSelect.addEventListener('change', toggleOtherSubProfessionInput);
+
+        // Initial setup on page load
+        updateSubProfessionOptions(true);
+        toggleOtherSubProfessionInput();
 });
     </script>
 </body>
