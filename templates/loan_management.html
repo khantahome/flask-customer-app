@@ -1346,7 +1346,6 @@
             </div>
             </div>
 
-{% if approove %}
 <!-- ตารางอนุมัติยอด -->
 <div class="approove-table-section" style="display:none;">
   <h3>ตารางลูกค้าที่อนุมัติ</h3>
@@ -1365,6 +1364,7 @@
       </tr>
     </thead>
     <tbody>
+      {% if approove %}
       {% for record in approove %}
       <tr data-customer-id-row="{{ record['Customer ID'] }}">
         <td>{{ record['สถานะ'] }}</td>
@@ -1381,12 +1381,13 @@
         </td>
       </tr>
       {% endfor %}
+      {% else %}
+        <tr><td colspan="9" style="text-align: center;">ไม่พบข้อมูลลูกค้าที่อนุมัติ</td></tr>
+      {% endif %}
     </tbody>
   </table>
 </div>
-{% endif %}
 
-{% if approove %}
 <div class="closejob-table-section" style="display:none;">
   <h3>ตารางลูกค้าปิดจ๊อบ</h3>
   <!-- ฟอร์มค้นหา -->
@@ -1416,6 +1417,7 @@
         </tr>
       </thead>
       <tbody id="closejob-tbody">
+        {% if approove %}
         {% for record in approove %}
         <tr 
           data-status="{{ record.get('สถานะ', '') }}" 
@@ -1453,11 +1455,13 @@
           </td>
         </tr>
         {% endfor %}
+        {% else %}
+          <tr><td colspan="9" style="text-align: center;">ไม่พบข้อมูลลูกค้าสำหรับปิดจ๊อบ</td></tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
 </div>
-{% endif %}
 
 <!-- ตารางตัวเสีย -->
 <div class="baddebt-table-section" style="display:none;">
