@@ -425,11 +425,13 @@ def search_customer_data():
             # This makes the code compatible with both MySQL (production) and SQLite (testing).
             if 'mysql' in app.config.get('SQLALCHEMY_DATABASE_URI', ''):
                 # Use efficient FULLTEXT search for MySQL
+                # REVISED: Correctly build the boolean mode search string for MySQL.
+                # This creates a search term like '+word1* +word2*' for better results.
+                boolean_search_term = ' '.join(f'+{word}*' for word in search_keyword.split())
                 fulltext_match = func.match(
                     CustomerRecord.first_name, CustomerRecord.last_name, 
                     CustomerRecord.business_name, CustomerRecord.remarks
-                ).op('against')(search_keyword, in_boolean_mode=True)
-                
+                ).op('against')(f'{boolean_search_term} IN BOOLEAN MODE')
                 like_match = or_(
                     CustomerRecord.customer_id.ilike(like_term),
                     CustomerRecord.mobile_phone.ilike(like_term),
