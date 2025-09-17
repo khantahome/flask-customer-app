@@ -420,37 +420,20 @@ def search_customer_data():
         if search_keyword:
             display_title = f"ผลการค้นหาสำหรับ: '{search_keyword}'"
             like_term = f"%{search_keyword}%"
-
-            # NEW: Check the database dialect to use the appropriate search method.
-            # This makes the code compatible with both MySQL (production) and SQLite (testing).
-            if 'mysql' in app.config.get('SQLALCHEMY_DATABASE_URI', ''):
-                # Use efficient FULLTEXT search for MySQL
-                # REVISED: Correctly build the boolean mode search string for MySQL.
-                # This creates a search term like '+word1* +word2*' for better results.
-                boolean_search_term = ' '.join(f'+{word}*' for word in search_keyword.split())
-                fulltext_match = func.match(
-                    CustomerRecord.first_name, CustomerRecord.last_name, 
-                    CustomerRecord.business_name, CustomerRecord.remarks
-                ).op('against')(f'{boolean_search_term} IN BOOLEAN MODE')
-                like_match = or_(
-                    CustomerRecord.customer_id.ilike(like_term),
-                    CustomerRecord.mobile_phone.ilike(like_term),
-                    CustomerRecord.id_card_number.ilike(like_term)
-                )
-                
-                base_query = base_query.filter(or_(fulltext_match, like_match))
-            else:
-                # Use standard LIKE search for SQLite (testing) and other DBs
-                search_filter = or_(
-                    CustomerRecord.customer_id.ilike(like_term),
-                    CustomerRecord.first_name.ilike(like_term),
-                    CustomerRecord.last_name.ilike(like_term),
-                    CustomerRecord.mobile_phone.ilike(like_term),
-                    CustomerRecord.id_card_number.ilike(like_term),
-                    CustomerRecord.business_name.ilike(like_term),
-                    CustomerRecord.remarks.ilike(like_term)
-                )
-                base_query = base_query.filter(search_filter)
+            
+            # REVISED: Use a universal LIKE search for all databases.
+            # This avoids potential errors from MySQL-specific FULLTEXT search if the index is not set up correctly.
+            # This method is more robust and works across different environments (like testing with SQLite).
+            search_filter = or_(
+                CustomerRecord.customer_id.ilike(like_term),
+                CustomerRecord.first_name.ilike(like_term),
+                CustomerRecord.last_name.ilike(like_term),
+                CustomerRecord.mobile_phone.ilike(like_term),
+                CustomerRecord.id_card_number.ilike(like_term),
+                CustomerRecord.business_name.ilike(like_term),
+                CustomerRecord.remarks.ilike(like_term)
+            )
+            base_query = base_query.filter(search_filter)
         
         pagination = base_query.order_by(CustomerRecord.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
         results_obj = pagination.items
