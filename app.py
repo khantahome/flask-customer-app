@@ -10,6 +10,9 @@ from datetime import datetime, timedelta, UTC
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify, current_app
 from flask_caching import Cache
+
+# NEW: Import password hashing utilities
+from werkzeug.security import check_password_hash, generate_password_hash
 import pandas as pd
 import numpy as np
 
