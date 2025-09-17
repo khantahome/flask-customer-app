@@ -428,7 +428,7 @@ def search_customer_data():
                 fulltext_match = func.match(
                     CustomerRecord.first_name, CustomerRecord.last_name, 
                     CustomerRecord.business_name, CustomerRecord.remarks
-                ).against(search_keyword, in_boolean_mode=True)
+                ).op('against')(search_keyword, in_boolean_mode=True)
                 
                 like_match = or_(
                     CustomerRecord.customer_id.ilike(like_term),
