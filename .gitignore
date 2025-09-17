@@ -1,22 +1,22 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-venv/
-env/
-.ipynb_checkpoints/
+# Environment variables
+.env
 
-# Google Service Account Key (IMPORTANT: Keep this file private!)
+# Service Account Keys - DO NOT COMMIT
 exclusive.json
 firebase-service-account.json.json
 
-# Local testing tools
-ngrok.exe
+# Virtual Environment
+venv/
 
-# Operating System files
-desktop.ini
-Thumbs.db
+# Python cache
+__pycache__/
+*.pyc
 
-# Log files
-*.log
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# IDE settings
+.vscode/
+.idea/
