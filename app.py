@@ -1,1848 +1,1294 @@
-# Import necessary modules from Flask and other libraries
-from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify, current_app
-import gspread
-import traceback
-import gspread.utils
-from oauth2client.service_account import ServiceAccountCredentials
-import pandas as pd
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+# -*- coding: utf-8 -*-
 import os
-from datetime import datetime, timedelta
-import requests
-import time
-import json
+from dotenv import load_dotenv
+ 
+# REVISED: Explicitly load the .env file from the project's root directory.
+# This makes the app's configuration more robust and independent of the current working directory.
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(dotenv_path=dotenv_path)
+from datetime import datetime, timedelta, UTC
+from functools import wraps
+from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify, current_app
+from flask_caching import Cache
+import pandas as pd
+import numpy as np
+
+# NEW: SQLAlchemy and database imports
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func, or_, and_
+
+# NEW: Cloudinary for image uploads
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-from flask_caching import Cache
-from flask import request, jsonify, session
-from datetime import datetime
-import math
 
-# Initialize the Flask application
+# =================================================================================
+# FLASK APP INITIALIZATION AND CONFIGURATION
+# =================================================================================
+
 app = Flask(__name__)
-# In production, it's crucial that SECRET_KEY is set as an environment variable.
-# A hardcoded key is a security risk and should not be used.
-app.secret_key = os.environ.get('SECRET_KEY')
-if not app.secret_key:
-    raise ValueError("No SECRET_KEY set for Flask application. Please set it as an environment variable.")
 
-cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+# --- Secret Key Configuration ---
+# IMPORTANT: Set this in your environment variables for production
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("No SECRET_KEY set for Flask application. Please set it in your environment variables.")
+app.secret_key = SECRET_KEY
 
-# --- Configuration for Google Sheets & Drive API Access ---
-GOOGLE_API_SCOPE = [
-    'https://spreadsheets.google.com/feeds',
-    'https://www.googleapis.com/auth/drive'
-]
+# --- Database Configuration (MySQL with SQLAlchemy) ---
+DB_USER = os.environ.get('DB_USER', 'root')
+DB_PASSWORD = os.environ.get('DB_PASSWORD') # It's better to not have a default password
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_NAME = os.environ.get('DB_NAME', 'loan_system')
 
-SERVICE_ACCOUNT_KEY_FILE = 'firebase-service-account.json'
+if not DB_PASSWORD:
+    raise ValueError("No DB_PASSWORD set for Flask application. Please set it in your environment variables.")
 
-# --- Google Sheets Configuration ---
-SPREADSHEET_NAME = 'data1' # Main spreadsheet containing all data
-
-PIDJOB_WORKSHEET_NAME = 'pidjob'
-PIDJOB_WORKSHEET_HEADERS = [
-    'status',
-    'customer_id',
-    'fullname',
-    'phone',
-    'approve_date',
-    'approved_amount',
-    'open_amount',
-    'company',
-    'other_company',
-    'table1',
-    'table2',
-    'registrar',
-    'timestamp'
-]
-
-# User Login Sheet
-USER_LOGIN_SPREADSHEET_NAME = 'UserLoginData'
-USER_LOGIN_WORKSHEET_NAME = 'users'
-
-APPROVE_WORKSHEET_NAME = 'approove'
-APPROVE_WORKSHEET_HEADERS = [
-    'สถานะ', 
-    'Customer ID', 
-    'ชื่อ-นามสกุล', 
-    'หมายเลขโทรศัพท์', 
-    'วันที่อนุมัติ', 
-    'วงเงินที่อนุมัติ', 
-    'บริษัทที่รับงาน',
-    'ชื่อผู้ลงทะเบียน',
-    'รูปถ่ายสัญญา'
-]
-
-BAD_DEBT_WORKSHEET_NAME = 'bad_debt_records'
-BAD_DEBT_WORKSHEET_HEADERS = [
-    'Timestamp', 'CustomerID', 'CustomerName', 'Phone', 
-    'ApprovedAmount', 'OutstandingBalance', 'MarkedBy', 'Notes'
-]
-
-PULL_PLUG_WORKSHEET_NAME = 'pull_plug_records'
-PULL_PLUG_WORKSHEET_HEADERS = [
-    'Timestamp', 'CustomerID', 'CustomerName', 'Phone', 
-    'PullPlugAmount', 'MarkedBy', 'Notes'
-]
-
-RETURN_PRINCIPAL_WORKSHEET_NAME = 'return_principal_records'
-RETURN_PRINCIPAL_WORKSHEET_HEADERS = [
-    'Timestamp', 'CustomerID', 'CustomerName', 'Phone', 
-    'ReturnAmount', 'MarkedBy', 'Notes'
-]
-
-# NEW: Static list of all possible channels for consistency in filters
-ALL_CHANNELS = [
-    "FACEBOOK สตาร์โลน",
-    "FACEBOOK กลอรี่แคช",
-    "FACEBOOK แคชเครดิต",
-    "ไลน์@สตาร์โลน",
-    "ไลน์@กลอรี่แคช",
-    "ไลน์@แคชเครดิต",
-    "โทรเข้ามา สตาร์โลน",
-    "โทรเข้ามา กลอรี่แคช",
-    "โทรเข้ามา แคชเครดิต",
-    "อีเมล"
-]
-
-# Original Customer Records Sheet (uses เลขบัตรประชาชน)
-WORKSHEET_NAME = 'customer_records'
-CUSTOMER_DATA_WORKSHEET_HEADERS = [
-    'Timestamp', 'Customer ID', 'ชื่อ', 'นามสกุล', 'เลขบัตรประชาชน', 'เบอร์มือถือ',
-    'กลุ่มลูกค้าหลัก',
-    'กลุ่มอาชีพย่อย',
-    'ระบุอาชีพย่อยอื่นๆ', 
-    'จดทะเบียน', 'ชื่อกิจการ', 'จังหวัดที่อยู่', 'ที่อยู่จดทะเบียน', 'สถานะ',
-    'วงเงินที่ต้องการ', 'วงเงินที่อนุมัติ', 'เคยขอเข้ามาในเครือหรือยัง', 'เช็ค',
-    'ขอเข้ามาทางไหน', 'บริษัทที่รับงาน', 'หักดอกหัวท้าย', 'ค่าดำเนินการ',
-    'วันที่ขอเข้ามา', 'ลิงค์โลเคชั่นบ้าน', 'ลิงค์โลเคชั่นที่ทำงาน', 'หมายเหตุ',
-    'Image URLs',
-    'Logged In User'
-    , 'วันที่นัดตรวจ',
-    'เวลานัดตรวจ',
-    'ผู้รับงานตรวจ'
-]
-DATA1_SHEET_NAME = "data1"
-ALLPIDJOB_WORKSHEET = "allpidjob"
-ALLPIDJOB_HEADERS = [
-    "Date", "CompanyName", "CustomerID", "Time", "CustomerName", "interest",
-    "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
-    "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
-    "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount",
-    "บริษัทที่รับงาน"
-]
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}?charset=utf8mb4'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle': 280} # Prevents connection timeouts
 
 # --- Cloudinary Configuration ---
 cloudinary.config(
-    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    api_key = os.environ.get('CLOUDINARY_API_KEY'),
-    api_secret = os.environ.get('CLOUDINARY_API_SECRET')
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+    secure=True
 )
 
-# --- Initialize Google API Clients ---
-GSPREAD_CLIENT = None
-DRIVE_CLIENT = None
+db = SQLAlchemy(app)
 
-try:
-    creds_json = None
-
-    if os.environ.get('GOOGLE_CREDENTIALS_JSON'):
-        creds_json_str = os.environ.get('GOOGLE_CREDENTIALS_JSON')
-        creds_json = json.loads(creds_json_str)
-    else:
-        with open(SERVICE_ACCOUNT_KEY_FILE, 'r') as f:
-            creds_json = json.load(f)
-
-    if creds_json:
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, GOOGLE_API_SCOPE)
-        GSPREAD_CLIENT = gspread.authorize(creds)
-        gauth = GoogleAuth()
-        gauth.credentials = creds
-        DRIVE_CLIENT = GoogleDrive(gauth)
-    else:
-        raise ValueError("Service Account credentials could not be loaded from environment or file.")
-
-except Exception as e:
-    print(f"CRITICAL ERROR: Google API clients failed to initialize. Error: {e}")
-    GSPREAD_CLIENT = None
-    DRIVE_CLIENT = None
+# --- Cache Configuration ---
+# To fix the DeprecationWarning, we use the full path to the backend class.
+cache = Cache(app, config={
+    'CACHE_TYPE': 'flask_caching.backends.SimpleCache', 
+    'CACHE_DEFAULT_TIMEOUT': 300
+})
 
 
-# --- Helper Functions for Google Sheets (Moved to top) ---
+# =================================================================================
+# DATABASE MODELS (Replaces Google Sheets Structure)
+# =================================================================================
 
-def get_worksheet(spreadsheet_name, worksheet_name, headers=None):
-    """Helper to get a specific worksheet, creating it and setting headers if needed."""
-    if not GSPREAD_CLIENT:
-        print(f"Gspread client not initialized. Cannot access worksheet '{worksheet_name}'.")
-        return None
-    try:
-        spreadsheet = GSPREAD_CLIENT.open(spreadsheet_name)
-        try:
-            worksheet = spreadsheet.worksheet(worksheet_name)
-            if headers:
-                existing_headers = worksheet.row_values(1)
-                if not existing_headers or existing_headers != headers:
-                    print(f"Warning: Worksheet '{worksheet_name}' headers do not match expected. Updating headers.")
-                    worksheet.update('A1', [headers])
-                    print(f"Worksheet '{worksheet_name}' headers updated.")
-            return worksheet
-        except gspread.exceptions.WorksheetNotFound:
-            print(f"Worksheet '{worksheet_name}' not found. Creating it...")
-            worksheet = spreadsheet.add_worksheet(title=worksheet_name, rows="100", cols=str(len(headers) if headers else 20))
-            if headers:
-                worksheet.append_row(headers)
-            print(f"Worksheet '{worksheet_name}' created with headers.")
-            return worksheet
-    except Exception as e:
-        print(f"Error accessing/creating worksheet '{worksheet_name}': {e}")
-        return None
-    
-def generate_next_customer_id(worksheet):
-    """
-    Generates the next numeric customer ID by finding the highest existing ID.
-    It handles both old ('SL123') and new ('123') formats.
-    """
-    try:
-        headers = worksheet.row_values(1)
-        try:
-            id_col_index = headers.index('Customer ID') + 1
-        except ValueError:
-            print("ERROR: 'Customer ID' column not found in the sheet.")
-            # Fallback to a simple count.
-            return str(len(worksheet.get_all_records()) + 1)
+class CustomerRecord(db.Model):
+    __tablename__ = 'customer_records'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    customer_id = db.Column(db.String(50), unique=True, nullable=False)
+    first_name = db.Column(db.String(255))
+    last_name = db.Column(db.String(255))
+    id_card_number = db.Column(db.String(100))
+    mobile_phone = db.Column(db.String(100))
+    main_customer_group = db.Column(db.String(255))
+    sub_profession_group = db.Column(db.String(255))
+    other_sub_profession = db.Column(db.Text)
+    is_registered = db.Column(db.String(50))
+    business_name = db.Column(db.String(255))
+    province = db.Column(db.String(255))
+    registered_address = db.Column(db.Text)
+    status = db.Column(db.String(100))
+    desired_credit_limit = db.Column(db.DECIMAL(15, 2))
+    approved_credit_limit = db.Column(db.DECIMAL(15, 2))
+    applied_before = db.Column(db.String(1000))
+    check_status = db.Column(db.String(50))
+    application_channel = db.Column(db.String(255))
+    assigned_company = db.Column(db.String(255))
+    upfront_interest_deduction = db.Column(db.DECIMAL(15, 2))
+    processing_fee = db.Column(db.DECIMAL(15, 2))
+    application_date = db.Column(db.Date)
+    home_location_link = db.Column(db.Text)
+    work_location_link = db.Column(db.Text)
+    remarks = db.Column(db.Text)
+    image_urls = db.Column(db.Text)
+    logged_in_user = db.Column(db.String(100))
+    inspection_date = db.Column(db.Date)
+    inspection_time = db.Column(db.Time)
+    inspector = db.Column(db.String(255))
 
-        customer_ids = worksheet.col_values(id_col_index)
-        
-        max_num = 0
-        # Start from the second item to skip the header
-        for an_id in customer_ids[1:]:
-            if not an_id:
-                continue
-            
-            num = 0
-            try:
-                # Check for old 'SL' format first
-                if an_id.upper().startswith('SL'):
-                    num = int(an_id[2:])
-                # Then check for new numeric format
-                else:
-                    num = int(an_id)
-            except ValueError:
-                # Ignore malformed IDs
-                continue
-            
-            if num > max_num:
-                max_num = num
-        
-        next_id = max_num + 1
-        return str(next_id) # Return as a string
-    except Exception as e:
-        print(f"Error generating next customer ID: {e}")
-        # Fallback to a simple count in case of any error
-        return str(len(worksheet.get_all_records()) + 1)
+    # NEW: Add a Full-Text Search index for faster, more relevant text searching.
+    __table_args__ = (
+        db.Index('ix_customer_records_fulltext', 'first_name', 'last_name', 'business_name', 'remarks', mysql_prefix='FULLTEXT'),
+    )
 
-def get_user_worksheet():
-    return get_worksheet(USER_LOGIN_SPREADSHEET_NAME, USER_LOGIN_WORKSHEET_NAME)
-
-
-def get_customer_data_worksheet():
-    """Returns the original customer_records worksheet and force-updates header row."""
-    worksheet = get_worksheet(SPREADSHEET_NAME, WORKSHEET_NAME)
-
-    if worksheet:
-        try:
-            worksheet.update('A1', [CUSTOMER_DATA_WORKSHEET_HEADERS])
-            print("DEBUG: Header of 'customer_records' worksheet updated successfully.")
-        except Exception as e:
-            print(f"ERROR: Failed to update header for 'customer_records': {e}")
-    
-    return worksheet
-
-
-@app.route('/get-customer-info/<customer_id>')
-def get_customer_info(customer_id):
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    try:
-        worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-        data = worksheet.get_all_values()
-        if not data or len(data) < 2:
-            return jsonify({'error': 'No data found'}), 404
-
-        headers = data[0]
-        rows = data[1:]
-        records = [dict(zip(headers, row)) for row in rows]
-
-        # ค้นหาข้อมูลลูกค้าตาม Customer ID (ปรับชื่อ key ให้ตรงกับ Google Sheet)
-        customer = next((r for r in records if (r.get('Customer ID') or '').strip() == customer_id.strip()), None)
-        if not customer:
-            return jsonify({'error': 'Customer not found'}), 404
-
-        return jsonify(customer)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-def _calculate_customer_balance(customer_id):
-    """
-    Internal helper to calculate customer balance.
-    Returns a dictionary with balance details or an error dict.
-    """
-    try:
-        worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(ALLPIDJOB_WORKSHEET)
-        all_records = worksheet.get_all_records()
-        
-        if not all_records:
-            return {
-                'total_balance': 0,
-                'total_openings': 0,
-                'total_transactions_value': 0
-            }
-
-        df = pd.DataFrame(all_records)
-
-        # ป้องกันปัญหาช่องว่างที่มองไม่เห็นในชื่อคอลัมน์
-        df.columns = [col.strip() for col in df.columns]
-        if 'CustomerID' not in df.columns:
-            return {'error': 'CustomerID column not found in allpidjob sheet'}
-
-        # --- NEW: Robust Customer ID Matching ---
-        # Convert both sides to string and strip whitespace for reliable comparison
-        allpidjob_ids = df['CustomerID'].astype(str).str.strip()
-        frontend_id = str(customer_id).strip()
-
-        # 1. First, try a direct, case-insensitive match
-        customer_df = df[allpidjob_ids.str.lower() == frontend_id.lower()]
-
-        # 2. If direct match fails, try matching only the numeric part of the ID
-        if customer_df.empty:
-            # Extract numbers from the frontend ID (e.g., 'C-12345' -> '12345')
-            numeric_frontend_id = ''.join(filter(str.isdigit, frontend_id))
-            if numeric_frontend_id: # Proceed only if we found some digits
-                # Extract numbers from the backend IDs and compare
-                numeric_allpidjob_ids = allpidjob_ids.str.extract(r'(\d+)').iloc[:, 0]
-                customer_df = df[numeric_allpidjob_ids == numeric_frontend_id]
-
-        if customer_df.empty:
-            # If still no match after all attempts, return 0 balance
-            return {
-                'total_balance': 0,
-                'total_openings': 0,
-                'total_transactions_value': 0
-            }
-
-        # --- REVISED LOGIC ---
-        # Since each company has its own running balance, we must get the latest record
-        # for EACH company and then sum their balances together.
-        if 'CompanyName' not in customer_df.columns:
-            return {'error': 'CompanyName column not found in allpidjob sheet'}
-        
-        latest_records_df = customer_df.groupby('CompanyName').tail(1)
-
-        # Define column groups based on the latest records' columns
-        opening_cols = [col for col in latest_records_df.columns if 
-                        'OpeningBalance' in col or 'NetOpening' in col or 
-                        'ยอดเปิดโต๊ะ' in col or 'สุทธิ' in col]
-        
-        principal_returned_cols = [col for col in latest_records_df.columns if 'PrincipalReturned' in col or 'คืนต้น' in col]
-        lost_amount_cols = [col for col in latest_records_df.columns if 'LostAmount' in col or 'เสีย' in col]
-
-        # ฟังก์ชันช่วยในการรวมยอดอย่างปลอดภัย
-        def sum_columns(df, cols):
-            total = 0
-            for col in cols:
-                if col in df.columns:
-                    # Clean data: remove non-numeric characters, replace empty with '0'
-                    cleaned_series = df[col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
-                    series_with_zeros = cleaned_series.replace('', '0')
-                    total += pd.to_numeric(series_with_zeros, errors='coerce').fillna(0).sum()
-            return total
-
-        # Calculate totals by summing across the latest record of EACH company
-        total_openings = sum_columns(latest_records_df, opening_cols)
-        total_principal_returned = sum_columns(latest_records_df, principal_returned_cols)
-        total_lost_amount = sum_columns(latest_records_df, lost_amount_cols)
-
-        # "ยอดเงินที่ใช้อยู่" (Current balance in use) is calculated as:
-        # All openings (OpeningBalance + NetOpening) + LostAmount from the latest record.
-        # This reflects the total liability before accounting for repayments.
-        total_transactions_value = total_openings + total_lost_amount
-
-        # Net balance (for other references) is the actual remaining debt.
-        total_balance = total_openings - (total_principal_returned + total_lost_amount)
-
-        # Convert all numeric values to Python's float before returning as JSON
-        # to prevent "Object of type int64 is not JSON serializable" error.
+    def to_dict(self):
+        """Converts the object to a dictionary, matching the old Google Sheet format."""
         return {
-            'total_balance': float(total_balance),
-            'total_openings': float(total_openings),
-            'total_transactions_value': float(total_transactions_value)
+            'row_index': self.id, # Use DB id as the unique row identifier
+            'Timestamp': self.timestamp.strftime('%Y-%m-%d %H:%M:%S') if self.timestamp else '',
+            'Customer ID': self.customer_id,
+            'ชื่อ': self.first_name,
+            'นามสกุล': self.last_name,
+            'เลขบัตรประชาชน': self.id_card_number,
+            'เบอร์มือถือ': self.mobile_phone,
+            'กลุ่มลูกค้าหลัก': self.main_customer_group,
+            'กลุ่มอาชีพย่อย': self.sub_profession_group,
+            'ระบุอาชีพย่อยอื่นๆ': self.other_sub_profession,
+            'จดทะเบียน': self.is_registered,
+            'ชื่อกิจการ': self.business_name,
+            'จังหวัดที่อยู่': self.province,
+            'ที่อยู่จดทะเบียน': self.registered_address,
+            'สถานะ': self.status,
+            'วงเงินที่ต้องการ': self.desired_credit_limit,
+            'วงเงินที่อนุมัติ': self.approved_credit_limit,
+            'เคยขอเข้ามาในเครือหรือยัง': self.applied_before,
+            'เช็ค': self.check_status,
+            'ขอเข้ามาทางไหน': self.application_channel,
+            'บริษัทที่รับงาน': self.assigned_company,
+            'หักดอกหัวท้าย': self.upfront_interest_deduction,
+            'ค่าดำเนินการ': self.processing_fee,
+            'วันที่ขอเข้ามา': self.application_date.strftime('%Y-%m-%d') if self.application_date else '',
+            'ลิงค์โลเคชั่นบ้าน': self.home_location_link,
+            'ลิงค์โลเคชั่นที่ทำงาน': self.work_location_link,
+            'หมายเหตุ': self.remarks,
+            'Image URLs': self.image_urls,
+            'Logged In User': self.logged_in_user,
+            'วันที่นัดตรวจ': self.inspection_date.strftime('%Y-%m-%d') if self.inspection_date else '',
+            'เวลานัดตรวจ': self.inspection_time.strftime('%H:%M:%S') if self.inspection_time else '',
+            'ผู้รับงานตรวจ': self.inspector
         }
 
-    except Exception as e:
-        print(f"Error in get_customer_balance for ID {customer_id}: {e}")
-        return {'error': str(e)}
+class User(db.Model):
+    __tablename__ = 'users'
+    user_id = db.Column('id', db.String(100), primary_key=True)
+    password = db.Column(db.String(255), nullable=False)
 
-@app.route('/api/customer-balance/<customer_id>')
-def get_customer_balance(customer_id):
-    """
-    API route to get customer balance. Calls the internal helper function.
-    """
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    balance_data = _calculate_customer_balance(customer_id)
-    if 'error' in balance_data:
-        return jsonify(balance_data), 500
-    return jsonify(balance_data)
-@cache.cached(timeout=20, key_prefix='all_customer_records')
-def get_all_customer_records():
-    """
-    Retrieves all customer records from the original customer_records worksheet.
-    Each record will be a dictionary, now including its row_index.
-    """
-    global loan_customers_cache, loan_customers_cache_timestamp
+class Approval(db.Model):
+    __tablename__ = 'approvals'
+    id = db.Column(db.Integer, primary_key=True)
+    status = db.Column(db.String(100))
+    customer_id = db.Column(db.String(50))
+    full_name = db.Column(db.String(255))
+    phone_number = db.Column(db.String(100))
+    approval_date = db.Column(db.Date)
+    approved_amount = db.Column(db.DECIMAL(15, 2))
+    assigned_company = db.Column(db.String(255))
+    registrar = db.Column(db.String(255))
+    contract_image_urls = db.Column(db.Text)
 
+class BadDebtRecord(db.Model):
+    __tablename__ = 'bad_debt_records'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    customer_id = db.Column(db.String(50))
+    customer_name = db.Column(db.String(255))
+    phone = db.Column(db.String(100))
+    approved_amount = db.Column(db.DECIMAL(15, 2))
+    outstanding_balance = db.Column(db.DECIMAL(15, 2))
+    marked_by = db.Column(db.String(100))
+    notes = db.Column(db.Text)
 
-    print("DEBUG: Fetching loan customer records from Google Sheet (cache expired or not set).")
-    worksheet = get_customer_data_worksheet()
-    if not worksheet:
-        return []
-    try:
-        all_data = worksheet.get_all_values()
-        if not all_data or len(all_data) < 2:
-            print("DEBUG: Google Sheet 'customer_records' is empty or only has headers.")
-            return []
+class PullPlugRecord(db.Model):
+    __tablename__ = 'pull_plug_records'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    customer_id = db.Column(db.String(50))
+    customer_name = db.Column(db.String(255))
+    phone = db.Column(db.String(100))
+    pull_plug_amount = db.Column(db.DECIMAL(15, 2))
+    marked_by = db.Column(db.String(100))
+    notes = db.Column(db.Text)
 
-        headers = all_data[0]
-        data_rows = all_data[1:]
+class ReturnPrincipalRecord(db.Model):
+    __tablename__ = 'return_principal_records'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    customer_id = db.Column(db.String(50))
+    customer_name = db.Column(db.String(255))
+    phone = db.Column(db.String(100))
+    return_amount = db.Column(db.DECIMAL(15, 2))
+    marked_by = db.Column(db.String(100))
+    notes = db.Column(db.Text)
 
-        customer_records = []
-        # เริ่มต้นการวนลูปด้วย index (i) เพื่อใช้ในการคำนวณ row_index
-        for i, row in enumerate(data_rows): # <--- แก้ไขตรงนี้: เพิ่ม enumerate(data_rows)
-            record = {}
-            for j, header in enumerate(headers):
-                if j < len(row):
-                    record[header] = row[j]
-                else:
-                    record[header] = ''
+class AllPidJob(db.Model):
+    __tablename__ = 'all_pid_jobs'
+    id = db.Column(db.Integer, primary_key=True)
+    transaction_date = db.Column(db.Date)
+    company_name = db.Column(db.String(255))
+    customer_id = db.Column(db.String(50))
+    transaction_time = db.Column(db.Time)
+    customer_name = db.Column(db.String(255))
+    interest = db.Column(db.DECIMAL(15, 2))
+    table1_opening_balance = db.Column(db.DECIMAL(15, 2), default=0)
+    table1_net_opening = db.Column(db.DECIMAL(15, 2), default=0)
+    table1_principal_returned = db.Column(db.DECIMAL(15, 2), default=0)
+    table1_lost_amount = db.Column(db.DECIMAL(15, 2), default=0)
+    table2_opening_balance = db.Column(db.DECIMAL(15, 2), default=0)
+    table2_net_opening = db.Column(db.DECIMAL(15, 2), default=0)
+    table2_principal_returned = db.Column(db.DECIMAL(15, 2), default=0)
+    table2_lost_amount = db.Column(db.DECIMAL(15, 2), default=0)
+    table3_opening_balance = db.Column(db.DECIMAL(15, 2), default=0)
+    table3_net_opening = db.Column(db.DECIMAL(15, 2), default=0)
+    table3_principal_returned = db.Column(db.DECIMAL(15, 2), default=0)
+    table3_lost_amount = db.Column(db.DECIMAL(15, 2), default=0)
+    main_assigned_company = db.Column(db.String(255))
 
-            # เพิ่มบรรทัดนี้: กำหนด row_index ให้กับแต่ละ record
-            # i คือ index ที่เริ่มจาก 0 สำหรับ data_rows (ซึ่งคือแถวที่ 2 ของชีทจริง)
-            # ดังนั้น row_index ใน Google Sheet คือ i + 2
-            record['row_index'] = i + 2
+    def to_dict(self):
+        """Converts the AllPidJob object to a dictionary for API responses."""
+        return {
+            'Date': self.transaction_date.strftime('%Y-%m-%d') if self.transaction_date else None,
+            'CompanyName': self.company_name,
+            'CustomerID': self.customer_id,
+            'Time': self.transaction_time.strftime('%H:%M:%S') if self.transaction_time else None,
+            'CustomerName': self.customer_name,
+            'บริษัทที่รับงาน': self.main_assigned_company,
+            'interest': float(self.interest) if self.interest is not None else None,
+            'Table1_OpeningBalance': float(self.table1_opening_balance) if self.table1_opening_balance is not None else None,
+            'Table1_NetOpening': float(self.table1_net_opening) if self.table1_net_opening is not None else None,
+            'Table1_PrincipalReturned': float(self.table1_principal_returned) if self.table1_principal_returned is not None else None,
+            'Table1_LostAmount': float(self.table1_lost_amount) if self.table1_lost_amount is not None else None,
+            'Table2_OpeningBalance': float(self.table2_opening_balance) if self.table2_opening_balance is not None else None,
+            'Table2_NetOpening': float(self.table2_net_opening) if self.table2_net_opening is not None else None,
+            'Table2_PrincipalReturned': float(self.table2_principal_returned) if self.table2_principal_returned is not None else None,
+            'Table2_LostAmount': float(self.table2_lost_amount) if self.table2_lost_amount is not None else None,
+            'Table3_OpeningBalance': float(self.table3_opening_balance) if self.table3_opening_balance is not None else None,
+            'Table3_NetOpening': float(self.table3_net_opening) if self.table3_net_opening is not None else None,
+            'Table3_PrincipalReturned': float(self.table3_principal_returned) if self.table3_principal_returned is not None else None,
+            'Table3_LostAmount': float(self.table3_lost_amount) if self.table3_lost_amount is not None else None,
+        }
 
-            customer_records.append(record)
-        return customer_records
-    except Exception as e:
-        print(f"ERROR in get_all_customer_records (original customer_records): {e}")
-        return []
-# NEW: Route to get aggregated customer data for chart
-@app.route('/get_customer_chart_data')
-def get_customer_chart_data():
-    """
-    Retrieves customer data, aggregates it by year/month and 'กลุ่มลูกค้าหลัก',
-    and returns it as JSON for charting.
-    """
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    all_customers = get_all_customer_records()
-    
-    chart_data = {} # Stores aggregated data: {year: {month: {group: count}}}
-    unique_customer_groups = set()
-    unique_years = set()
-    
-    for record in all_customers:
-        # ใช้ 'Timestamp' และ 'กลุ่มลูกค้าหลัก' ซึ่งเป็นส่วนหนึ่งของ CUSTOMER_DATA_WORKSHEET_HEADERS ที่คุณมีอยู่แล้ว
-        timestamp_str = record.get('Timestamp') 
-        customer_group = record.get('กลุ่มลูกค้าหลัก')
-
-        if timestamp_str and customer_group:
-            try:
-                # Parse timestamp string (e.g., 'YYYY-MM-DD HH:MM:SS')
-                dt_object = datetime.strptime(timestamp_str.split(' ')[0], '%Y-%m-%d')
-                year = str(dt_object.year)
-                month = dt_object.strftime('%m') # '01', '02', etc.
-
-                unique_years.add(year)
-                unique_customer_groups.add(customer_group)
-
-                if year not in chart_data:
-                    chart_data[year] = {}
-                if month not in chart_data[year]:
-                    chart_data[year][month] = {}
-                
-                chart_data[year][month][customer_group] = chart_data[year][month].get(customer_group, 0) + 1
-            except ValueError:
-                # Handle cases where timestamp might be malformed
-                print(f"Warning: Could not parse timestamp '{timestamp_str}' for chart data.")
-                continue
-
-    # Convert sets to sorted lists for consistent ordering in frontend
-    sorted_years = sorted(list(unique_years))
-    sorted_customer_groups = sorted(list(unique_customer_groups))
-    
-    # Months list is fixed
-    all_months = [str(i).zfill(2) for i in range(1, 13)]
-
-    return jsonify({
-        'chart_data': chart_data,
-        'unique_customer_groups': sorted_customer_groups,
-        'unique_years': sorted_years,
-        'all_months': all_months
-    })
-
-@app.route('/get_channel_province_chart_data')
-def get_channel_province_chart_data():
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    all_customers = get_all_customer_records()
-    
-    # Data structure: {year: {month: {province: {channel: {group: count}}}}}
-    chart_data = {} 
-    # unique_channels = set() # No longer needed, using a static list
-    unique_provinces = set()
-    unique_years = set()
-    unique_groups = set()
-    
-    for record in all_customers:
-        # Use 'วันที่ขอเข้ามา', 'ขอเข้ามาทางไหน', 'จังหวัดที่อยู่', and 'กลุ่มลูกค้าหลัก'
-        date_str = record.get('วันที่ขอเข้ามา')
-        channel = record.get('ขอเข้ามาทางไหน')
-        province = record.get('จังหวัดที่อยู่')
-        group = record.get('กลุ่มลูกค้าหลัก')
-
-        if date_str and channel and province and group and channel != '-' and province != '-' and group != '-':
-            try:
-                # Parse date string (e.g., 'YYYY-MM-DD')
-                dt_object = datetime.strptime(date_str, '%Y-%m-%d')
-                year = str(dt_object.year)
-                month = dt_object.strftime('%m') # '01', '02', etc.
- 
-                unique_years.add(year)
-                # unique_channels.add(channel) # No longer needed
-                unique_provinces.add(province)
-                unique_groups.add(group)
-
-                # Build the deeply nested dictionary for flexible filtering
-                year_data = chart_data.setdefault(year, {})
-                month_data = year_data.setdefault(month, {})
-                province_data = month_data.setdefault(province, {})
-                channel_data = province_data.setdefault(channel, {})
-                
-                channel_data[group] = channel_data.get(group, 0) + 1
-
-            except (ValueError, TypeError):
-                print(f"Warning: Could not parse date '{date_str}' for channel/province chart data.")
-                continue
-
-    # Convert sets to sorted lists for consistent ordering
-    sorted_years = sorted(list(unique_years))
-    # sorted_channels = sorted(list(unique_channels)) # No longer needed
-    sorted_provinces = sorted(list(unique_provinces))
-    sorted_groups = sorted(list(unique_groups))
-    
-    # Months list is fixed
-    all_months = [str(i).zfill(2) for i in range(1, 13)]
-
-    return jsonify({
-        'chart_data': chart_data,
-        'unique_channels': ALL_CHANNELS, # Use the static list
-        'unique_provinces': sorted_provinces,
-        'unique_years': sorted_years,
-        'all_months': all_months,
-        'unique_groups': sorted_groups
-    })
+class ContractDocument(db.Model):
+    __tablename__ = 'contract_documents'
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.String(50))
+    document_url = db.Column(db.Text)
+    uploaded_by = db.Column(db.String(100))
+    upload_timestamp = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
 
 
+# =================================================================================
+# AUTHENTICATION & DECORATORS
+# =================================================================================
 
-@cache.cached(timeout=20, key_prefix='user_login_data')
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            flash('กรุณาเข้าสู่ระบบก่อน', 'danger')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# REFACTORED: Now loads users from the database
+@cache.cached(timeout=60, key_prefix='user_login_data')
 def load_users():
-    """
-    Loads user IDs and passwords from the specified Google Sheet (UserLoginData).
-    It expects the sheet to have columns named 'id' and 'pass'.
-    Returns a dictionary where keys are user IDs and values are their passwords.
-    Returns an empty dictionary if there's an error or columns are missing.
-    """
-    if not GSPREAD_CLIENT:
-        print("Gspread client not initialized. Cannot load users.")
-        return {}
+    """Loads users from the MySQL database."""
     try:
-        sheet = GSPREAD_CLIENT.open(USER_LOGIN_SPREADSHEET_NAME).worksheet(USER_LOGIN_WORKSHEET_NAME)
-        data = sheet.get_all_records()
-
-        # --- ADDED: Robustness Check ---
-        # If the sheet is empty, get_all_records() returns an empty list.
-        # This prevents pandas from creating an empty DataFrame that causes issues.
-        if not data:
-            print("Warning: User login sheet is empty. No users loaded.")
-            return {}
-
-        df = pd.DataFrame(data)
-        if 'id' in df.columns and 'pass' in df.columns:
-            users = dict(zip(df['id'], df['pass']))
-            return users
-        else:
-            print("Error: 'id' or 'pass' columns not found in Google Sheet. Please check your sheet structure.")
-            return {}
+        all_users = User.query.all()
+        return {user.user_id: user.password for user in all_users}
     except Exception as e:
-        print(f"Error loading users from Google Sheet: {e}")
+        current_app.logger.error(f"Error loading users from database: {e}")
         return {}
 
+# =================================================================================
+# HELPER FUNCTIONS (DATA ACCESS LAYER - REFACTORED FOR MYSQL)
+# =================================================================================
 
-def get_customer_records_by_status(status):
-    """
-    Retrieves customer records filtered by status from the original customer_records sheet.
-    """
-    print(f"DEBUG: get_customer_records_by_status called with status: {status}")
-    all_records = get_all_customer_records()
-    filtered_records = [record for record in all_records if record.get('สถานะ') == status]
-    print(f"DEBUG: get_customer_records_by_status returning {len(filtered_records)} records for status '{status}'")
-    return filtered_records
-
-def get_customer_records_by_keyword(keyword):
-    """
-    Retrieves customer records filtered by keyword across all values from the original customer_records sheet.
-    """
-    print(f"DEBUG: get_customer_records_by_keyword called with keyword: {keyword}")
-    all_records = get_all_customer_records()
-    filtered_records = [
-        record for record in all_records
-        if any(keyword.lower() in str(value).lower() for value in record.values())
-    ]
-    print(f"DEBUG: get_customer_records_by_keyword returning {len(filtered_records)} records for keyword '{keyword}'")
-    return filtered_records
-
-
-
-
-
-def upload_image_to_cloudinary(file_stream, original_filename):
-    """
-    Uploads an image file stream to Cloudinary, resizing it for optimization.
-    Returns the URL of the uploaded file, or None if upload fails.
-    """
+# REFACTORED: This function now queries the database
+def get_all_customer_records():
+    """Fetches all customer records from the database and returns them as a list of dicts."""
     try:
-        # Upload the file directly from the stream, applying a transformation
-        # to resize the image, which saves storage and speeds up loading.
-        upload_result = cloudinary.uploader.upload(
-            file_stream,
-            folder="customer_app_images",
-            transformation=[
-                {'width': 1200, 'height': 1200, 'crop': 'limit', 'quality': 'auto'}
-            ]
-        )
-
-        if upload_result and 'secure_url' in upload_result:
-            print(f"Uploaded and resized file '{original_filename}' to Cloudinary. URL: {upload_result['secure_url']}")
-            return upload_result['secure_url']
-        else:
-            print(f"Error uploading image '{original_filename}' to Cloudinary: No secure_url returned.")
-            return None
+        records = CustomerRecord.query.order_by(CustomerRecord.timestamp.desc()).all()
+        # Convert SQLAlchemy objects to dictionaries to maintain compatibility with templates
+        return [record.to_dict() for record in records]
     except Exception as e:
-        print(f"Error uploading image '{original_filename}' to Cloudinary: {e}")
+        current_app.logger.error(f"Error fetching customer records: {e}")
+        return []
+
+# REFACTORED: Generates next ID based on the database's max ID.
+def generate_next_customer_id():
+    """Generates a new customer ID (e.g., PID-1001) based on the last ID in the database."""
+    # This logic is now aligned with the more robust method used in `migrate_data.py`.
+    # It directly queries for the highest numeric part of 'PID-xxxx' IDs, which is more
+    # efficient and reliable than fetching the last record and parsing its string ID.
+    try:
+        # This query finds the highest numeric part of 'PID-xxxx' IDs.
+        # It casts the substring after 'PID-' to an integer for correct sorting.
+        last_id_scalar = db.session.query(func.max(func.cast(func.substr(CustomerRecord.customer_id, 5), db.Integer))).filter(CustomerRecord.customer_id.like('PID-%')).scalar()
+        
+        # If no 'PID-' records exist, start from 1000. Otherwise, take the last number and add 1.
+        next_id_num = (last_id_scalar or 1000) + 1
+        return f"PID-{next_id_num}"
+
+    except Exception as e:
+        current_app.logger.error(f"Error generating next customer ID: {e}")
+        # Fallback to a timestamp-based ID to avoid collision
+        return f"PID-ERR-{int(datetime.now().timestamp())}"
+
+# NEW HELPER: Get a single customer by their database ID
+def get_customer_by_db_id(record_id):
+    try:
+        return db.session.get(CustomerRecord, record_id)
+    except Exception as e:
+        current_app.logger.error(f"Error getting customer by DB id {record_id}: {e}")
         return None
 
-def delete_image_from_cloudinary(image_url):
-    """
-    Deletes an image from Cloudinary using its URL.
-    """
-    if not image_url:
-        return True # No URL to delete, consider it success
-
+# NEW HELPER: Get a single customer by their Customer ID (PID-xxxx)
+def get_customer_by_customer_id(customer_id):
     try:
-        parts = image_url.split('/')
-        if len(parts) < 2:
-            print(f"Invalid Cloudinary URL for deletion: {image_url}")
-            return False
-
-        public_id_with_folder = "/".join(parts[-2:]).split('.')[0]
-
-        if "customer_app_images" in public_id_with_folder:
-            public_id_to_delete = public_id_with_folder
-        else:
-            public_id_to_delete = parts[-1].split('.')[0]
-
-        print(f"Attempting to delete Cloudinary image with public_id: {public_id_to_delete}")
-
-        delete_result = cloudinary.uploader.destroy(public_id_to_delete)
-
-        if delete_result and delete_result.get('result') == 'ok':
-            print(f"Successfully deleted image from Cloudinary: {image_url}")
-            return True
-        else:
-            print(f"Failed to delete image from Cloudinary: {image_url}, Result: {delete_result}")
-            return False
+        return CustomerRecord.query.filter_by(customer_id=customer_id).first()
     except Exception as e:
-        print(f"Error deleting image from Cloudinary: {image_url}, Error: {e}")
-        return False
+        current_app.logger.error(f"Error getting customer by customer_id {customer_id}: {e}")
+        return None
 
+def get_records_from_model(model_class):
+    """Generic function to fetch all records from any given model."""
+    try:
+        records = model_class.query.order_by(model_class.id.desc()).all()
+        # This generic version returns objects. Specific conversion to dict may be needed if used in templates.
+        return records
+    except Exception as e:
+        current_app.logger.error(f"Error fetching records from {model_class.__tablename__}: {e}")
+        return []
 
-# --- Flask Routes Definition ---
+# =================================================================================
+# FLASK ROUTES
+# =================================================================================
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    """
-    Handles user login functionality.
-    """
-    error = None
-    users = load_users()
-
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-
+        username = request.form['username']
+        password = request.form['password']
+        users = load_users()
         if username in users and users[username] == password:
+            session['logged_in'] = True
             session['username'] = username
+            flash('เข้าสู่ระบบสำเร็จ', 'success')
             return redirect(url_for('dashboard'))
         else:
-            error = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"
-    return render_template('login.html', error=error)
-
-@app.route('/dashboard')
-def dashboard():
-    """
-    Displays the main menu page after successful login.
-    Requires user to be logged in.
-    """
-    if 'username' not in session:
-        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
-        return redirect(url_for('login'))
-    username = session['username']
-    return render_template('main_menu.html', username=username)
-
+            flash('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'danger')
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    """
-    Logs out the user by clearing the session.
-    """
-    session.pop('username', None)
-    flash('คุณได้ออกจากระบบแล้ว', 'success')
+    session.clear()
+    flash('ออกจากระบบแล้ว', 'success')
     return redirect(url_for('login'))
 
-@app.route('/api/cloudinary-signature', methods=['GET'])
-def get_cloudinary_signature():
-    """
-    Generates a signature for a direct Cloudinary upload.
-    This keeps the API secret on the server.
-    """
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
+@app.route('/')
+@login_required
+def dashboard(): # <-- แก้ชื่อฟังก์ชันตรงนี้
+    return render_template('main_menu.html')
+
+@app.route('/customer_data')
+@login_required
+@cache.cached(timeout=30, key_prefix='customer_data_view')
+def customer_data():
+    all_records = get_all_customer_records()
+    return render_template('customer_data.html', customer_records=all_records)
+
+# REFACTORED: Search now uses efficient database queries
+@app.route('/search_customer_data', methods=['GET'])
+@login_required
+def search_customer_data():
+    search_keyword = request.args.get('search_keyword', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 15  # Number of items per page
+
+    results = []
+    pagination = None
+    display_title = "แสดงข้อมูลลูกค้าทั้งหมด"
 
     try:
-        # Generate a timestamp in seconds.
-        timestamp = int(time.time())
-        # Define the transformation string for resizing and optimizing images.
-        # This will be applied by Cloudinary upon upload.
-        transformation_str = "w_1200,h_1200,c_limit,q_auto"
+        base_query = CustomerRecord.query
+
+        if search_keyword:
+            display_title = f"ผลการค้นหาสำหรับ: '{search_keyword}'"
+            
+            # REFACTORED: Use Full-Text Search for text fields and LIKE for others.
+            # This is significantly more performant on large datasets.
+            # Note: The database table must have a FULLTEXT index.
+            fulltext_match = func.match(
+                CustomerRecord.first_name, CustomerRecord.last_name, 
+                CustomerRecord.business_name, CustomerRecord.remarks
+            ).against(search_keyword, in_boolean_mode=True)
+
+            # Use traditional LIKE for ID and phone numbers which are not full-text indexed.
+            like_term = f"%{search_keyword}%"
+            like_match = or_(
+                CustomerRecord.customer_id.ilike(like_term),
+                CustomerRecord.mobile_phone.ilike(like_term),
+                CustomerRecord.id_card_number.ilike(like_term)
+            )
+
+            base_query = base_query.filter(
+                # Combine both search methods
+                or_(fulltext_match, like_match)
+            )
         
-        # The parameters to sign must match what the frontend will send,
-        # minus the 'file', 'api_key', and 'signature' itself.
-        params_to_sign = {
-            'timestamp': timestamp,
-            'folder': 'customer_app_images', # The folder we want to upload to
-            'transformation': transformation_str # Add the transformation to the signature
-        }
+        pagination = base_query.order_by(CustomerRecord.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
+        results_obj = pagination.items
+        results = [record.to_dict() for record in results_obj]
 
-        # Generate the signature using Cloudinary's utility function.
-        signature = cloudinary.utils.api_sign_request(
-            params_to_sign,
-            cloudinary.config().api_secret
-        )
+        if not results and search_keyword:
+            flash('ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา', 'info')
 
-        # Return the necessary data to the frontend, including the transformation string
-        # so it can be included in the upload request.
-        return jsonify({
-            'signature': signature,
-            'timestamp': timestamp,
-            'api_key': cloudinary.config().api_key,
-            'cloud_name': cloudinary.config().cloud_name,
-            'transformation': transformation_str
-        })
     except Exception as e:
-        print(f"Error generating Cloudinary signature: {e}")
-        return jsonify({'error': 'Could not generate signature'}), 500
+        current_app.logger.error(f"Error during search for '{search_keyword}': {e}")
+        flash('เกิดข้อผิดพลาดระหว่างการค้นหา', 'danger')
 
-@app.route('/enter_customer_data', methods=['GET', 'POST']) #หน้าลงทะเบียนลูกค้า
+    return render_template('search_data.html', customer_records=results, search_keyword=search_keyword, display_title=display_title, username=session.get('username'), pagination=pagination)
+
+# REFACTORED: Uses SQLAlchemy to add a new record
+@app.route('/enter_customer_data', methods=['GET', 'POST'])
+@login_required
 def enter_customer_data():
-    """
-    Handles customer data entry for original customer_records sheet.
-    - GET request: Displays the data entry form.
-    - POST request: Processes the submitted customer data and images.
-    Requires user to be logged in.
-    """
-    if 'username' not in session:
-        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
-        return redirect(url_for('login'))
+    if request.method == 'POST':
+        try:
+            new_customer_id = generate_next_customer_id()
+            inspection_time_str = request.form.get('inspection_time')
+            inspection_time_obj = None
+            if inspection_time_str:
+                try:
+                    inspection_time_obj = datetime.strptime(inspection_time_str, '%H:%M').time()
+                except ValueError:
+                    # Handle case where time is not in HH:MM format, maybe log it
+                    pass
+            
+            # REVISED: Add data validation and cleaning for numeric fields to prevent crashes
+            def clean_decimal(value):
+                if value is None or value.strip() == '':
+                    return None
+                # Remove commas and convert to numeric, return None if it fails
+                return pd.to_numeric(str(value).replace(',', ''), errors='coerce')
 
-    logged_in_user = session['username']
+            new_customer = CustomerRecord(
+                timestamp=datetime.now(),
+                customer_id=new_customer_id,
+                first_name=request.form.get('customer_name', '').strip(),
+                last_name=request.form.get('last_name', '').strip(),
+                id_card_number=request.form.get('id_card_number') or None,
+                mobile_phone=request.form.get('mobile_phone_number') or None,
+                main_customer_group=request.form.get('main_customer_group') or None,
+                sub_profession_group=request.form.get('sub_profession_group') or None,
+                other_sub_profession=request.form.get('other_sub_profession') or None,
+                is_registered=request.form.get('registered') or None,
+                business_name=request.form.get('business_name') or None,
+                province=request.form.get('province') or None,
+                registered_address=request.form.get('registered_address') or None,
+                status=request.form.get('status', 'รอติดต่อ'),
+                desired_credit_limit=clean_decimal(request.form.get('desired_credit_limit')),
+                approved_credit_limit=clean_decimal(request.form.get('approved_credit_limit')),
+                applied_before=request.form.get('applied_before') or None,
+                check_status=request.form.get('check') or None,
+                application_channel=request.form.get('how_applied') or None,
+                assigned_company=request.form.get('assigned_company') or None,
+                upfront_interest_deduction=clean_decimal(request.form.get('upfront_interest')),
+                processing_fee=clean_decimal(request.form.get('processing_fee')),
+                application_date=request.form.get('application_date') or None,
+                home_location_link=request.form.get('home_location_link') or None,
+                work_location_link=request.form.get('work_location_link') or None,
+                remarks=request.form.get('remarks') or None,
+                image_urls=request.form.get('image_urls') or None,
+                logged_in_user=session.get('username', 'unknown'),
+                inspection_date=request.form.get('inspection_date') or None,
+                inspection_time=inspection_time_obj,
+                inspector=request.form.get('inspector')
+            )
+            db.session.add(new_customer)
+            db.session.commit()
+            
+            cache.delete('customer_data_view') # Clear cache after adding new data
+            # flash(f'บันทึกข้อมูลลูกค้า {new_customer_id} เรียบร้อยแล้ว!', 'success')
+            return jsonify({'success': True, 'message': f'บันทึกข้อมูลลูกค้า {new_customer_id} เรียบร้อยแล้ว!', 'customer_id': new_customer_id})
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error saving new customer data: {e}")
+            return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาด: {e}'}), 500
+
+    return render_template('data_entry.html', username=session.get('username'))
+
+# REFACTORED: Fetches data from DB to populate the edit form
+@app.route('/edit_customer_data/<int:record_id>', methods=['GET', 'POST'])
+@login_required
+def edit_customer_data(record_id):
+    customer = get_customer_by_db_id(record_id)
+    if not customer:
+        flash('ไม่พบข้อมูลลูกค้า', 'danger')
+        return redirect(url_for('search_customer_data'))
 
     if request.method == 'POST':
         try:
-            # Get text data from the form using .get() with a default empty string
-            # Then replace empty strings with "-"
-            customer_name = request.form.get('customer_name', '') or '-'
-            last_name = request.form.get('last_name', '') or '-'
-            id_card_number = request.form.get('id_card_number', '') or '-' # This still uses ID card
-            mobile_phone_number = request.form.get('mobile_phone_number', '') or '-'
-
-            # --- เพิ่มการดึงข้อมูลกลุ่มลูกค้าใหม่ตรงนี้ ---
-            main_customer_group = request.form.get('main_customer_group', '') or '-'
-            sub_profession_group = request.form.get('sub_profession_group', '') or '-'
-            other_sub_profession = request.form.get('other_sub_profession', '') or '-'
-
-            # Logic เพื่อกำหนดค่าสุดท้ายของ 'กลุ่มอาชีพย่อย'
-            final_sub_profession_value = sub_profession_group
-            if sub_profession_group == "อื่นๆ":
-                final_sub_profession_value = other_sub_profession
-
-            # --- สิ้นสุดการเพิ่มข้อมูลกลุ่มลูกค้าใหม่ ---
-
-            registered = request.form.get('registered', '') or '-'
-            business_name = request.form.get('business_name', '') or '-'
-            province = request.form.get('province', '') or '-'
-            registered_address = request.form.get('registered_address', '') or '-'
-            status = request.form.get('status', '') or '-'
-            desired_credit_limit = request.form.get('desired_credit_limit', '') or '-'
-            approved_credit_limit = request.form.get('approved_credit_limit', '') or '-'
-            applied_before = request.form.get('applied_before', '') or '-'
-            check = request.form.get('check', '') or '-'
-            how_applied = request.form.get('how_applied', '') or '-'
-            assigned_company = request.form.get('assigned_company', '') or '-'
-            upfront_interest = request.form.get('upfront_interest', '') or '-'
-            processing_fee = request.form.get('processing_fee', '') or '-'
-            application_date = request.form.get('application_date', '') or '-'
-            home_location_link = request.form.get('home_location_link', '') or '-'
-            work_location_link = request.form.get('work_location_link', '') or '-'
-            remarks = request.form.get('remarks', '') or '-'
-
-            # --- MODIFIED PART ---
-            # The backend no longer handles file uploads directly.
-            # It receives a string of pre-uploaded image URLs from the frontend.
-            image_urls_str = request.form.get('image_urls', '') or '-'
+            # Update customer object with form data
+            customer.first_name = request.form.get('customer_name', customer.first_name).strip()
+            customer.last_name = request.form.get('last_name', customer.last_name).strip()
+            customer.id_card_number = request.form.get('id_card_number', customer.id_card_number)
+            customer.mobile_phone = request.form.get('mobile_phone_number', customer.mobile_phone)
+            customer.main_customer_group = request.form.get('main_customer_group', customer.main_customer_group)
             
-            # Get the customer data worksheet
-            worksheet = get_customer_data_worksheet()
-            if worksheet:
-                try:
-                    # Generate the new customer ID
-                    new_customer_id = generate_next_customer_id(worksheet)
-
-                    row_data = {
-                        'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        'Customer ID': new_customer_id,
-                        'ชื่อ': customer_name, 
-                        'นามสกุล': last_name,
-                        'เลขบัตรประชาชน': id_card_number,
-                        'เบอร์มือถือ': mobile_phone_number,
-                        'กลุ่มลูกค้าหลัก': main_customer_group,
-                        'กลุ่มอาชีพย่อย': final_sub_profession_value, 
-                        'ระบุอาชีพย่อยอื่นๆ': other_sub_profession,
-                        'จดทะเบียน': registered,
-                        'ชื่อกิจการ': business_name,
-                        'จังหวัดที่อยู่': province,
-                        'ที่อยู่จดทะเบียน': registered_address,
-                        'สถานะ': status,
-                        'วงเงินที่ต้องการ': desired_credit_limit,
-                        'วงเงินที่อนุมัติ': approved_credit_limit,
-                        'เคยขอเข้ามาในเครือหรือยัง': applied_before,
-                        'เช็ค': check,
-                        'ขอเข้ามาทางไหน': how_applied,
-                        'บริษัทที่รับงาน': assigned_company,
-                        'หักดอกหัวท้าย': upfront_interest,
-                        'ค่าดำเนินการ': processing_fee,
-                        'วันที่ขอเข้ามา': application_date,
-                        'ลิงค์โลเคชั่นบ้าน': home_location_link,
-                        'ลิงค์โลเคชั่นที่ทำงาน': work_location_link,
-                        'หมายเหตุ': remarks,
-                        'Image URLs': image_urls_str,
-                        'Logged In User': logged_in_user
-                    }
-
-                    row_to_append = [row_data.get(header, '-') for header in CUSTOMER_DATA_WORKSHEET_HEADERS]
-                    worksheet.append_row(row_to_append)
-                    return jsonify({
-                        'success': True, 
-                        'message': f'บันทึกข้อมูลลูกค้าเรียบร้อยแล้ว! รหัสลูกค้าใหม่คือ {new_customer_id}',
-                        'customer_id': new_customer_id
-                    })
-                except Exception as e:
-                    print(f"Error saving data to Google Sheet: {e}")
-                    return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาดในการบันทึกข้อมูลลง Google Sheet: {e}'}), 500
+            sub_profession_group = request.form.get('sub_profession_group')
+            other_sub_profession = request.form.get('other_sub_profession')
+            # REVISED: Clear the 'other' field if a standard option is chosen to maintain data integrity.
+            if sub_profession_group == 'อื่นๆ':
+                # When 'Other' is selected, use the text input for both fields.
+                customer.sub_profession_group = other_sub_profession 
+                customer.other_sub_profession = other_sub_profession
             else:
-                print("Error: Customer data worksheet not available.")
-                return jsonify({'success': False, 'message': 'ไม่สามารถเข้าถึง Google Sheet สำหรับบันทึกข้อมูลลูกค้าได้'}), 500
+                customer.sub_profession_group = sub_profession_group
+                customer.other_sub_profession = None # Clear the custom field if not used.
+
+            customer.is_registered = request.form.get('registered', customer.is_registered)
+            customer.business_name = request.form.get('business_name', customer.business_name)
+            customer.province = request.form.get('province', customer.province)
+            customer.registered_address = request.form.get('registered_address', customer.registered_address)
+            customer.status = request.form.get('status', customer.status)
+            
+            customer.desired_credit_limit = request.form.get('desired_credit_limit', customer.desired_credit_limit) or None
+            customer.approved_credit_limit = request.form.get('approved_credit_limit', customer.approved_credit_limit) or None
+            
+            customer.applied_before = request.form.get('applied_before', customer.applied_before)
+            customer.check_status = request.form.get('check', customer.check_status)
+            customer.application_channel = request.form.get('how_applied', customer.application_channel)
+            customer.assigned_company = request.form.get('assigned_company', customer.assigned_company)
+            
+            customer.upfront_interest_deduction = request.form.get('upfront_interest', customer.upfront_interest_deduction)
+            customer.processing_fee = request.form.get('processing_fee', customer.processing_fee)
+            
+            application_date_str = request.form.get('application_date')
+            if application_date_str:
+                customer.application_date = datetime.strptime(application_date_str, '%Y-%m-%d').date()
+
+            customer.home_location_link = request.form.get('home_location_link', customer.home_location_link)
+            customer.work_location_link = request.form.get('work_location_link', customer.work_location_link)
+            customer.remarks = request.form.get('remarks', customer.remarks)
+            
+            customer.inspector = request.form.get('inspector', customer.inspector)
+
+            inspection_date_str = request.form.get('inspection_date')
+            customer.inspection_date = datetime.strptime(inspection_date_str, '%Y-%m-%d').date() if inspection_date_str else None
+            
+            inspection_time_str = request.form.get('inspection_time')
+            customer.inspection_time = datetime.strptime(inspection_time_str, '%H:%M').time() if inspection_time_str else None
+
+            # --- REVISED: Handle image deletion and updates ---
+            # 1. Delete images marked for removal from Cloudinary
+            deleted_urls_str = request.form.get('deleted_image_urls', '')
+            if deleted_urls_str:
+                deleted_urls = [url.strip() for url in deleted_urls_str.split(',') if url.strip()]
+                for url in deleted_urls:
+                    try:
+                        # Extract public_id from URL and delete from Cloudinary
+                        public_id_with_folder = '/'.join(url.split('/')[-2:])
+                        public_id = os.path.splitext(public_id_with_folder)[0]
+                        cloudinary.uploader.destroy(public_id)
+                        current_app.logger.info(f"Successfully deleted image {public_id} from Cloudinary.")
+                    except Exception as cloudinary_error:
+                        current_app.logger.warning(f"Could not delete image from Cloudinary for URL {url}: {cloudinary_error}")
+            # 2. Save the final list of URLs (kept + new) to the database
+            customer.image_urls = request.form.get('final_image_urls', customer.image_urls)
+
+            db.session.commit()
+            cache.clear() # Clear all cache after an edit
+            flash('อัปเดตข้อมูลลูกค้าสำเร็จ', 'success')
+            return redirect(url_for('search_customer_data'))
         except Exception as e:
-            print(f"Error processing customer data form: {e}")
-            return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาดในการประมวลผลข้อมูลจากฟอร์ม: {e}'}), 500
+            db.session.rollback()
+            current_app.logger.error(f"Error updating customer {record_id}: {e}")
+            flash(f'เกิดข้อผิดพลาดในการอัปเดตข้อมูล: {e}', 'danger')
 
-    return render_template('data_entry.html', username=logged_in_user)
-
-# ... (โค้ดส่วนบนของ app.py) ...
-
-
-@app.route('/search_customer_data', methods=['GET'])
-def search_customer_data():
-    if 'username' not in session:
-        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
-        return redirect(url_for('login'))
-
-    logged_in_user = session['username']
-    search_keyword = request.args.get('search_keyword', '').strip()
-    
-    # Get page number from query parameter, default to 1
-    try:
-        page = int(request.args.get('page', 1))
-    except ValueError:
-        page = 1
-    
-    items_per_page = 10
-
-    # Get all records or filter by keyword
-    if search_keyword:
-        all_records = get_customer_records_by_keyword(search_keyword)
-        display_title = f"ผลการค้นหาสำหรับ: '{search_keyword}'"
-    else:
-        all_records = get_all_customer_records()
-        display_title = "ข้อมูลลูกค้าทั้งหมด"
-
-    # Reverse the list so newest entries appear first
-    all_records.reverse()
-
-    # Pagination logic
-    total_items = len(all_records)
-    total_pages = math.ceil(total_items / items_per_page)
-    
-    # Ensure page is within valid range
-    if page < 1:
-        page = 1
-    if page > total_pages and total_pages > 0:
-        page = total_pages
-
-    start_index = (page - 1) * items_per_page
-    end_index = start_index + items_per_page
-    paginated_records = all_records[start_index:end_index]
-
-    if not all_records:
-        if search_keyword:
-            flash(f"ไม่พบข้อมูลลูกค้าสำหรับ '{search_keyword}'", "info")
-        else:
-            flash("ไม่พบข้อมูลลูกค้าในระบบ", "info")
-    
-    # Create pagination object to pass to template
-    pagination = {
-        'page': page,
-        'total_pages': total_pages,
-        'has_prev': page > 1,
-        'has_next': page < total_pages,
-        'prev_num': page - 1,
-        'next_num': page + 1
-    }
+    # For GET request, pass the customer object to the template
+    # The template expects a dictionary, so we convert the object
+    customer_dict = customer.to_dict()
+    customer_dict['existing_image_urls'] = [url.strip() for url in (customer.image_urls or '').split(',') if url.strip()]
+    return render_template('edit_customer_data.html', customer_data=customer_dict, row_index=record_id, username=session.get('username'))
 
 
-    return render_template(
-        'search_data.html',
-        customer_records=paginated_records,
-        search_keyword=search_keyword,
-        username=logged_in_user,
-        display_title=display_title,
-        pagination=pagination
-    )
-
-#เรียกตารางค้นหา/ปิดจ๊อบรายวัน
-@app.route('/api/daily-jobs', methods=['GET'])
-def api_daily_jobs():
-    date_q = request.args.get('date', '').strip()
-    company_q = request.args.get('company', '').strip()
-
-    if not date_q:
-        return jsonify({"error": "Date parameter is required"}), 400
-
-    try:
-        sheet = GSPREAD_CLIENT.open("data1").worksheet("allpidjob")
-        all_records = sheet.get_all_records()
-        if not all_records:
-            return jsonify([])
-
-        df = pd.DataFrame(all_records)
-        df.columns = [c.strip() for c in df.columns]
-
-        # Define numeric columns for delta calculation
-        numeric_cols = [
-            "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
-            "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
-            "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
-        ]
-        # Ensure numeric columns exist and convert them to numbers safely
-        for col in numeric_cols:
-            if col in df.columns:
-                # Convert to string, replace comma, then to numeric. Fill errors with 0.
-                df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
-            else:
-                # If column doesn't exist, create it with zeros
-                df[col] = 0
-
-        # Create a proper datetime column for sorting
-        df['DateTime'] = pd.to_datetime(df['Date'] + ' ' + df['Time'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
-        # Fallback for rows where the above format might fail
-        df.loc[df['DateTime'].isna(), 'DateTime'] = pd.to_datetime(df.loc[df['DateTime'].isna(), 'Date'], errors='coerce')
-        
-        # Sort values to ensure correct order for diff()
-        df = df.sort_values(by=['CustomerID', 'CompanyName', 'DateTime'])
-
-        # --- CORRECTED DELTA CALCULATION ---
-        # Calculate the difference (transactional value) for each group
-        # .fillna(df[numeric_cols]) ensures the first transaction of a group keeps its original value
-        transaction_df = df.groupby(['CustomerID', 'CompanyName'])[numeric_cols].diff().fillna(df[numeric_cols])
-
-        # --- FIX: Correctly handle negative diffs ---
-        # Only zero out negative diffs in Opening/NetOpening columns.
-        # Negative diffs in PrincipalReturned/LostAmount are valid (e.g., correction) and should be kept.
-        opening_cols_to_zero = [col for col in numeric_cols if 'OpeningBalance' in col or 'NetOpening' in col]
-        transaction_df[opening_cols_to_zero] = transaction_df[opening_cols_to_zero].clip(lower=0)
-
-        # Assign the calculated transactional values back to the main dataframe
-        df[numeric_cols] = transaction_df
-
-        # Now filter by the requested date
-        try:
-            date_obj = pd.to_datetime(date_q).date()
-        except (ValueError, TypeError):
-            return jsonify({"error": "Invalid 'date' format"}), 400
-
-        df['DateOnly'] = df['DateTime'].dt.date
-        daily_records_df = df[df['DateOnly'] == date_obj].copy()
-
-        if company_q:
-            mask = daily_records_df['CompanyName'].astype(str).str.contains(company_q, case=False, na=False)
-            daily_records_df = daily_records_df[mask]
-
-        # Filter out rows where all transaction values are zero.
-        daily_records_df = daily_records_df[daily_records_df[numeric_cols].any(axis=1)]
-
-        if daily_records_df.empty:
-            return jsonify([])
-
-        # Prepare for output
-        display_columns = [
-            "Date", "CompanyName", "CustomerID", "Time", "CustomerName", "interest",
-            "Table1_OpeningBalance", "Table1_NetOpening", "Table1_PrincipalReturned", "Table1_LostAmount",
-            "Table2_OpeningBalance", "Table2_NetOpening", "Table2_PrincipalReturned", "Table2_LostAmount",
-            "Table3_OpeningBalance", "Table3_NetOpening", "Table3_PrincipalReturned", "Table3_LostAmount"
-        ]
-        
-        final_df = daily_records_df.reindex(columns=display_columns, fill_value="").fillna("")
-
-        return jsonify(final_df.to_dict(orient='records'))
-
-    except Exception as e:
-        print(f"Error in api_daily_jobs: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-
-# . . .เรียกตารางอนุมัติยอด(appove)มาโชว์
 @app.route('/loan_management')
+@login_required
 def loan_management():
-    if 'username' not in session:
-        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
-        return redirect(url_for('login'))
-
-    approove_data = []
-
+    """Displays the loan management page with active loan records."""
     try:
-        worksheet = GSPREAD_CLIENT.open("data1").worksheet("approove")
-        data = worksheet.get_all_values()
-
-        if data and len(data) > 1:
-            headers = data[0]
-            rows = data[1:]
-            records = [dict(zip(headers, row)) for row in rows]
-            # ส่งข้อมูลทั้งหมดไปให้ Frontend แล้วให้ JavaScript จัดการการกรองเอง
-            approove_data = records
-
+        # Fetch records from the 'approvals' table.
+        approvals_obj = Approval.query.order_by(Approval.approval_date.desc()).all()
+        
+        # Convert SQLAlchemy objects to a list of dictionaries for the template
+        approvals_list = []
+        for record in approvals_obj:
+            approvals_list.append({
+                'id': record.id,
+                'สถานะ': record.status,
+                'Customer ID': record.customer_id,
+                'ชื่อ-นามสกุล': record.full_name,
+                'หมายเลขโทรศัพท์': record.phone_number,
+                'วันที่อนุมัติ': record.approval_date.strftime('%Y-%m-%d') if record.approval_date else '',
+                'วงเงินที่อนุมัติ': f"{record.approved_amount:,.2f}" if record.approved_amount is not None else '-',
+                'บริษัทที่รับงาน': record.assigned_company,
+                'ชื่อผู้ลงทะเบียน': record.registrar
+            })
+        return render_template('loan_management.html', approove=approvals_list, username=session.get('username'))
     except Exception as e:
-        flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูล approove: {e}", "error")
+        current_app.logger.error(f"Error fetching data for loan management: {e}")
+        flash('เกิดข้อผิดพลาดในการโหลดข้อมูลจัดการสินเชื่อ', 'danger')
+        return render_template('loan_management.html', approove=[], username=session.get('username'))
 
-    return render_template(
-        'loan_management.html',
-        username=session['username'],
-        approove=approove_data
-    )
 
-@app.route('/upload_contract_docs', methods=['POST'])
-def upload_contract_docs():
-    """
-    Handles uploading contract document images for a specific customer.
-    """
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
+# REFACTORED: Uses database ID for deletion
+@app.route('/delete_customer/<int:record_id>', methods=['POST'])
+@login_required
+def delete_customer(record_id):
+    customer = get_customer_by_db_id(record_id)
+    if customer:
+        try:
+            db.session.delete(customer)
+            db.session.commit()
+            cache.clear()
+            flash(f'ลบข้อมูลลูกค้า {customer.customer_id} สำเร็จ', 'success')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error deleting customer {record_id}: {e}")
+            flash(f'เกิดข้อผิดพลาดในการลบข้อมูล: {e}', 'danger')
+    else:
+        flash('ไม่พบข้อมูลลูกค้าที่จะลบ', 'danger')
+    return redirect(url_for('search_customer_data'))
 
+
+# The following routes for approove, bad_debt etc. need to be refactored
+# in a similar way as the customer_data routes.
+# Here is an example for one of them:
+
+@app.route('/approove')
+@login_required
+def approove():
+    approvals = get_records_from_model(Approval)
+    return render_template('approove.html', approove_records=approvals)
+
+@app.route('/bad_debt_records')
+@login_required
+def bad_debt_records_view():
+    records = get_records_from_model(BadDebtRecord)
+    return render_template('bad_debt_records.html', bad_debt_records=records)
+
+@app.route('/pull_plug_records')
+@login_required
+def pull_plug_records_view():
+    records = get_records_from_model(PullPlugRecord)
+    return render_template('pull_plug_records.html', pull_plug_records=records)
+
+@app.route('/return_principal_records')
+@login_required
+def return_principal_records_view():
+    records = get_records_from_model(ReturnPrincipalRecord)
+    return render_template('return_principal_records.html', return_principal_records=records)
+
+
+# This route needs a form and POST logic similar to enter_customer_data
+@app.route('/add_special_record/<record_type>', methods=['POST'])
+@login_required
+def add_special_record(record_type):
     try:
         customer_id = request.form.get('customer_id')
-        files = request.files.getlist('contract_files[]')
-
-        if not customer_id or not files:
-            return jsonify({'error': 'Customer ID and files are required.'}), 400
-
-        uploaded_urls = []
-        for file in files:
-            if file and file.filename:
-                url = upload_image_to_cloudinary(file.stream, file.filename)
-                if url:
-                    uploaded_urls.append(url)
-        
-        if not uploaded_urls:
-            return jsonify({'error': 'Failed to upload any files to Cloudinary.'}), 500
-
-        worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-        all_data = worksheet.get_all_values()
-        headers = all_data[0]
-        
-        id_col_index = headers.index('Customer ID')
-        doc_col_index = headers.index('รูปถ่ายสัญญา')
-
-        target_row_index = next((i for i, row in enumerate(all_data[1:], start=2) if str(row[id_col_index]).strip() == str(customer_id).strip()), None)
-        
-        if not target_row_index:
-            return jsonify({'error': 'Customer not found in approove sheet.'}), 404
-
-        existing_urls_str = worksheet.cell(target_row_index, doc_col_index + 1).value or ''
-        existing_urls = [url.strip() for url in existing_urls_str.split(',') if url.strip() and url.strip() != '-']
-        final_urls = existing_urls + uploaded_urls
-        final_urls_str = ', '.join(final_urls)
-
-        worksheet.update_cell(target_row_index, doc_col_index + 1, final_urls_str)
-
-        return jsonify({'success': True, 'new_urls_string': final_urls_str})
-
-    except Exception as e:
-        print(f"Error in upload_contract_docs: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-@app.route('/delete_contract_doc', methods=['POST'])
-def delete_contract_doc():
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    try:
-        data = request.get_json()
-        customer_id = data.get('customer_id')
-        url_to_delete = data.get('image_url_to_delete')
-
-        if not customer_id or not url_to_delete:
-            return jsonify({'error': 'Customer ID and image URL are required.'}), 400
-
-        # Step 1: Delete from Cloudinary
-        delete_success = delete_image_from_cloudinary(url_to_delete)
-        if not delete_success:
-            # Log the error but proceed to update the sheet anyway,
-            # as the link will be broken regardless.
-            print(f"Warning: Failed to delete image {url_to_delete} from Cloudinary, but proceeding to remove from sheet.")
-
-        # Step 2: Update Google Sheet
-        worksheet = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-        all_data = worksheet.get_all_values()
-        headers = all_data[0]
-
-        id_col_index = headers.index('Customer ID')
-        doc_col_index = headers.index('รูปถ่ายสัญญา')
-
-        target_row_index = next((i for i, row in enumerate(all_data[1:], start=2) if str(row[id_col_index]).strip() == str(customer_id).strip()), None)
-
-        if not target_row_index:
-            return jsonify({'error': 'Customer not found in approove sheet.'}), 404
-
-        existing_urls_str = worksheet.cell(target_row_index, doc_col_index + 1).value or ''
-        existing_urls = [url.strip() for url in existing_urls_str.split(',') if url.strip() and url.strip() != '-']
-        updated_urls = [url for url in existing_urls if url.strip() != url_to_delete.strip()]
-        final_urls_str = ', '.join(updated_urls) if updated_urls else '-'
-        worksheet.update_cell(target_row_index, doc_col_index + 1, final_urls_str)
-
-        return jsonify({'success': True, 'message': 'Image deleted successfully.'})
-
-    except Exception as e:
-        print(f"Error in delete_contract_doc: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-@app.route('/save-approved-data', methods=['POST'])
-def save_approved_data():
-    if 'username' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-
-    try:
-        data = request.get_json()
-
-        # --- 1. Extract and prepare data from request ---
-        customer_id = data.get('customer_id')
-        fullname = data.get('fullname')
-        # --- FIX: Use the current date for the transaction, not the original approval date ---
-        transaction_date = datetime.now().strftime('%Y-%m-%d')
-        assigned_company = data.get('assigned_company') # NEW: Get assigned company
-        interest_str = data.get('interest', '0')
-        transactions = data.get('transactions', [])
-
-        try:
-            # Interest is applied to each new record created in this batch
-            interest_per_trx = float(str(interest_str).replace(',', '')) if interest_str else 0.0
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid amount or interest format.'}), 400
-
-        # --- 2. Get worksheet and data ---
-        worksheet = get_worksheet(DATA1_SHEET_NAME, ALLPIDJOB_WORKSHEET, ALLPIDJOB_HEADERS)
-        if not worksheet:
-            return jsonify({'error': 'Could not access allpidjob worksheet'}), 500
-        all_records = worksheet.get_all_records()
-        df = pd.DataFrame(all_records)
-        if not df.empty:
-            df.columns = [c.strip() for c in df.columns]
-            # --- FIX: Create a proper datetime column for sorting ---
-            # This ensures we always find the chronologically latest record.
-            if 'Date' in df.columns and 'Time' in df.columns:
-                df['DateTime'] = pd.to_datetime(df['Date'] + ' ' + df['Time'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
-                # Fallback for rows where the time part might be missing
-                df.loc[df['DateTime'].isna(), 'DateTime'] = pd.to_datetime(df.loc[df['DateTime'].isna(), 'Date'], errors='coerce')
-            else:
-                # If date/time columns are missing, we cannot sort reliably.
-                # Add a placeholder column to prevent errors later.
-                df['DateTime'] = pd.NaT
-
-        def to_float(val):
-            return float(str(val).replace(',', '')) if val else 0.0
-
-        # --- 3. Loop through each transaction to create a SEPARATE record ---
-        for trx in transactions:
-            company = trx.get('company', '')
-            action = trx.get('action_type', '').strip() # Add strip() for robustness
-            table = trx.get('table_select', '')
-            amount = to_float(trx.get('amount', '0'))
-
-            # Find the LATEST record for this customer AND THIS SPECIFIC COMPANY
-            latest_record_for_company = None
-            if not df.empty and 'CustomerID' in df.columns and 'CompanyName' in df.columns:
-                customer_company_df = df[(df['CustomerID'].astype(str).str.strip() == str(customer_id).strip()) & \
-                                         (df['CompanyName'].astype(str).str.strip() == str(company).strip())]
-                # --- FIX: Sort by the new DateTime column to find the actual latest record ---
-                if not customer_company_df.empty:
-                    # Sort by DateTime to ensure iloc[-1] gets the latest transaction
-                    customer_company_df = customer_company_df.sort_values(by='DateTime', ascending=True, na_position='first')
-                    latest_record_for_company = customer_company_df.iloc[-1].to_dict()
-
-            # Prepare the NEW row data, inheriting from the company-specific latest record
-            all_table_cols = [f"Table{t}_{c}" for t in [1,2,3] for c in ['OpeningBalance', 'NetOpening', 'PrincipalReturned', 'LostAmount']]
-            new_row_data = {col: '' for col in all_table_cols}
-
-            if latest_record_for_company is not None:
-                for col in all_table_cols:
-                    new_row_data[col] = latest_record_for_company.get(col, '')
-
-            table_prefix_map = {'โต๊ะ1': 'Table1_', 'โต๊ะ2': 'Table2_', 'โต๊ะ3': 'Table3_'}
-            table_prefix = table_prefix_map.get(table)
-            if not table_prefix:
-                return jsonify({'error': f'Invalid table "{table}" in transaction for company {company}.'}), 400
-
-            if action == 'คืนต้น':
-                principal_returned_col = f"{table_prefix}PrincipalReturned"
-                net_opening_col = f"{table_prefix}NetOpening"
-                opening_balance_col = f"{table_prefix}OpeningBalance"
-
-                # CORRECTED VALIDATION: The current balance for a specific table is the sum of its
-                # 'OpeningBalance' and 'NetOpening' from the latest record. These fields already
-                # represent the running balance, so we don't need to subtract the cumulative returned principal again.
-                no_val = to_float(new_row_data.get(net_opening_col, 0))
-                ob_val = to_float(new_row_data.get(opening_balance_col, 0))
-                table_balance = ob_val + no_val
-
-                if amount > table_balance:
-                    error_msg = f'ยอดคืนต้น ({amount:,.2f}) ของบริษัท {company} โต๊ะ {table} มากกว่ายอดคงเหลือ ({table_balance:,.2f})'
-                    return jsonify({'error': error_msg}), 400
-                
-                # Now, update the values for the new row
-                pr_val = to_float(new_row_data.get(principal_returned_col, 0))
-                new_row_data[principal_returned_col] = pr_val + amount
-
-                # --- FIX: Correctly decrement balance ---
-                # Prioritize reducing NetOpening first. If it's not enough, reduce OpeningBalance.
-                if no_val >= amount:
-                    new_row_data[net_opening_col] = no_val - amount
-                else:
-                    remaining_amount = amount - no_val
-                    new_row_data[net_opening_col] = 0
-                    new_row_data[opening_balance_col] = ob_val - remaining_amount
-            else:
-                action_map = {'เปิดยอด': 'OpeningBalance', 'เปิดสุทธิ': 'NetOpening', 'สูญเสีย': 'LostAmount'}
-                column_suffix = action_map.get(action)
-                if not column_suffix:
-                    return jsonify({'error': f'Invalid action "{action}" in transaction for company {company}.'}), 400
-
-                column_to_update = f"{table_prefix}{column_suffix}"
-                current_val = to_float(new_row_data.get(column_to_update))
-                new_row_data[column_to_update] = current_val + amount
-
-            # Construct and append the row for THIS transaction
-            final_row_list = [
-                transaction_date, company, customer_id, datetime.now().strftime("%H:%M:%S"), fullname, interest_per_trx,
-                new_row_data['Table1_OpeningBalance'], new_row_data['Table1_NetOpening'], new_row_data['Table1_PrincipalReturned'], new_row_data['Table1_LostAmount'],
-                new_row_data['Table2_OpeningBalance'], new_row_data['Table2_NetOpening'], new_row_data['Table2_PrincipalReturned'], new_row_data['Table2_LostAmount'],
-                new_row_data['Table3_OpeningBalance'], new_row_data['Table3_NetOpening'], new_row_data['Table3_PrincipalReturned'], new_row_data['Table3_LostAmount'],
-                assigned_company
-            ]
-            worksheet.append_row(final_row_list)
-
-        # --- After loop: Update 'approove' sheet status (common logic) ---
-        approove_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-        approove_data = approove_ws.get_all_values()
-        if approove_data and len(approove_data) > 1:
-            headers = approove_data[0]
-            rows = approove_data[1:]
-            status_idx = headers.index('สถานะ') if 'สถานะ' in headers else None
-            id_idx = headers.index('Customer ID') if 'Customer ID' in headers else None
-            if status_idx is not None and id_idx is not None:
-                for i, row in enumerate(rows, start=2):  # start=2 because row 1 is header
-                    if str(row[id_idx]).strip() == str(customer_id).strip():
-                        approove_ws.update_cell(i, status_idx + 1, 'ปิดจ๊อบแล้ว')
-                        break       
-
-        return jsonify({'success': True})
-    except Exception as e:
-        print(f"Error in save_approved_data: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-
-@app.route('/mark_as_bad_debt', methods=['POST'])
-def mark_as_bad_debt():
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    try:
-        data = request.get_json()
-        customer_id = data.get('customer_id')
-        notes = data.get('notes', '')
-        phone_from_form = data.get('phone', None)
-        balance_from_form = data.get('outstanding_balance', None)
-        logged_in_user = session['username']
-
-        if not customer_id:
-            return jsonify({'error': 'Customer ID is required'}), 400
-
-        # 1. Get customer info from 'approove' sheet
-        approve_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-        approve_records = approve_ws.get_all_records()
-        customer_info = next((r for r in approve_records if str(r.get('Customer ID')).strip() == str(customer_id).strip()), None)
-
-        if not customer_info:
-            return jsonify({'error': 'Customer not found in approval list'}), 404
-
-        # Use form data if provided, otherwise fall back to sheet data
-        customer_name = customer_info.get('ชื่อ-นามสกุล', '-') # Name is not editable on this form
-        phone_from_sheet = customer_info.get('เบอร์มือถือ', '-')
-        approved_amount = customer_info.get('วงเงินที่อนุมัติ', '0')
-
-        final_phone = phone_from_form if phone_from_form is not None and phone_from_form != '' else phone_from_sheet
-
-        # 2. Calculate outstanding balance
-        if balance_from_form is not None and balance_from_form != '':
-            try:
-                final_balance = float(str(balance_from_form).replace(',', ''))
-            except (ValueError, TypeError):
-                return jsonify({'error': 'Invalid balance format provided.'}), 400
-        else:
-            balance_data = _calculate_customer_balance(customer_id)
-            if 'error' in balance_data:
-                print(f"Warning: Could not calculate balance for bad debt record {customer_id}. Error: {balance_data['error']}")
-                final_balance = 0 # Default to 0 if calculation fails and no value is provided
-            else:
-                final_balance = balance_data.get('total_transactions_value', 0)
-
-        # 3. Append to bad_debt_records sheet
-        bad_debt_ws = get_worksheet(SPREADSHEET_NAME, BAD_DEBT_WORKSHEET_NAME, BAD_DEBT_WORKSHEET_HEADERS)
-        if not bad_debt_ws:
-             return jsonify({'error': 'Could not access the bad debt records sheet.'}), 500
-        
-        bad_debt_row = [datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, customer_name, final_phone, approved_amount, final_balance, logged_in_user, notes]
-        bad_debt_ws.append_row(bad_debt_row)
-
-        # 4. Update status in 'approove' sheet
-        all_approve_data = approve_ws.get_all_values()
-        headers = all_approve_data[0]
-        id_col_index = headers.index('Customer ID')
-        status_col_index = headers.index('สถานะ')
-        for i, row in enumerate(all_approve_data[1:], start=2):
-            if str(row[id_col_index]).strip() == str(customer_id).strip():
-                approve_ws.update_cell(i, status_col_index + 1, 'หนี้เสีย')
-                break
-        return jsonify({'success': True, 'message': f'Customer {customer_id} has been marked as bad debt.'})
-    except Exception as e:
-        print(f"Error in mark_as_bad_debt: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-@app.route('/api/bad-debt-records')
-def get_bad_debt_records():
-    """
-    API endpoint to fetch all records from the bad_debt_records worksheet.
-    """
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    try:
-        worksheet = get_worksheet(SPREADSHEET_NAME, BAD_DEBT_WORKSHEET_NAME, BAD_DEBT_WORKSHEET_HEADERS)
-        if not worksheet:
-            return jsonify([]), 404 # Return empty list if not found
-        records = worksheet.get_all_records()
-        return jsonify(records)
-    except Exception as e:
-        print(f"Error fetching bad debt records: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-@app.route('/mark_as_pull_plug', methods=['POST'])
-def mark_as_pull_plug():
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    try:
-        data = request.get_json()
-        customer_id = data.get('customer_id')
-        notes = data.get('notes', '')
-        phone = data.get('phone', '')
-        pull_plug_amount_str = data.get('pull_plug_amount', '0')
-        logged_in_user = session['username']
-
-        if not customer_id:
-            return jsonify({'error': 'Customer ID is required'}), 400
-        
-        try:
-            pull_plug_amount = float(str(pull_plug_amount_str).replace(',', ''))
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid amount format provided.'}), 400
-
-        # 1. Get customer info from 'approove' sheet
-        approve_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-        approve_records = approve_ws.get_all_records()
-        customer_info = next((r for r in approve_records if str(r.get('Customer ID')).strip() == str(customer_id).strip()), None)
-
-        if not customer_info:
-            return jsonify({'error': 'Customer not found in approval list'}), 404
-
-        customer_name = customer_info.get('ชื่อ-นามสกุล', '-')
-
-        # 2. Append to pull_plug_records sheet
-        pull_plug_ws = get_worksheet(SPREADSHEET_NAME, PULL_PLUG_WORKSHEET_NAME, PULL_PLUG_WORKSHEET_HEADERS)
-        if not pull_plug_ws:
-             return jsonify({'error': 'Could not access the pull plug records sheet.'}), 500
-        
-        pull_plug_row = [datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, customer_name, phone, pull_plug_amount, logged_in_user, notes]
-        pull_plug_ws.append_row(pull_plug_row)
-
-        # 3. Update status in 'approove' sheet
-        all_approve_data = approve_ws.get_all_values()
-        headers = all_approve_data[0]
-        id_col_index = headers.index('Customer ID')
-        status_col_index = headers.index('สถานะ')
-        for i, row in enumerate(all_approve_data[1:], start=2):
-            if str(row[id_col_index]).strip() == str(customer_id).strip():
-                approve_ws.update_cell(i, status_col_index + 1, 'ชั๊กปลั๊ก')
-                break
-        return jsonify({'success': True, 'message': f'Customer {customer_id} has been marked as "Pull Plug".'})
-    except Exception as e:
-        print(f"Error in mark_as_pull_plug: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-@app.route('/api/pull-plug-records')
-def get_pull_plug_records():
-    """
-    API endpoint to fetch all records from the pull_plug_records worksheet.
-    """
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    try:
-        worksheet = get_worksheet(SPREADSHEET_NAME, PULL_PLUG_WORKSHEET_NAME, PULL_PLUG_WORKSHEET_HEADERS)
-        if not worksheet:
-            return jsonify([]), 404 # Return empty list if not found
-        records = worksheet.get_all_records()
-        return jsonify(records)
-    except Exception as e:
-        print(f"Error fetching pull plug records: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-@app.route('/mark_as_return_principal', methods=['POST'])
-def mark_as_return_principal():
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    try:
-        data = request.get_json()
-        customer_id = data.get('customer_id')
-        notes = data.get('notes', '')
-        phone = data.get('phone', '')
-        return_amount_str = data.get('return_amount', '0')
-        logged_in_user = session['username']
-
-        if not customer_id:
-            return jsonify({'error': 'Customer ID is required'}), 400
-        
-        try:
-            return_amount = float(str(return_amount_str).replace(',', ''))
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid amount format provided.'}), 400
-
-        # 1. Get customer info from 'approove' sheet
-        approve_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-        approve_records = approve_ws.get_all_records()
-        customer_info = next((r for r in approve_records if str(r.get('Customer ID')).strip() == str(customer_id).strip()), None)
-
-        if not customer_info:
-            return jsonify({'error': 'Customer not found in approval list'}), 404
-
-        customer_name = customer_info.get('ชื่อ-นามสกุล', '-')
-
-        # 2. Append to return_principal_records sheet
-        return_principal_ws = get_worksheet(SPREADSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_HEADERS)
-        if not return_principal_ws:
-             return jsonify({'error': 'Could not access the return principal records sheet.'}), 500
-        
-        return_principal_row = [datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, customer_name, phone, return_amount, logged_in_user, notes]
-        return_principal_ws.append_row(return_principal_row)
-
-        # 3. Update status in 'approove' sheet
-        all_approve_data = approve_ws.get_all_values()
-        headers = all_approve_data[0]
-        id_col_index = headers.index('Customer ID')
-        status_col_index = headers.index('สถานะ')
-        for i, row in enumerate(all_approve_data[1:], start=2):
-            if str(row[id_col_index]).strip() == str(customer_id).strip():
-                approve_ws.update_cell(i, status_col_index + 1, 'คืนต้น')
-                break
-        return jsonify({'success': True, 'message': f'Customer {customer_id} has been marked as "Return Principal".'})
-    except Exception as e:
-        print(f"Error in mark_as_return_principal: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-@app.route('/api/return-principal-records')
-def get_return_principal_records():
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    try:
-        worksheet = get_worksheet(SPREADSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_NAME, RETURN_PRINCIPAL_WORKSHEET_HEADERS)
-        if not worksheet:
-            return jsonify([]), 404
-        records = worksheet.get_all_records()
-        return jsonify(records)
-    except Exception as e:
-        print(f"Error fetching return principal records: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-
-@app.route('/finish_return_principal', methods=['POST'])
-def finish_return_principal():
-    """
-    Updates a customer's status to 'คืนต้นครบแล้ว' in the 'approove' worksheet.
-    """
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    try:
-        data = request.get_json()
-        customer_id = data.get('customer_id')
-
-        if not customer_id:
-            return jsonify({'error': 'Customer ID is required'}), 400
-
-        # Get the 'approove' worksheet
-        approve_ws = GSPREAD_CLIENT.open(DATA1_SHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-        
-        # Find the column index for 'Customer ID' and 'สถานะ'
-        headers = approve_ws.row_values(1)
-        try:
-            id_col_index = headers.index('Customer ID') + 1
-            status_col_index = headers.index('สถานะ') + 1
-        except ValueError:
-            return jsonify({'error': 'Required columns not found in approove sheet'}), 500
-
-        # Find the cell with the matching customer ID
-        cell = approve_ws.find(str(customer_id).strip(), in_column=id_col_index)
-        if not cell:
-            return jsonify({'error': 'Customer not found in approove sheet'}), 404
-
-        # Update the status cell in the found row
-        approve_ws.update_cell(cell.row, status_col_index, 'คืนต้นครบแล้ว')
-        return jsonify({'success': True, 'message': f'Customer {customer_id} status updated to "คืนต้นครบแล้ว".'})
-
-    except Exception as e:
-        print(f"Error in finish_return_principal: {traceback.format_exc()}")
-        return jsonify({'error': 'An internal server error occurred.'}), 500
-# ... (โค้ดส่วนล่างของ app.py) ...
-
-
-@app.route('/edit_customer_data/<int:row_index>', methods=['GET', 'POST'])
-def edit_customer_data(row_index):
-    """
-    Handles editing of a specific customer record from the original customer_records sheet.
-    - GET request: Displays the pre-filled edit form.
-    - POST request: Processes the updated customer data and new images.
-    Requires user to be logged in.
-    """
-    if 'username' not in session:
-        flash('กรุณาเข้าสู่ระบบก่อน', 'error')
-        return redirect(url_for('login'))
-
-    logged_in_user = session['username']
-    customer_data = {}
-
-    worksheet = get_customer_data_worksheet()
-    if not worksheet:
-        flash('ไม่สามารถเข้าถึง Google Sheet สำหรับแก้ไขข้อมูลลูกค้าได้', 'error')
-        return redirect(url_for('search_customer_data'))
-
-    # (ค่าที่รับมาจากลูกค้ารอดำเนินการ)
-    try:
-        row_values = worksheet.row_values(row_index)
-        if row_values:
-            customer_data = dict(zip(CUSTOMER_DATA_WORKSHEET_HEADERS, row_values))
-            if 'Image URLs' in customer_data and customer_data['Image URLs'] != '-':
-                customer_data['existing_image_urls'] = customer_data['Image URLs'].split(', ')
-            else:
-                customer_data['existing_image_urls'] = []
-        else:
-            flash('ไม่พบข้อมูลลูกค้าในแถวที่ระบุ', 'error')
-            return redirect(url_for('search_customer_data'))
-    except Exception as e:
-        flash(f'เกิดข้อผิดพลาดในการดึงข้อมูลลูกค้าเพื่อแก้ไข: {e}', 'error')
-        print(f"Error fetching row {row_index} for edit: {e}")
-        return redirect(url_for('search_customer_data'))
-
-    if request.method == 'POST':
-        # Get updated text data from the form
-        sub_profession_group = request.form.get('sub_profession_group', '') or '-'
-        other_sub_profession = request.form.get('other_sub_profession', '') or '-'
-        # ถ้าเลือก "อื่นๆ" ให้ใช้ค่าที่กรอกเอง
-        final_sub_profession_value = other_sub_profession if sub_profession_group == "อื่นๆ" else sub_profession_group
-        updated_data = {
-            'Timestamp': customer_data.get('Timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
-            'Customer ID': customer_data.get('Customer ID', '-'), # Preserve existing ID
-            'ชื่อ': request.form.get('customer_name', '') or '-',
-            'นามสกุล': request.form.get('last_name', '') or '-',
-            'เลขบัตรประชาชน': request.form.get('id_card_number', '') or '-',
-            'เบอร์มือถือ': request.form.get('mobile_phone_number', '') or '-',
-            'กลุ่มลูกค้าหลัก': request.form.get('main_customer_group', '') or '-',
-            'กลุ่มอาชีพย่อย': final_sub_profession_value,
-            'ระบุอาชีพย่อยอื่นๆ': other_sub_profession,
-            'จดทะเบียน': request.form.get('registered', '') or '-',
-            'ชื่อกิจการ': request.form.get('business_name', '') or '-',
-            'จังหวัดที่อยู่': request.form.get('province', '') or '-',
-            'ที่อยู่จดทะเบียน': request.form.get('registered_address', '') or '-',
-            'สถานะ': request.form.get('status', '') or '-',
-            'วงเงินที่ต้องการ': request.form.get('desired_credit_limit', '') or '-',
-            'วงเงินที่อนุมัติ': request.form.get('approved_credit_limit', '') or '-',
-            'เคยขอเข้ามาในเครือหรือยัง': request.form.get('applied_before', '') or '-',
-            'เช็ค': request.form.get('check', '') or '-',
-            'ขอเข้ามาทางไหน': request.form.get('how_applied', '') or '-',
-            'บริษัทที่รับงาน': request.form.get('assigned_company', '') or '-',
-            'หักดอกหัวท้าย': request.form.get('upfront_interest', '') or '-',
-            'ค่าดำเนินการ': request.form.get('processing_fee', '') or '-',
-            'วันที่ขอเข้ามา': request.form.get('application_date', '') or '-',
-            'ลิงค์โลเคชั่นบ้าน': request.form.get('home_location_link', '') or '-',
-            'ลิงค์โลเคชั่นที่ทำงาน': request.form.get('work_location_link', '') or '-',
-            'หมายเหตุ': request.form.get('remarks', '') or '-',
-            'วันที่นัดตรวจ': request.form.get('inspection_date', '') or '-',
-            'เวลานัดตรวจ': request.form.get('inspection_time', '') or '-',
-            'ผู้รับงานตรวจ': request.form.get('inspector', '') or '-',
+        customer = get_customer_by_customer_id(customer_id)
+        if not customer:
+            flash(f'ไม่พบลูกค้า ID: {customer_id}', 'danger')
+            return redirect(request.referrer)
+
+        model_map = {
+            'bad_debt': BadDebtRecord,
+            'pull_plug': PullPlugRecord,
+            'return_principal': ReturnPrincipalRecord
         }
         
-        # --- MODIFIED PART for Direct Cloudinary Upload ---
-        # The backend no longer handles file uploads. It receives the final list of URLs
-        # and a list of URLs to be deleted from the frontend.
+        if record_type not in model_map:
+            flash('ประเภทรายการไม่ถูกต้อง', 'danger')
+            return redirect(request.referrer)
 
-        # 1. Handle image deletion
-        deleted_urls_str = request.form.get('deleted_image_urls', '')
-        if deleted_urls_str:
-            urls_to_delete = deleted_urls_str.split(',')
-            for url in urls_to_delete:
-                if url: # Ensure not to process empty strings
-                    delete_image_from_cloudinary(url.strip())
-
-        # 2. Get the final list of image URLs to save
-        final_image_urls_str = request.form.get('final_image_urls', '')
-        updated_data['Image URLs'] = final_image_urls_str if final_image_urls_str else '-'
-        updated_data['Logged In User'] = logged_in_user
-
-        # ----------------------------------------------------
-        # NEW LOGIC: Check for 'อนุมัติ' status and save to new worksheet
-        # ----------------------------------------------------
-        if updated_data.get('สถานะ') == 'อนุมัติ':
-            try:
-                 # Get the 'approove' worksheet
-                 approve_worksheet = GSPREAD_CLIENT.open(SPREADSHEET_NAME).worksheet(APPROVE_WORKSHEET_NAME)
-                 
-                 # Use the existing Customer ID from the record being edited
-                 customer_id_to_approve = updated_data.get('Customer ID', '-').strip()
- 
-                 if not customer_id_to_approve or customer_id_to_approve == '-':
-                     flash('ไม่สามารถอนุมัติได้เนื่องจากไม่มีรหัสลูกค้า', 'error')
-                 else:
-                     # Check if this ID already exists in the approove sheet to prevent duplicates
-                     all_approve_records = approve_worksheet.get_all_records()
-                     existing_ids = [str(r.get('Customer ID', '')).strip() for r in all_approve_records]
- 
-                     if customer_id_to_approve in existing_ids:
-                         flash(f'ลูกค้า ID {customer_id_to_approve} มีข้อมูลอนุมัติในระบบแล้ว', 'info')
-                     else:
-                         # Build the row for the 'approove' sheet
-                         approved_data_row = [
-                             "รอปิดจ๊อบ",
-                             customer_id_to_approve,
-                             f"{updated_data.get('ชื่อ', '')} {updated_data.get('นามสกุล', '')}".strip(),
-                             updated_data.get('เบอร์มือถือ', ''),
-                             datetime.now().strftime('%Y-%m-%d'),
-                             updated_data.get('วงเงินที่อนุมัติ', ''),
-                             updated_data.get('บริษัทที่รับงาน', ''),
-                             logged_in_user,
-                             '-'
-                         ]
-                         approve_worksheet.append_row(approved_data_row)
-                         flash(f'ข้อมูลลูกค้า ID {customer_id_to_approve} ได้รับการอนุมัติและบันทึกในชีท "{APPROVE_WORKSHEET_NAME}" แล้ว', 'success')
-                         
-            except gspread.WorksheetNotFound:
-                flash(f'ไม่พบเวิร์คชีท "{APPROVE_WORKSHEET_NAME}" กรุณาสร้างเวิร์คชีทดังกล่าว', 'error')
-            except Exception as e:
-                flash(f'เกิดข้อผิดพลาดในการบันทึกข้อมูลอนุมัติ: {e}', 'error')
-                print(f"Error saving to approve worksheet: {e}")
-
-        # Prepare the row to update in the correct order of headers
-        try:
-            worksheet_headers = CUSTOMER_DATA_WORKSHEET_HEADERS
-            row_to_update = [updated_data.get(header, '-') for header in worksheet_headers]
-            worksheet.update(f'A{row_index}', [row_to_update])
-            flash('บันทึกการแก้ไขข้อมูลลูกค้าเรียบร้อยแล้ว!', 'success')
-            return redirect(url_for('search_customer_data'))
-        except Exception as e:
-            flash(f'เกิดข้อผิดพลาดในการบันทึกการแก้ไขข้อมูล: {e}', 'error')
-            print(f"Error updating row {row_index} in Google Sheet: {e}")
-
-    return render_template('edit_customer_data.html',
-                           username=logged_in_user,
-                           customer_data=customer_data,
-                           row_index=row_index)
-
-# NEW: UNIFIED ENDPOINT FOR STATUS UPDATES FROM SEARCH PAGE
-@app.route('/update_customer_status', methods=['POST'])
-def update_customer_status():
-    """
-    Handles all status updates from the search page's universal status modal.
-    - 'รอดำเนินการ'
-    - 'ยกเลิก' (with note)
-    - 'ไม่อนุมัติ' (with note)
-    - 'รอตรวจ' / 'เลื่อนนัด' (with inspection details)
-    """
-    if 'username' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-
-    try:
-        data = request.get_json()
-        try:
-            row_index = int(data.get('row_index'))
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'message': 'Invalid or missing row index.'}), 400
+        ModelClass = model_map[record_type]
         
-        new_status = data.get('new_status')
-        if not new_status:
-            return jsonify({'success': False, 'message': 'New status is required.'}), 400
+        # Create a new record instance
+        new_record_data = {
+            'customer_id': customer.customer_id,
+            'customer_name': f"{customer.first_name} {customer.last_name}",
+            'phone': customer.mobile_phone,
+            'marked_by': session.get('username'),
+            'notes': request.form.get('notes')
+        }
 
-        worksheet = get_customer_data_worksheet()
-        if not worksheet:
-            return jsonify({'success': False, 'message': 'Cannot access worksheet.'}), 500
+        if record_type == 'bad_debt':
+            new_record_data['approved_amount'] = customer.approved_credit_limit
+            new_record_data['outstanding_balance'] = request.form.get('outstanding_balance')
+        elif record_type == 'pull_plug':
+            new_record_data['pull_plug_amount'] = request.form.get('pull_plug_amount')
+        elif record_type == 'return_principal':
+            new_record_data['return_amount'] = request.form.get('return_amount')
 
-        headers = worksheet.row_values(1)
-        updates_to_perform = []
+        new_record = ModelClass(**new_record_data)
+        db.session.add(new_record)
+        db.session.commit()
 
-        # Find column indices dynamically
-        try:
-            status_col = headers.index('สถานะ') + 1
-            note_col = headers.index('หมายเหตุ') + 1
-            date_col = headers.index('วันที่นัดตรวจ') + 1
-            time_col = headers.index('เวลานัดตรวจ') + 1
-            inspector_col = headers.index('ผู้รับงานตรวจ') + 1
-        except ValueError as e:
-            return jsonify({'success': False, 'message': f"Required column not found in sheet: {e}"}), 500
-
-        # --- Logic for different statuses ---
-
-        # 1. Simple status update
-        if new_status == 'รอดำเนินการ':
-            updates_to_perform.append({
-                'range': gspread.utils.rowcol_to_a1(row_index, status_col),
-                'values': [[new_status]],
-            })
-
-        # 2. Status update with a required note
-        elif new_status in ['ยกเลิก', 'ไม่อนุมัติ']:
-            note = data.get('note', '').strip()
-            if not note:
-                return jsonify({'success': False, 'message': 'A note/reason is required for this status.'}), 400
-            
-            # Update status
-            updates_to_perform.append({
-                'range': gspread.utils.rowcol_to_a1(row_index, status_col),
-                'values': [[new_status]],
-            })
-
-            # Append note
-            existing_note = worksheet.cell(row_index, note_col).value or ''
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
-            note_prefix = "ยกเลิก" if new_status == 'ยกเลิก' else "ไม่อนุมัติ"
-            formatted_note = f"[{timestamp} - {note_prefix}]: {note}"
-            final_note = f"{existing_note}\n{formatted_note}".strip() if existing_note and existing_note.strip() != '-' else formatted_note
-            
-            updates_to_perform.append({
-                'range': gspread.utils.rowcol_to_a1(row_index, note_col),
-                'values': [[final_note]],
-            })
-
-        # 3. Status update for inspection scheduling/rescheduling
-        elif new_status in ['รอตรวจ', 'เลื่อนนัด']:
-            inspection_date = data.get('inspection_date')
-            inspection_time = data.get('inspection_time')
-            inspector = data.get('inspector')
-
-            if not all([inspection_date, inspector]): # Time can be optional
-                return jsonify({'success': False, 'message': 'Inspection date and inspector name are required.'}), 400
-
-            # Update status to 'รอตรวจ' for both cases
-            updates_to_perform.append({
-                'range': gspread.utils.rowcol_to_a1(row_index, status_col),
-                'values': [['รอตรวจ']],
-            })
-            # Update inspection details
-            updates_to_perform.append({
-                'range': gspread.utils.rowcol_to_a1(row_index, date_col),
-                'values': [[inspection_date]],
-            })
-            updates_to_perform.append({
-                'range': gspread.utils.rowcol_to_a1(row_index, time_col),
-                'values': [[inspection_time or '']],
-            })
-            updates_to_perform.append({
-                'range': gspread.utils.rowcol_to_a1(row_index, inspector_col),
-                'values': [[inspector]],
-            })
-
-        else:
-            return jsonify({'success': False, 'message': f'Invalid status update: {new_status}'}), 400
-
-        # Perform batch update if there are changes
-        if updates_to_perform:
-            worksheet.batch_update(updates_to_perform)
-            return jsonify({'success': True, 'message': 'Status updated successfully.'})
-        else:
-            return jsonify({'success': False, 'message': 'No update was performed.'}), 400
+        flash('บันทึกรายการสำเร็จ', 'success')
 
     except Exception as e:
-        print(f"Error in update_customer_status: {traceback.format_exc()}")
-        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
+        db.session.rollback()
+        current_app.logger.error(f"Error adding special record type {record_type}: {e}")
+        flash(f'เกิดข้อผิดพลาด: {e}', 'danger')
 
-# --- Main execution block ---
+    return redirect(request.referrer or url_for('customer_data'))
+
+# =================================================================================
+# API & DYNAMIC CONTENT ROUTES
+# =================================================================================
+
+@app.route('/get-customer-info/<customer_id>', methods=['GET'])
+@login_required
+def get_customer_info(customer_id):
+    """
+    API endpoint to fetch detailed information for a customer who has been approved.
+    This is used by the 'View Info' modal in loan management.
+    """
+    try:
+        # 1. ค้นหาข้อมูลการอนุมัติของลูกค้า
+        approval_record = Approval.query.filter_by(customer_id=customer_id).first()
+
+        if not approval_record:
+            return jsonify({'error': 'ไม่พบข้อมูลการอนุมัติสำหรับลูกค้านี้'}), 404
+
+        # 2. ค้นหาเอกสารสัญญาทั้งหมดที่เกี่ยวข้อง
+        contract_docs = ContractDocument.query.filter_by(customer_id=customer_id).order_by(ContractDocument.upload_timestamp.asc()).all()
+        image_urls = [doc.document_url for doc in contract_docs]
+        image_urls_str = ','.join(image_urls) if image_urls else '-'
+
+        # 3. สร้างข้อมูลสำหรับส่งกลับไปในรูปแบบที่ Frontend ต้องการ
+        customer_info = {
+            'Customer ID': approval_record.customer_id,
+            'ชื่อ-นามสกุล': approval_record.full_name,
+            'สถานะ': approval_record.status,
+            'หมายเลขโทรศัพท์': approval_record.phone_number,
+            'วันที่อนุมัติ': approval_record.approval_date.strftime('%Y-%m-%d') if approval_record.approval_date else '-',
+            'วงเงินที่อนุมัติ': f"{approval_record.approved_amount:,.2f}" if approval_record.approved_amount is not None else '-',
+            'ชื่อผู้ลงทะเบียน': approval_record.registrar,
+            'รูปถ่ายสัญญา': image_urls_str
+        }
+
+        return jsonify(customer_info)
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching info for customer_id {customer_id}: {e}")
+        return jsonify({'error': 'เกิดข้อผิดพลาดในเซิร์ฟเวอร์'}), 500
+
+@app.route('/upload_contract_docs', methods=['POST'])
+@login_required
+def upload_contract_docs():
+    """
+    API endpoint to upload contract document images for a specific customer.
+    Handles multiple file uploads and saves them to Cloudinary and the database.
+    """
+    if 'contract_files[]' not in request.files:
+        return jsonify({'success': False, 'error': 'No files selected for upload'}), 400
+
+    files = request.files.getlist('contract_files[]')
+    customer_id = request.form.get('customer_id')
+    username = session.get('username')
+
+    if not customer_id:
+        return jsonify({'success': False, 'error': 'Customer ID is missing'}), 400
+    
+    if not files or files[0].filename == '':
+        return jsonify({'success': False, 'error': 'No files selected for upload'}), 400
+
+    errors = []
+
+    try:
+        for file in files:
+            try:
+                # Upload to Cloudinary
+                upload_result = cloudinary.uploader.upload(
+                    file,
+                    folder="customer_app_images", # Same folder as in the signature API
+                    transformation=[{'width': 1000, 'height': 1000, 'crop': 'limit'}] # Apply a transformation
+                )
+                
+                # Create a new database record for the document
+                new_doc = ContractDocument(
+                    customer_id=customer_id,
+                    document_url=upload_result['secure_url'],
+                    uploaded_by=username
+                )
+                db.session.add(new_doc)
+            except Exception as upload_error:
+                current_app.logger.error(f"Error uploading file '{file.filename}' for customer {customer_id}: {upload_error}")
+                errors.append(f"Could not upload file {file.filename}.")
+
+        if errors:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': '. '.join(errors)}), 500
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'Successfully uploaded {len(files)} files.'})
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"General error in upload_contract_docs for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': 'An unexpected server error occurred.'}), 500
+
+@app.route('/api/customer-balance/<customer_id>', methods=['GET'])
+@login_required
+def get_customer_balance(customer_id):
+    """
+    Calculates the total outstanding balance for a customer from the all_pid_jobs table.
+    This is the sum of money given out minus the sum of money returned.
+    """
+    try:
+        # Sum up all the amounts that represent money given out
+        total_given_out = db.session.query(
+            func.sum(
+                func.coalesce(AllPidJob.table1_opening_balance, 0) +
+                func.coalesce(AllPidJob.table1_net_opening, 0) +
+                func.coalesce(AllPidJob.table2_opening_balance, 0) +
+                func.coalesce(AllPidJob.table2_net_opening, 0) +
+                func.coalesce(AllPidJob.table3_opening_balance, 0) +
+                func.coalesce(AllPidJob.table3_net_opening, 0)
+            )
+        ).filter(AllPidJob.customer_id == customer_id).scalar() or 0
+
+        # Sum up all the amounts that represent money returned
+        total_returned = db.session.query(
+            func.sum(
+                func.coalesce(AllPidJob.table1_principal_returned, 0) +
+                func.coalesce(AllPidJob.table2_principal_returned, 0) +
+                func.coalesce(AllPidJob.table3_principal_returned, 0)
+            )
+        ).filter(AllPidJob.customer_id == customer_id).scalar() or 0
+        
+        outstanding_balance = total_given_out - total_returned
+
+        return jsonify({'total_transactions_value': float(outstanding_balance)})
+
+    except Exception as e:
+        current_app.logger.error(f"Error calculating balance for customer_id {customer_id}: {e}")
+        return jsonify({'error': 'Could not calculate balance'}), 500
+
+@app.route('/save-approved-data', methods=['POST'])
+@login_required
+def save_approved_data():
+    """
+    Saves the 'close job' transaction data to the all_pid_jobs table
+    and updates the customer's approval status.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid data provided'}), 400
+
+    customer_id = data.get('customer_id')
+    transactions = data.get('transactions', [])
+
+    if not customer_id or not transactions:
+        return jsonify({'error': 'Missing customer ID or transactions'}), 400
+
+    try:
+        # 1. Update the approval status to 'ปิดจ๊อบแล้ว'
+        approval_record = Approval.query.filter_by(customer_id=customer_id).first()
+        if approval_record:
+            approval_record.status = 'ปิดจ๊อบแล้ว'
+        
+        # REFACTORED: Use a mapping for safer and clearer attribute setting.
+        # This prevents arbitrary attribute setting and makes the logic easier to follow.
+        action_to_column_map = {
+            'เปิดยอด': 'opening_balance',
+            'เปิดสุทธิ': 'net_opening',
+            'คืนต้น': 'principal_returned'
+        }
+
+        # 2. Add new records to AllPidJob for each transaction
+        for trans in transactions:
+            new_job = AllPidJob(transaction_date=datetime.now().date(), transaction_time=datetime.now().time(), company_name=trans.get('company'), customer_id=customer_id, customer_name=data.get('fullname'), interest=data.get('interest'), main_assigned_company=data.get('assigned_company'))
+            
+            action_type = trans.get('action_type')
+            amount = trans.get('amount')
+            table_number_str = trans.get('table_select', '').replace('โต๊ะ', '')
+
+            # Validate the inputs before proceeding
+            if table_number_str.isdigit() and action_type in action_to_column_map and amount is not None:
+                table_number = int(table_number_str)
+                column_suffix = action_to_column_map[action_type]
+                # Construct the full attribute name, e.g., 'table1_opening_balance'
+                attribute_name = f'table{table_number}_{column_suffix}'
+                setattr(new_job, attribute_name, amount)
+
+            db.session.add(new_job)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'บันทึกข้อมูลการปิดจ๊อบเรียบร้อยแล้ว'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error saving approved data for customer {customer_id}: {e}")
+        return jsonify({'error': 'เกิดข้อผิดพลาดในเซิร์ฟเวอร์ขณะบันทึกข้อมูล'}), 500
+
+@app.route('/api/daily-jobs', methods=['GET'])
+@login_required
+def get_daily_jobs():
+    """
+    API endpoint to fetch daily job transactions based on date and company.
+    """
+    search_date_str = request.args.get('date')
+    search_company = request.args.get('company')
+
+    if not search_date_str:
+        return jsonify({'error': 'Date parameter is required'}), 400
+
+    try:
+        search_date = datetime.strptime(search_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Please use YYYY-MM-DD.'}), 400
+
+    try:
+        query = AllPidJob.query.filter(AllPidJob.transaction_date == search_date)
+
+        if search_company:
+            query = query.filter(AllPidJob.company_name == search_company)
+
+        results = query.order_by(AllPidJob.transaction_time).all()
+
+        # REFACTORED: Use the new to_dict() method for cleaner code
+        jobs_list = [job.to_dict() for job in results]
+        return jsonify(jobs_list)
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching daily jobs: {e}")
+        return jsonify({'error': 'An internal server error occurred'}), 500
+
+@app.route('/delete_contract_doc', methods=['POST'])
+@login_required
+def delete_contract_doc():
+    """
+    API endpoint to delete a specific contract document image.
+    It deletes the record from the database and the file from Cloudinary.
+    """
+    data = request.get_json()
+    customer_id = data.get('customer_id')
+    image_url = data.get('image_url_to_delete')
+
+    if not customer_id or not image_url:
+        return jsonify({'success': False, 'error': 'Missing customer ID or image URL'}), 400
+
+    try:
+        # Find the document in the database
+        doc_to_delete = ContractDocument.query.filter_by(customer_id=customer_id, document_url=image_url).first()
+
+        if not doc_to_delete:
+            return jsonify({'success': False, 'error': 'Document not found in database'}), 404
+
+        # Delete from Cloudinary by extracting the public_id from the URL
+        # Example URL: https://res.cloudinary.com/<cloud_name>/image/upload/v12345/customer_app_images/public_id.jpg
+        # The public_id for Cloudinary is 'customer_app_images/public_id'
+        try:
+            public_id_with_folder = '/'.join(image_url.split('/')[-2:])
+            public_id = os.path.splitext(public_id_with_folder)[0]
+            cloudinary.uploader.destroy(public_id)
+        except Exception as cloudinary_error:
+            # Log the error but continue to delete from DB, as the link is broken anyway
+            current_app.logger.warning(f"Could not delete image from Cloudinary for URL {image_url}: {cloudinary_error}")
+
+        # Delete from our database
+        db.session.delete(doc_to_delete)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'ลบรูปภาพเรียบร้อยแล้ว'})
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting contract doc for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': 'เกิดข้อผิดพลาดในเซิร์ฟเวอร์'}), 500
+
+# REFACTORED: Helper function to reduce duplication in status marking routes.
+def _mark_status_and_log(customer_id, status_text, log_model, payload):
+    """A generic helper to update an approval's status and create a corresponding log record."""
+    approval = Approval.query.filter_by(customer_id=customer_id).first()
+    if not approval:
+        raise ValueError(f'Approval record not found for customer {customer_id}')
+    
+    approval.status = status_text
+
+    log_data = {
+        'customer_id': customer_id,
+        'customer_name': approval.full_name,
+        'phone': payload.get('phone'),
+        'marked_by': session.get('username'),
+        'notes': payload.get('notes')
+    }
+
+    # Add model-specific fields
+    if log_model == BadDebtRecord:
+        log_data['approved_amount'] = approval.approved_amount
+        log_data['outstanding_balance'] = payload.get('outstanding_balance')
+    elif log_model == PullPlugRecord:
+        log_data['pull_plug_amount'] = payload.get('pull_plug_amount')
+    elif log_model == ReturnPrincipalRecord:
+        log_data['return_amount'] = payload.get('return_amount')
+
+    new_log_record = log_model(**log_data)
+    db.session.add(new_log_record)
+
+def _handle_status_marking_request(status_text, log_model, success_message):
+    """Boilerplate handler for status marking API requests."""
+    data = request.get_json()
+    customer_id = data.get('customer_id')
+    if not customer_id:
+        return jsonify({'success': False, 'error': 'Customer ID is required'}), 400
+    try:
+        _mark_status_and_log(customer_id, status_text, log_model, data)
+        db.session.commit()
+        return jsonify({'success': True, 'message': success_message})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error marking '{status_text}' for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': f'เกิดข้อผิดพลาดในเซิร์ฟเวอร์: {e}'}), 500
+
+@app.route('/mark_as_bad_debt', methods=['POST'])
+@login_required
+def mark_as_bad_debt():
+    return _handle_status_marking_request('หนี้เสีย', BadDebtRecord, 'บันทึกหนี้เสียเรียบร้อยแล้ว')
+
+@app.route('/mark_as_pull_plug', methods=['POST'])
+@login_required
+def mark_as_pull_plug():
+    return _handle_status_marking_request('ชั๊กปลั๊ก', PullPlugRecord, 'บันทึกการชั๊กปลั๊กเรียบร้อยแล้ว')
+
+@app.route('/mark_as_return_principal', methods=['POST'])
+@login_required
+def mark_as_return_principal():
+    return _handle_status_marking_request('คืนต้น', ReturnPrincipalRecord, 'บันทึกการคืนต้นเรียบร้อยแล้ว')
+
+@app.route('/finish_return_principal', methods=['POST'])
+@login_required
+def finish_return_principal():
+    """
+    API endpoint to mark a 'return principal' customer as finished.
+    """
+    data = request.get_json()
+    customer_id = data.get('customer_id')
+
+    if not customer_id:
+        return jsonify({'success': False, 'error': 'Customer ID is required'}), 400
+
+    try:
+        approval = Approval.query.filter_by(customer_id=customer_id).first()
+        if not approval:
+            return jsonify({'success': False, 'error': 'Approval record not found'}), 404
+        
+        approval.status = 'คืนต้นครบแล้ว'
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'อัปเดตสถานะเป็น "คืนต้นครบแล้ว" เรียบร้อย'})
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error finishing return principal for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': 'เกิดข้อผิดพลาดในเซิร์ฟเวอร์'}), 500
+
+# REFACTORED: Generic API endpoint for fetching log-style records
+MODEL_API_CONFIG = {
+    'bad-debt': {
+        'model': BadDebtRecord,
+        'fields': {
+            'Timestamp': (lambda r: r.timestamp.strftime('%Y-%m-%d %H:%M') if r.timestamp else '-'),
+            'CustomerID': 'customer_id', 'CustomerName': 'customer_name', 'Phone': 'phone',
+            'ApprovedAmount': (lambda r: f"{r.approved_amount:,.2f}" if r.approved_amount is not None else '-'),
+            'OutstandingBalance': (lambda r: f"{r.outstanding_balance:,.2f}" if r.outstanding_balance is not None else '-'),
+            'MarkedBy': 'marked_by', 'Notes': 'notes'
+        }
+    },
+    'pull-plug': {
+        'model': PullPlugRecord,
+        'fields': {
+            'Timestamp': (lambda r: r.timestamp.strftime('%Y-%m-%d %H:%M') if r.timestamp else '-'),
+            'CustomerID': 'customer_id', 'CustomerName': 'customer_name', 'Phone': 'phone',
+            'PullPlugAmount': (lambda r: f"{r.pull_plug_amount:,.2f}" if r.pull_plug_amount is not None else '-'),
+            'MarkedBy': 'marked_by', 'Notes': 'notes'
+        }
+    },
+    'return-principal': {
+        'model': ReturnPrincipalRecord,
+        'fields': {
+            'Timestamp': (lambda r: r.timestamp.strftime('%Y-%m-%d %H:%M') if r.timestamp else '-'),
+            'CustomerID': 'customer_id', 'CustomerName': 'customer_name', 'Phone': 'phone',
+            'ReturnAmount': (lambda r: f"{r.return_amount:,.2f}" if r.return_amount is not None else '-'),
+            'MarkedBy': 'marked_by', 'Notes': 'notes'
+        }
+    }
+}
+
+@app.route('/api/records/<record_type>', methods=['GET'])
+@login_required
+def get_records_api(record_type):
+    config = MODEL_API_CONFIG.get(record_type)
+    if not config:
+        return jsonify({'error': 'Invalid record type'}), 404
+    
+    try:
+        records = config['model'].query.order_by(config['model'].timestamp.desc()).all()
+        records_list = []
+        for r in records:
+            record_dict = {}
+            for key, accessor in config['fields'].items():
+                if callable(accessor):
+                    record_dict[key] = accessor(r)
+                else:
+                    record_dict[key] = getattr(r, accessor, None)
+            records_list.append(record_dict)
+        return jsonify(records_list)
+    except Exception as e:
+        current_app.logger.error(f"Error fetching {record_type} records: {e}")
+        return jsonify({'error': 'Could not fetch records'}), 500
+
+@app.route('/get_customer_chart_data')
+@login_required
+def get_customer_chart_data():
+    """Provides data for the main dashboard chart, structured for the frontend filters."""
+    try:
+        # REFACTORED: Let the database do the grouping and counting for performance.
+        results = db.session.query(
+            func.extract('year', CustomerRecord.application_date).label('year'),
+            func.extract('month', CustomerRecord.application_date).label('month'),
+            CustomerRecord.main_customer_group,
+            func.count(CustomerRecord.id).label('count')
+        ).filter(CustomerRecord.application_date.isnot(None)).group_by('year', 'month', 'main_customer_group').all()
+
+        chart_data = {}
+        unique_customer_groups = set()
+        unique_years = set()
+
+        for row in results:
+            year = str(row.year)
+            month = f"{row.month:02d}"
+            group = row.main_customer_group or "ไม่ระบุ"
+            count = row.count
+
+            unique_years.add(year)
+            unique_customer_groups.add(group)
+
+            chart_data.setdefault(year, {}).setdefault(month, {})
+            chart_data[year][month][group] = count
+
+        all_months = [f"{i:02d}" for i in range(1, 13)]
+
+        return jsonify({
+            'chart_data': chart_data,
+            'unique_customer_groups': sorted(list(unique_customer_groups)),
+            'unique_years': sorted(list(unique_years), reverse=True),
+            'all_months': all_months
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"Error generating customer chart data: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_channel_province_chart_data')
+@login_required
+def get_channel_province_chart_data():
+    """Provides data for the channel/province dashboard chart."""
+    try:
+        # REFACTORED: Use database grouping for much better performance.
+        results = db.session.query(
+            func.extract('year', CustomerRecord.application_date).label('year'),
+            func.extract('month', CustomerRecord.application_date).label('month'),
+            CustomerRecord.province,
+            CustomerRecord.application_channel,
+            CustomerRecord.main_customer_group,
+            func.count(CustomerRecord.id).label('count')
+        ).filter(CustomerRecord.application_date.isnot(None)).group_by('year', 'month', 'province', 'application_channel', 'main_customer_group').all()
+
+        chart_data = {}
+        unique_years = set()
+        unique_channels = set()
+        unique_provinces = set()
+        unique_groups = set()
+
+        for row in results:
+            year = str(row.year)
+            month = f"{row.month:02d}"
+            province = row.province or "ไม่ระบุ"
+            channel = row.application_channel or "ไม่ระบุ"
+            group = row.main_customer_group or "ไม่ระบุ"
+            count = row.count
+
+            unique_years.add(year)
+            unique_provinces.add(province)
+            unique_channels.add(channel)
+            unique_groups.add(group)
+
+            path = chart_data.setdefault(year, {}).setdefault(month, {}).setdefault(province, {}).setdefault(channel, {})
+            path[group] = count
+
+        all_months = [f"{i:02d}" for i in range(1, 13)]
+
+        # NEW: Define a fixed list of all possible channels to ensure they always appear in the filter
+        all_possible_channels = [
+            "FACEBOOK สตาร์โลน",
+            "FACEBOOK กลอรี่แคช",
+            "FACEBOOK แคชเครดิต",
+            "ไลน์@สตาร์โลน",
+            "ไลน์@กลอรี่แคช",
+            "ไลน์@แคชเครดิต",
+            "โทรเข้ามา สตาร์โลน",
+            "โทรเข้ามา กลอรี่แคช",
+            "โทรเข้ามา แคชเครดิต",
+            "อีเมล"
+        ]
+
+        return jsonify({
+            'chart_data': chart_data,
+            'unique_years': sorted(list(unique_years), reverse=True),
+            'all_months': all_months,
+            'unique_channels': all_possible_channels,
+            'unique_provinces': sorted(list(unique_provinces)),
+            'unique_groups': sorted(list(unique_groups))
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error generating channel/province chart data: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cloudinary-signature', methods=['GET'])
+@login_required
+def get_cloudinary_signature():
+    """Generate a signature for direct Cloudinary uploads."""
+    try:
+        timestamp = int(datetime.now().timestamp())
+        transformation = "w_1000,h_1000,c_limit"
+        params_to_sign = {'timestamp': timestamp, 'folder': 'customer_app_images', 'transformation': transformation}
+        signature = cloudinary.utils.api_sign_request(params_to_sign, os.environ.get('CLOUDINARY_API_SECRET'))
+        
+        return jsonify({
+            'signature': signature, 'timestamp': timestamp,
+            'api_key': os.environ.get('CLOUDINARY_API_KEY'),
+            'cloud_name': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+            'transformation': transformation
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error generating Cloudinary signature: {e}")
+        return jsonify({'error': 'Could not generate signature'}), 500
+
+@app.route('/update_customer_status', methods=['POST'])
+@login_required
+def update_customer_status():
+    data = request.get_json()
+    record_id = data.get('row_index')
+    new_status = data.get('new_status')
+
+    customer = get_customer_by_db_id(record_id)
+    if not customer:
+        return jsonify({'success': False, 'message': 'ไม่พบข้อมูลลูกค้า'}), 404
+
+    try:
+        customer.status = new_status
+        if new_status in ['รอตรวจ', 'เลื่อนนัด']:
+            customer.inspection_date = datetime.strptime(data.get('inspection_date'), '%Y-%m-%d').date() if data.get('inspection_date') else None
+            customer.inspection_time = datetime.strptime(data.get('inspection_time'), '%H:%M').time() if data.get('inspection_time') else None
+            customer.inspector = data.get('inspector')
+        if new_status in ['ยกเลิก', 'ไม่อนุมัติ']:
+            note = data.get('note')
+            customer.remarks = (customer.remarks or '') + f"\n[สถานะ: {new_status}] {note}"
+
+        db.session.commit()
+        cache.clear()
+        return jsonify({'success': True, 'message': 'อัปเดตสถานะสำเร็จ'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating status for {record_id}: {e}")
+        return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาด: {e}'}), 500
+
+# =================================================================================
+# MAIN EXECUTION
+# =================================================================================
+
 if __name__ == '__main__':
-    # This block is intended for local development.
-    # For production deployment on a VPS, use a WSGI server like Gunicorn instead of Flask's built-in server.
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True) # debug=True is for development only
+    # Use app.run() only for local development.
+    # For production, use a proper WSGI server like Gunicorn or uWSGI.
+    app.run(debug=True)
