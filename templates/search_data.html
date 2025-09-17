@@ -1218,7 +1218,7 @@
                 </div>
 
                 {# Pagination Controls #}
-                {% if pagination and pagination.total_pages > 1 %}
+                {% if pagination and pagination.pages > 1 %}
                 <div class="pagination-controls">
                     {# Previous Page Link #}
                     {% if pagination.has_prev %}
@@ -1228,12 +1228,14 @@
                     {% endif %}
 
                     {# Page Numbers #}
-                    {% for page_num in range(1, pagination.total_pages + 1) %}
-                        {% if page_num == pagination.page %}
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %} {# iter_pages() can return None for gaps #}
+                            {% if page_num == pagination.page %}
                             <span class="current-page">{{ page_num }}</span>
                         {% else %}
                             <a href="{{ url_for('search_customer_data', page=page_num, search_keyword=search_keyword) }}">{{ page_num }}</a>
                         {% endif %}
+                        {% endif %} {# iter_pages() can return None for gaps #}
                     {% endfor %}
 
                     {# Next Page Link #}
@@ -1245,7 +1247,7 @@
                 </div>
                 {% endif %}
 
-                {% else %}
+                {% elif search_keyword %}
                     {# This part is shown if no records are found after a search, handled by flash message now, but good to have a fallback #}
                     <p style="text-align: center; color: var(--light-text-color); margin-top: 20px;">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</p>
                 {% endif %}

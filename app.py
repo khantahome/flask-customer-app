@@ -670,60 +670,6 @@ def return_principal_records_view():
     records = get_records_from_model(ReturnPrincipalRecord)
     return render_template('return_principal_records.html', return_principal_records=records)
 
-
-# This route needs a form and POST logic similar to enter_customer_data
-@app.route('/add_special_record/<record_type>', methods=['POST'])
-@login_required
-def add_special_record(record_type):
-    try:
-        customer_id = request.form.get('customer_id')
-        customer = get_customer_by_customer_id(customer_id)
-        if not customer:
-            flash(f'ไม่พบลูกค้า ID: {customer_id}', 'danger')
-            return redirect(request.referrer)
-
-        model_map = {
-            'bad_debt': BadDebtRecord,
-            'pull_plug': PullPlugRecord,
-            'return_principal': ReturnPrincipalRecord
-        }
-        
-        if record_type not in model_map:
-            flash('ประเภทรายการไม่ถูกต้อง', 'danger')
-            return redirect(request.referrer)
-
-        ModelClass = model_map[record_type]
-        
-        # Create a new record instance
-        new_record_data = {
-            'customer_id': customer.customer_id,
-            'customer_name': f"{customer.first_name} {customer.last_name}",
-            'phone': customer.mobile_phone,
-            'marked_by': session.get('username'),
-            'notes': request.form.get('notes')
-        }
-
-        if record_type == 'bad_debt':
-            new_record_data['approved_amount'] = customer.approved_credit_limit
-            new_record_data['outstanding_balance'] = request.form.get('outstanding_balance')
-        elif record_type == 'pull_plug':
-            new_record_data['pull_plug_amount'] = request.form.get('pull_plug_amount')
-        elif record_type == 'return_principal':
-            new_record_data['return_amount'] = request.form.get('return_amount')
-
-        new_record = ModelClass(**new_record_data)
-        db.session.add(new_record)
-        db.session.commit()
-
-        flash('บันทึกรายการสำเร็จ', 'success')
-
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error adding special record type {record_type}: {e}")
-        flash(f'เกิดข้อผิดพลาด: {e}', 'danger')
-
-    return redirect(request.referrer or url_for('customer_data'))
-
 # =================================================================================
 # API & DYNAMIC CONTENT ROUTES
 # =================================================================================

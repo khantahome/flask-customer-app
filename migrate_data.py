@@ -1,30 +1,40 @@
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 import numpy as np
+import sys
 # NEW: Import os and dotenv to handle environment variables
 import os
 from dotenv import load_dotenv
 # NEW: Import the Flask app and db object to create tables
-from app import app, db
+from app import app, db, CustomerRecord
 
 load_dotenv() # โหลดค่าจากไฟล์ .env
 
+# NEW: Function to create tables based on models in app.py
 # ==============================================================================
-# * 1. ตั้งค่าการเชื่อมต่อ DATABASE ของคุณ
+# 1. ฟังก์ชันสำหรับสร้างตารางฐานข้อมูล
 # ==============================================================================
-# **สำคัญ:** แก้ไขค่าในไฟล์ .env ของคุณ ไม่ใช่ในโค้ดโดยตรง
-DB_USER = os.environ.get('DB_USER', 'root')
-DB_PASSWORD = os.environ.get('DB_PASSWORD') # <-- * อ่านรหัสผ่านจาก .env
-DB_HOST = os.environ.get('DB_HOST', 'localhost')
-DB_NAME = os.environ.get('DB_NAME', 'loan_system')
-
-# เพิ่มการตรวจสอบว่ามีรหัสผ่านหรือไม่
-if not DB_PASSWORD:
-    raise ValueError("ไม่ได้ตั้งค่า DB_PASSWORD ในไฟล์ .env กรุณาตั้งค่าแล้วลองอีกครั้ง")
-
-db_connection_str = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
-db_engine = create_engine(db_connection_str)
-
+def create_tables(clean_install=False):
+    """
+    สร้างตารางฐานข้อมูล
+    - ถ้า clean_install=True: จะลบตารางเก่าทั้งหมดทิ้งก่อนแล้วสร้างใหม่ (อันตราย!)
+    - ถ้า clean_install=False: จะสร้างเฉพาะตารางที่ยังไม่มีอยู่เท่านั้น (ปลอดภัย)
+    """
+    print("\nกำลังตรวจสอบและสร้างตารางในฐานข้อมูล...")
+    try:
+        with app.app_context():
+            if clean_install:
+                print("  - ได้รับคำสั่ง --clean: กำลังลบตารางเก่าทั้งหมด...")
+                db.drop_all()
+                print("  - กำลังสร้างตารางใหม่ตามโมเดลล่าสุด...")
+                db.create_all()
+            else:
+                print("  - กำลังสร้างตารางที่ยังไม่มี (หากจำเป็น)...")
+                db.create_all() # คำสั่งนี้ปลอดภัย จะไม่ลบตารางที่มีอยู่แล้ว
+        print("✅ ตรวจสอบตารางเสร็จสิ้น!")
+    except Exception as e:
+        print(f"❌ เกิดข้อผิดพลาดร้ายแรงระหว่างการสร้างตาราง: {e}")
+        exit() # Exit if tables can't be created, as migration will fail anyway.
 
 # ==============================================================================
 # 2. ฟังก์ชันสำหรับทำความสะอาดและแปลงข้อมูล (ไม่ต้องแก้ไขส่วนนี้)
@@ -43,17 +53,23 @@ def process_dataframe_and_import(df, table_name, column_map, source_name):
 
         if table_name == 'customer_records' and 'customer_id' in df.columns:
             # --- REVISED: Generate PID-xxxx style IDs for missing values ---
-            id_counter = 1001
-            
-            def generate_pid(value):
-                # Check if the value is missing (NaN, None, or empty string)
-                if pd.isna(value) or str(value).strip() == '':
+            # NEW: Get the next available ID from the database ONCE for efficiency.
+            # This prevents creating duplicate IDs if the script is run multiple times.
+            with app.app_context():
+                # This query finds the highest numeric part of 'PID-xxxx' IDs.
+                last_id_scalar = db.session.query(db.func.max(db.func.cast(db.func.substr(CustomerRecord.customer_id, 5), db.Integer))).filter(CustomerRecord.customer_id.like('PID-%')).scalar()
+                
+                id_counter = (last_id_scalar or 1000) + 1
+
+                def generate_pid(value):
                     nonlocal id_counter
-                    new_id = f"PID-{id_counter}"
-                    id_counter += 1
-                    return new_id
-                # If the value exists, keep it as is.
-                return str(value).strip()
+                    # Check if the value is missing (NaN, None, or empty string)
+                    if pd.isna(value) or str(value).strip() == '':
+                        new_id = f"PID-{id_counter}"
+                        id_counter += 1
+                        return new_id
+                    # If the value exists, keep it as is.
+                    return str(value).strip()
 
             df['customer_id'] = df['customer_id'].apply(generate_pid)
 
@@ -71,7 +87,9 @@ def process_dataframe_and_import(df, table_name, column_map, source_name):
         # Since we are now dropping and creating tables, the TRUNCATE logic is no longer needed.
         # We can directly append to the newly created empty tables.
 
-        df.to_sql(table_name, con=db_engine, if_exists='append', index=False)
+        # REVISED: ใช้ engine จาก app context เพื่อหลีกเลี่ยงการสร้าง connection ซ้ำซ้อน
+        with app.app_context():
+            df.to_sql(table_name, con=db.engine, if_exists='append', index=False)
         print(f"  ✅ นำเข้าข้อมูลสู่ตาราง '{table_name}' สำเร็จ!")
     except Exception as e:
         print(f"  ❌ เกิดข้อผิดพลาดระหว่างประมวลผล '{source_name}' สำหรับตาราง '{table_name}': {e}")
@@ -139,34 +157,78 @@ users_map = {
 }
 
 def main():
+    # --- ตรวจสอบว่าผู้ใช้ต้องการล้างข้อมูลหรือไม่ ---
+    clean_install = '--clean' in sys.argv
+
+    if clean_install:
+        print("\n🔥🔥🔥 คำเตือน: คุณกำลังจะลบข้อมูลทั้งหมดในฐานข้อมูลและสร้างใหม่! 🔥🔥🔥")
+        # เพิ่มการยืนยันเพื่อความปลอดภัย
+        confirm = input("ข้อมูลทั้งหมดจะหายไป! พิมพ์ 'yes' เพื่อยืนยันการลบข้อมูล: ")
+        if confirm.lower() != 'yes':
+            print("ยกเลิกการทำงาน")
+            exit()
+
     # --- Step 0: Create tables first ---
-    # This function is now defined in the provided `migrate_data.py` but not shown here for brevity.
-    # It drops and creates all tables.
-    # create_tables() is assumed to be called here.
+    # ส่งค่า clean_install ไปยังฟังก์ชัน
+    create_tables(clean_install=clean_install)
 
-    # --- Step 1: Import main customer data from data1.csv ---
-    customer_csv_path = 'data1.csv'
-    print(f"\nกำลังเริ่มการนำเข้าข้อมูลจากไฟล์ CSV หลัก: '{customer_csv_path}'")
-    try:
-        # Define dtypes to prevent pandas from dropping leading zeros from phone numbers and ID cards
-        customer_dtype_spec = {'เบอร์มือถือ': str, 'เลขบัตรประชาชน': str}
-        df_customers = pd.read_csv(customer_csv_path, encoding='utf-8-sig', dtype=customer_dtype_spec)
-        process_dataframe_and_import(df_customers, 'customer_records', customer_records_map, f"ไฟล์ '{customer_csv_path}'")
-    except FileNotFoundError:
-        print(f"🚨 ไม่พบไฟล์ '{customer_csv_path}'! กรุณาตรวจสอบว่าไฟล์อยู่ในตำแหน่งที่ถูกต้อง")
-    except Exception as e:
-        print(f"❌ เกิดข้อผิดพลาดกับไฟล์ '{customer_csv_path}': {e}")
+    # --- REFACTORED: Define all migration tasks in a structured list ---
+    migration_tasks = [
+        {
+            'csv_path': 'data1.csv',
+            'table_name': 'customer_records',
+            'column_map': customer_records_map,
+            'dtype_spec': {'เบอร์มือถือ': str, 'เลขบัตรประชาชน': str}
+        },
+        {
+            'csv_path': 'users.csv',
+            'table_name': 'users',
+            'column_map': users_map,
+            'dtype_spec': None
+        },
+        {
+            'csv_path': 'approvals.csv',
+            'table_name': 'approvals',
+            'column_map': approvals_map,
+            'dtype_spec': {'หมายเลขโทรศัพท์': str}
+        },
+        {
+            'csv_path': 'bad_debts.csv',
+            'table_name': 'bad_debt_records',
+            'column_map': bad_debt_map,
+            'dtype_spec': {'Phone': str}
+        },
+        {
+            'csv_path': 'all_pid_jobs.csv',
+            'table_name': 'all_pid_jobs',
+            'column_map': all_pid_jobs_map,
+            'dtype_spec': None
+        },
+        {
+            'csv_path': 'pull_plug_records.csv',
+            'table_name': 'pull_plug_records',
+            'column_map': pull_plug_map,
+            'dtype_spec': {'Phone': str}
+        },
+        {
+            'csv_path': 'return_principal_records.csv',
+            'table_name': 'return_principal_records',
+            'column_map': return_principal_map,
+            'dtype_spec': {'Phone': str}
+        }
+    ]
 
-    # --- Step 2: Import user data from users.csv ---
-    users_csv_path = 'users.csv'
-    print(f"\nกำลังเริ่มการนำเข้าข้อมูลจากไฟล์ CSV: '{users_csv_path}'")
-    try:
-        df_users = pd.read_csv(users_csv_path, encoding='utf-8-sig')
-        process_dataframe_and_import(df_users, 'users', users_map, f"ไฟล์ '{users_csv_path}'")
-    except FileNotFoundError:
-        print(f"🚨 ไม่พบไฟล์ '{users_csv_path}'!")
-    except Exception as e:
-        print(f"❌ เกิดข้อผิดพลาดกับไฟล์ '{users_csv_path}': {e}")
+    # --- REFACTORED: Loop through tasks and execute ---
+    for task in migration_tasks:
+        csv_path = task['csv_path']
+        print(f"\nกำลังเริ่มการนำเข้าข้อมูลจากไฟล์ CSV: '{csv_path}'")
+        try:
+            df = pd.read_csv(csv_path, encoding='utf-8-sig', dtype=task.get('dtype_spec'))
+            process_dataframe_and_import(df, task['table_name'], task['column_map'], f"ไฟล์ '{csv_path}'")
+        except FileNotFoundError:
+            print(f"🚨 ไม่พบไฟล์ '{csv_path}'! ข้ามการนำเข้าไฟล์นี้")
+        except Exception as e:
+            print(f"❌ เกิดข้อผิดพลาดกับไฟล์ '{csv_path}': {e}")
 
     print("\n🎉 กระบวนการนำเข้าข้อมูลทั้งหมดเสร็จสิ้น!")
 
