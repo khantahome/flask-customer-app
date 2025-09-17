@@ -10,6 +10,9 @@ from datetime import datetime, timedelta, UTC
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response, jsonify, current_app
 from flask_caching import Cache
+
+# NEW: Import password hashing utilities
+from werkzeug.security import check_password_hash, generate_password_hash
 import pandas as pd
 import numpy as np
 
@@ -348,9 +351,14 @@ def get_records_from_model(model_class):
 def login():
     if request.method == 'POST':
         username = request.form['username']
-        password = request.form['password']
-        users = load_users()
-        if username in users and users[username] == password:
+        password_candidate = request.form['password']
+        
+        # REFACTORED: Query for a single user instead of loading all users.
+        # This is much more efficient and secure.
+        user = User.query.filter_by(user_id=username).first()
+
+        # REFACTORED: Use check_password_hash to securely compare passwords.
+        if user and check_password_hash(user.password, password_candidate):
             session['logged_in'] = True
             session['username'] = username
             flash('เข้าสู่ระบบสำเร็จ', 'success')
@@ -533,16 +541,23 @@ def edit_customer_data(record_id):
             customer.registered_address = request.form.get('registered_address', customer.registered_address)
             customer.status = request.form.get('status', customer.status)
             
-            customer.desired_credit_limit = request.form.get('desired_credit_limit', customer.desired_credit_limit) or None
-            customer.approved_credit_limit = request.form.get('approved_credit_limit', customer.approved_credit_limit) or None
+            # REVISED: Apply the same robust data cleaning from the data entry form to prevent crashes.
+            def clean_decimal(value):
+                if value is None or str(value).strip() == '':
+                    return None
+                # Remove commas and convert to numeric, return None if it fails
+                return pd.to_numeric(str(value).replace(',', ''), errors='coerce')
+
+            customer.desired_credit_limit = clean_decimal(request.form.get('desired_credit_limit', customer.desired_credit_limit))
+            customer.approved_credit_limit = clean_decimal(request.form.get('approved_credit_limit', customer.approved_credit_limit))
             
             customer.applied_before = request.form.get('applied_before', customer.applied_before)
             customer.check_status = request.form.get('check', customer.check_status)
             customer.application_channel = request.form.get('how_applied', customer.application_channel)
             customer.assigned_company = request.form.get('assigned_company', customer.assigned_company)
             
-            customer.upfront_interest_deduction = request.form.get('upfront_interest', customer.upfront_interest_deduction)
-            customer.processing_fee = request.form.get('processing_fee', customer.processing_fee)
+            customer.upfront_interest_deduction = clean_decimal(request.form.get('upfront_interest', customer.upfront_interest_deduction))
+            customer.processing_fee = clean_decimal(request.form.get('processing_fee', customer.processing_fee))
             
             application_date_str = request.form.get('application_date')
             if application_date_str:

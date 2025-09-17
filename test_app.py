@@ -1,5 +1,5 @@
 import json
-from app import User, db, CustomerRecord
+from app import User, db, CustomerRecord, generate_password_hash
 
 def test_login_page(client):
     """
@@ -22,7 +22,8 @@ def test_successful_login_and_logout(client, app):
     """
     # Setup: สร้างผู้ใช้ทดสอบในฐานข้อมูลจำลอง (in-memory)
     with app.app_context():
-        test_user = User(user_id='testuser', password='password123')
+        hashed_password = generate_password_hash('password123')
+        test_user = User(user_id='testuser', password=hashed_password)
         db.session.add(test_user)
         db.session.commit()
 

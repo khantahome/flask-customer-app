@@ -1,5 +1,5 @@
 import pytest
-from app import app as flask_app, db as sqlalchemy_db, User
+from app import app as flask_app, db as sqlalchemy_db, User, generate_password_hash
 
 @pytest.fixture(scope='module')
 def app():
@@ -49,7 +49,8 @@ def logged_in_client(client, app):
         # ตรวจสอบว่ามีผู้ใช้ 'testuser' อยู่แล้วหรือไม่ เพื่อป้องกัน error
         test_user = User.query.filter_by(user_id='testuser').first()
         if not test_user:
-            user = User(user_id='testuser', password='password123')
+            hashed_password = generate_password_hash('password123')
+            user = User(user_id='testuser', password=hashed_password)
             sqlalchemy_db.session.add(user)
             sqlalchemy_db.session.commit()
 

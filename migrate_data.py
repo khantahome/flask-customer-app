@@ -6,7 +6,7 @@ import sys
 import os
 from dotenv import load_dotenv
 # NEW: Import the Flask app and db object to create tables
-from app import app, db, CustomerRecord
+from app import app, db, CustomerRecord, generate_password_hash
 
 load_dotenv() # โหลดค่าจากไฟล์ .env
 
@@ -81,6 +81,11 @@ def process_dataframe_and_import(df, table_name, column_map, source_name):
                 df[col] = pd.to_datetime(df[col], errors='coerce')
             elif 'time' in col: # NEW: Handle time columns
                 df[col] = pd.to_datetime(df[col], errors='coerce', format='%H:%M:%S').dt.time
+
+        # NEW: Hash passwords before inserting into the database
+        if table_name == 'users' and 'password' in df.columns:
+            print("  - กำลังแฮชรหัสผ่าน...")
+            df['password'] = df['password'].apply(lambda pwd: generate_password_hash(str(pwd)) if pd.notna(pwd) else None)
 
         df.replace({np.nan: None, 'NaT': None}, inplace=True)
 
@@ -164,7 +169,7 @@ def main():
         print("\n🔥🔥🔥 คำเตือน: คุณกำลังจะลบข้อมูลทั้งหมดในฐานข้อมูลและสร้างใหม่! 🔥🔥🔥")
         # เพิ่มการยืนยันเพื่อความปลอดภัย
         confirm = input("ข้อมูลทั้งหมดจะหายไป! พิมพ์ 'yes' เพื่อยืนยันการลบข้อมูล: ")
-        if confirm.lower() != 'yes':
+        if confirm.lower().strip() != 'yes':
             print("ยกเลิกการทำงาน")
             exit()
 
