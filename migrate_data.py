@@ -228,7 +228,15 @@ def main():
         csv_path = task['csv_path']
         print(f"\nกำลังเริ่มการนำเข้าข้อมูลจากไฟล์ CSV: '{csv_path}'")
         try:
-            df = pd.read_csv(csv_path, encoding='utf-8-sig', dtype=task.get('dtype_spec'))
+            # REVISED: Handle different delimiters for different CSV files.
+            # data1.csv and users.csv use commas, while the others use semicolons.
+            delimiter = ';' if task['table_name'] not in ['customer_records', 'users'] else ','
+            df = pd.read_csv(
+                csv_path, 
+                encoding='utf-8-sig', 
+                dtype=task.get('dtype_spec'), 
+                delimiter=delimiter
+            )
             process_dataframe_and_import(df, task['table_name'], task['column_map'], f"ไฟล์ '{csv_path}'")
         except FileNotFoundError:
             print(f"🚨 ไม่พบไฟล์ '{csv_path}'! ข้ามการนำเข้าไฟล์นี้")

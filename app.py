@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import logging
 from dotenv import load_dotenv
  
 # REVISED: Explicitly load the .env file from the project's root directory.
@@ -37,6 +38,22 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError("No SECRET_KEY set for Flask application. Please set it in your environment variables.")
 app.secret_key = SECRET_KEY
+
+# --- Logging Configuration ---
+# This sets up a file-based logger which is crucial for debugging on a server.
+if not app.debug:
+    # Create a directory for logs if it doesn't exist
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+    
+    # Set up a rotating file handler
+    from logging.handlers import RotatingFileHandler
+    file_handler = RotatingFileHandler('logs/customer_app.log', maxBytes=10240, backupCount=10)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('Customer App startup')
 
 # --- Database Configuration (MySQL with SQLAlchemy) ---
 DB_USER = os.environ.get('DB_USER', 'root')
@@ -402,27 +419,36 @@ def search_customer_data():
 
         if search_keyword:
             display_title = f"ผลการค้นหาสำหรับ: '{search_keyword}'"
-            
-            # REFACTORED: Use Full-Text Search for text fields and LIKE for others.
-            # This is significantly more performant on large datasets.
-            # Note: The database table must have a FULLTEXT index.
-            fulltext_match = func.match(
-                CustomerRecord.first_name, CustomerRecord.last_name, 
-                CustomerRecord.business_name, CustomerRecord.remarks
-            ).against(search_keyword, in_boolean_mode=True)
-
-            # Use traditional LIKE for ID and phone numbers which are not full-text indexed.
             like_term = f"%{search_keyword}%"
-            like_match = or_(
-                CustomerRecord.customer_id.ilike(like_term),
-                CustomerRecord.mobile_phone.ilike(like_term),
-                CustomerRecord.id_card_number.ilike(like_term)
-            )
 
-            base_query = base_query.filter(
-                # Combine both search methods
-                or_(fulltext_match, like_match)
-            )
+            # NEW: Check the database dialect to use the appropriate search method.
+            # This makes the code compatible with both MySQL (production) and SQLite (testing).
+            if 'mysql' in app.config.get('SQLALCHEMY_DATABASE_URI', ''):
+                # Use efficient FULLTEXT search for MySQL
+                fulltext_match = func.match(
+                    CustomerRecord.first_name, CustomerRecord.last_name, 
+                    CustomerRecord.business_name, CustomerRecord.remarks
+                ).against(search_keyword, in_boolean_mode=True)
+                
+                like_match = or_(
+                    CustomerRecord.customer_id.ilike(like_term),
+                    CustomerRecord.mobile_phone.ilike(like_term),
+                    CustomerRecord.id_card_number.ilike(like_term)
+                )
+                
+                base_query = base_query.filter(or_(fulltext_match, like_match))
+            else:
+                # Use standard LIKE search for SQLite (testing) and other DBs
+                search_filter = or_(
+                    CustomerRecord.customer_id.ilike(like_term),
+                    CustomerRecord.first_name.ilike(like_term),
+                    CustomerRecord.last_name.ilike(like_term),
+                    CustomerRecord.mobile_phone.ilike(like_term),
+                    CustomerRecord.id_card_number.ilike(like_term),
+                    CustomerRecord.business_name.ilike(like_term),
+                    CustomerRecord.remarks.ilike(like_term)
+                )
+                base_query = base_query.filter(search_filter)
         
         pagination = base_query.order_by(CustomerRecord.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
         results_obj = pagination.items

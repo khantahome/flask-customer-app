@@ -1,0 +1,7 @@
+2025-09-17 15:48:25,388 INFO: Customer App startup [in c:\Users\Lenovo V330-14IKB\Desktop\flask_customer_app\app.py:56]
+2025-09-17 15:48:29,509 ERROR: Error during search for ' ¡À≠‘ß': Neither 'Function' object nor 'Comparator' object has an attribute 'against' [in c:\Users\Lenovo V330-14IKB\Desktop\flask_customer_app\app.py:452]
+2025-09-17 15:53:48,046 INFO: Customer App startup [in c:\Users\Lenovo V330-14IKB\Desktop\flask_customer_app\app.py:56]
+2025-09-17 15:53:50,754 ERROR: Error during search for ' ¡À≠‘ß': Neither 'Function' object nor 'Comparator' object has an attribute 'against' [in c:\Users\Lenovo V330-14IKB\Desktop\flask_customer_app\app.py:461]
+2025-09-17 15:58:02,963 INFO: Customer App startup [in c:\Users\Lenovo V330-14IKB\Desktop\flask_customer_app\app.py:56]
+2025-09-17 15:58:06,005 ERROR: Error during search for ' ¡À≠‘ß': Neither 'Function' object nor 'Comparator' object has an attribute 'against' [in c:\Users\Lenovo V330-14IKB\Desktop\flask_customer_app\app.py:461]
+2025-09-17 16:00:22,681 INFO: Customer App startup [in c:\Users\Lenovo V330-14IKB\Desktop\flask_customer_app\app.py:56]

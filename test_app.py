@@ -1,5 +1,6 @@
 import json
-from app import User, db, CustomerRecord, generate_password_hash
+from datetime import date
+from app import User, db, CustomerRecord, Approval, generate_password_hash
 
 def test_login_page(client):
     """
@@ -199,3 +200,35 @@ def test_delete_customer(logged_in_client, app):
     with app.app_context():
         deleted_customer = db.session.get(CustomerRecord, customer_db_id)
         assert deleted_customer is None
+
+def test_loan_management_page(logged_in_client, app):
+    """
+    GIVEN a logged-in user and an approval record in the database
+    WHEN the '/loan_management' page is requested
+    THEN check that the page loads correctly and displays the approval data
+    """
+    # 1. Setup: Create a test approval record
+    with app.app_context():
+        test_approval = Approval(
+            status='รอปิดจ๊อบ',
+            customer_id='PID-LOAN-1',
+            full_name='ผู้กู้ ทดสอบ',
+            phone_number='080-123-4567',
+            approval_date=date(2024, 5, 20),
+            approved_amount=50000.00,
+            assigned_company='STARLOAN',
+            registrar='testuser'
+        )
+        db.session.add(test_approval)
+        db.session.commit()
+
+    # 2. Make a GET request to the loan management page
+    response = logged_in_client.get('/loan_management')
+
+    # 3. Assertions
+    assert response.status_code == 200
+    response_text = response.data.decode('utf-8')
+    assert 'จัดการสินเชื่อ' in response_text
+    assert 'PID-LOAN-1' in response_text
+    assert 'ผู้กู้ ทดสอบ' in response_text
+    assert '50,000.00' in response_text # Check for formatted amount
