@@ -283,8 +283,17 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'logged_in' not in session:
-            flash('กรุณาเข้าสู่ระบบก่อน', 'danger')
-            return redirect(url_for('login'))
+            # REVISED: Check if the request is an API call (expecting JSON).
+            # If so, return a 401 Unauthorized error in JSON format instead of redirecting.
+            # This prevents the "Unexpected token '<'" error on the frontend.
+            is_api_request = request.path.startswith('/api/') or request.is_json
+            
+            if is_api_request:
+                return jsonify(error="Authentication required. Your session may have expired.", login_url=url_for('login')), 401
+            else:
+                # For regular page loads, flash a message and redirect to the login page.
+                flash('กรุณาเข้าสู่ระบบก่อน', 'danger')
+                return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
