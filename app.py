@@ -525,6 +525,10 @@ def edit_customer_data(record_id):
 
     if request.method == 'POST':
         try:
+            # --- NEW: Get original status before making changes ---
+            original_status = customer.status
+            new_status = request.form.get('status', customer.status)
+
             # Update customer object with form data
             customer.first_name = request.form.get('customer_name', customer.first_name).strip()
             customer.last_name = request.form.get('last_name', customer.last_name).strip()
@@ -547,7 +551,7 @@ def edit_customer_data(record_id):
             customer.business_name = request.form.get('business_name', customer.business_name)
             customer.province = request.form.get('province', customer.province)
             customer.registered_address = request.form.get('registered_address', customer.registered_address)
-            customer.status = request.form.get('status', customer.status)
+            customer.status = new_status # Apply the new status
             
             # REVISED: Apply the same robust data cleaning from the data entry form to prevent crashes.
             def clean_decimal(value):
@@ -604,6 +608,25 @@ def edit_customer_data(record_id):
                         current_app.logger.warning(f"Could not delete image from Cloudinary for URL {url}: {cloudinary_error}")
             # 2. Save the final list of URLs (kept + new) to the database
             customer.image_urls = request.form.get('final_image_urls', customer.image_urls)
+
+            # --- NEW: Logic to create an Approval record when status is changed to 'อนุมัติ' ---
+            if new_status == 'อนุมัติ' and original_status != 'อนุมัติ':
+                # Check if an approval record already exists to prevent duplicates
+                existing_approval = Approval.query.filter_by(customer_id=customer.customer_id).first()
+                if not existing_approval:
+                    new_approval = Approval(
+                        status='รอปิดจ๊อบ',  # Initial status for loan management
+                        customer_id=customer.customer_id,
+                        full_name=f"{customer.first_name} {customer.last_name}",
+                        phone_number=customer.mobile_phone,
+                        approval_date=datetime.now().date(), # Use current date for approval
+                        approved_amount=customer.approved_credit_limit,
+                        assigned_company=customer.assigned_company,
+                        registrar=session.get('username'),
+                        contract_image_urls=customer.image_urls # Copy image URLs for reference
+                    )
+                    db.session.add(new_approval)
+                    flash('สร้างรายการอนุมัติในหน้าจัดการสินเชื่อเรียบร้อยแล้ว', 'info')
 
             db.session.commit()
             cache.clear() # Clear all cache after an edit

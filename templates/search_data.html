@@ -1398,6 +1398,43 @@
                 });
             }
 
+            // --- NEW: Helper function to dynamically create the status cell HTML ---
+            function createStatusCellHTML(status, rowIndex, recordData) {
+                let badgeClass = 'status-unknown';
+                let badgeText = status;
+
+                const statusLower = String(status || '').toLowerCase();
+                if (statusLower.includes('รอติดต่อ')) { badgeClass = 'status-contact-needed'; badgeText = 'รอติดต่อ'; }
+                else if (statusLower.includes('รอดำเนินการ')) { badgeClass = 'status-pending'; badgeText = 'รอดำเนินการ'; }
+                else if (statusLower.includes('รอตรวจ') || statusLower.includes('เลื่อนนัด')) { badgeClass = 'status-inspection-needed'; badgeText = status; }
+                else if (statusLower.includes('ไม่อนุมัติ')) { badgeClass = 'status-rejected'; badgeText = 'ไม่อนุมัติ'; }
+                else if (statusLower.includes('อนุมัติ')) { badgeClass = 'status-approved'; badgeText = 'อนุมัติ'; }
+                else if (statusLower.includes('ยกเลิก')) { badgeClass = 'status-cancelled'; badgeText = 'ยกเลิก'; }
+
+                // IMPORTANT: Update the record data object before stringifying it for the new button
+                recordData['สถานะ'] = status;
+                
+                // Also update other fields that might have changed from the modal
+                const inspectionDate = document.getElementById('status_inspection_date').value;
+                const inspectionTime = document.getElementById('status_inspection_time').value;
+                const inspector = document.getElementById('status_inspector').value;
+                
+                if (status === 'รอตรวจ' || status === 'เลื่อนนัด') {
+                    if (inspectionDate) recordData['วันที่นัดตรวจ'] = inspectionDate;
+                    if (inspectionTime) recordData['เวลานัดตรวจ'] = inspectionTime;
+                    if (inspector) recordData['ผู้รับงานตรวจ'] = inspector;
+                }
+
+                // Escape single quotes in the stringified JSON to prevent HTML attribute from breaking
+                const escapedRecordData = JSON.stringify(recordData).replace(/'/g, '&apos;');
+
+                return `
+                    <div class="status-cell-content">
+                        <span class="status-badge ${badgeClass}">${badgeText}</span>
+                        <button type="button" class="record-button update-status-btn" data-row-index="${rowIndex}" data-current-status="${status}" data-record='${escapedRecordData}'><i class="fas fa-pen"></i></button>
+                    </div>`;
+            }
+
             // --- Lightbox Logic (for image thumbnails in modal) ---
             const lightboxOverlay = document.getElementById('lightboxOverlay');
             const lightboxImage = document.getElementById('lightboxImage');
@@ -1572,6 +1609,9 @@
                         // Trigger change event to set initial visibility of extra fields
                         updateStatusSelect.dispatchEvent(new Event('change'));
 
+                        // NEW: Store the full record data on the form element itself for later use
+                        updateStatusForm.dataset.record = updateBtn.dataset.record;
+
                         updateStatusModal.classList.add('visible');
                     }
 
@@ -1643,11 +1683,18 @@
                         const result = await response.json();
 
                         if (response.ok && result.success) {
-                            alert('อัปเดตสถานะเรียบร้อยแล้ว');
-                            window.location.reload(); // Easiest way to reflect all changes
+                            // REVISED: Instead of reloading, update the table cell dynamically
+                            const statusCell = document.getElementById(`status-cell-${rowIndex}`);
+                            if (statusCell) {
+                                // Retrieve the original record data stored on the form
+                                const recordData = JSON.parse(updateStatusForm.dataset.record);
+                                // Update the cell content dynamically
+                                statusCell.innerHTML = createStatusCellHTML(newStatus, rowIndex, recordData);
+                            }
                         } else {
                             throw new Error(result.message || 'Failed to update status.');
                         }
+
                     } catch (error) {
                         console.error('Error updating status:', error);
                         alert('เกิดข้อผิดพลาด: ' + error.message);
