@@ -1433,6 +1433,7 @@
           <td>{{ record.get('บริษัทที่รับงาน', '-') }}</td>
           <td>{{ record.get('ชื่อผู้ลงทะเบียน', '-') }}</td>
           <td>
+            <button class="action-table-btn btn-view-info view-info-btn" data-id="{{ record.get('Customer ID', '') }}"><i class="fas fa-eye"></i> ดูข้อมูล</button>
             <button class="action-table-btn closejob-action-btn" data-id="{{ record.get('Customer ID', '') }}">ปิดจ๊อบ</button>
             <button class="action-table-btn btn-danger bad-debt-btn" 
                     data-id="{{ record.get('Customer ID', '') }}" 
@@ -1728,7 +1729,7 @@
         </div>
         <div class="form-group">
             <label class="form-label" for="bad-debt-balance">ยอดเงินคงค้างชำระ:</label>
-            <input type="number" id="bad-debt-balance" name="balance" class="form-input" placeholder="กรอกยอดเงิน หรือรอคำนวณ" step="any">
+            <input type="number" id="bad-debt-balance" name="outstanding_balance" class="form-input" placeholder="กรอกยอดเงิน หรือรอคำนวณ" step="any">
         </div>
         <div class="form-group">
             <label class="form-label" for="bad-debt-notes">หมายเหตุ (จำเป็น):</label>
@@ -1757,7 +1758,7 @@
         </div>
         <div class="form-group">
             <label class="form-label" for="pull-plug-amount">ยอดเงินที่ชั๊กปลั๊ก:</label>
-            <input type="number" id="pull-plug-amount" name="amount" class="form-input" placeholder="กรอกยอดเงิน" step="any" required>
+            <input type="number" id="pull-plug-amount" name="pull_plug_amount" class="form-input" placeholder="กรอกยอดเงิน" step="any" required>
         </div>
         <div class="form-group">
             <label class="form-label" for="pull-plug-notes">หมายเหตุ (จำเป็น):</label>
@@ -1786,7 +1787,7 @@
         </div>
         <div class="form-group">
             <label class="form-label" for="return-principal-amount">ยอดเงินที่คืนต้น:</label>
-            <input type="number" id="return-principal-amount" name="amount" class="form-input" placeholder="กรอกยอดเงิน" step="any" required>
+            <input type="number" id="return-principal-amount" name="return_amount" class="form-input" placeholder="กรอกยอดเงิน" step="any" required>
         </div>
         <div class="form-group">
             <label class="form-label" for="return-principal-notes">หมายเหตุ (จำเป็น):</label>
@@ -1926,6 +1927,240 @@ document.addEventListener('DOMContentLoaded', () => {
     const otherCompanySearchContainer = document.getElementById('other-company-search-container');
     const otherCompanySearchInput = document.getElementById('other-company-search');
     const viewReportBtn = document.getElementById('view-report-btn');
+
+    // =========================================================================
+    // MODAL: ADD DOCUMENT
+    // =========================================================================
+    let selectedDocFiles = []; // This needs to be accessible by the open function
+
+    function renderDocPreviews() {
+        const addDocModal = document.getElementById('add-doc-modal');
+        if (!addDocModal) return;
+
+        const docPreviewsContainer = document.getElementById('doc-previews-container');
+        const dropZoneTextSpan = addDocModal.querySelector('.drop-zone-text');
+        const originalDropZoneText = `<i class="fas fa-cloud-upload-alt"></i> ลากและวางไฟล์ที่นี่<br>หรือคลิกเพื่อเลือกไฟล์`;
+
+        docPreviewsContainer.innerHTML = '';
+        if (selectedDocFiles.length > 0) {
+            dropZoneTextSpan.innerHTML = `<i class="fas fa-images"></i> ${selectedDocFiles.length} ไฟล์ถูกเลือกแล้ว<br>ลากไฟล์เพิ่มเติมหรือคลิกที่นี่`;
+        } else {
+            dropZoneTextSpan.innerHTML = originalDropZoneText;
+        }
+
+        selectedDocFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'doc-preview-item';
+                previewItem.innerHTML = `<img src="${e.target.result}" alt="Preview"><button type="button" class="remove-doc-preview" data-index="${index}">&times;</button>`;
+                docPreviewsContainer.appendChild(previewItem);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (addDocModal) {
+        const addDocForm = document.getElementById('add-doc-form');
+        const cancelAddDocBtn = document.getElementById('cancel-add-doc-btn');
+        const closeAddDocModalBtn = addDocModal.querySelector('.close-add-doc-modal');
+        const contractFilesInput = document.getElementById('contract-files-input');
+        const docPreviewsContainer = document.getElementById('doc-previews-container');
+        const fileDropZone = addDocModal.querySelector('.file-drop-zone');
+
+        function handleFiles(files) {
+            const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            newFiles.forEach(newFile => {
+                if (!selectedDocFiles.some(existingFile => existingFile.name === newFile.name && existingFile.size === newFile.size)) {
+                    selectedDocFiles.push(newFile);
+                }
+            });
+            renderDocPreviews();
+        }
+
+        fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('dragover'); });
+        fileDropZone.addEventListener('dragleave', () => { fileDropZone.classList.remove('dragover'); });
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+        });
+        contractFilesInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        docPreviewsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-doc-preview')) {
+                const indexToRemove = parseInt(e.target.dataset.index, 10);
+                selectedDocFiles.splice(indexToRemove, 1);
+                renderDocPreviews();
+            }
+        });
+
+        function closeAddDocModal() { addDocModal.style.display = 'none'; }
+        cancelAddDocBtn.addEventListener('click', closeAddDocModal);
+        closeAddDocModalBtn.addEventListener('click', closeAddDocModal);
+        window.addEventListener('click', (event) => { if (event.target == addDocModal) closeAddDocModal(); });
+
+        addDocForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (selectedDocFiles.length === 0) {
+                alert('กรุณาเลือกไฟล์เอกสารก่อนบันทึก');
+                return;
+            }
+            const uploadSpinner = document.getElementById('upload-spinner');
+            uploadSpinner.style.display = 'block';
+            const submitBtn = addDocModal.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            const formData = new FormData(addDocForm);
+            // Clear and append files from our managed array
+            formData.delete('contract_files[]');
+            selectedDocFiles.forEach(file => { formData.append('contract_files[]', file); });
+
+            try {
+                const response = await fetch('/upload_contract_docs', { method: 'POST', body: formData });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    alert('อัปโหลดและบันทึกเอกสารเรียบร้อยแล้ว');
+                    closeAddDocModal();
+                    window.location.reload(); // Reload to show updated info
+                } else {
+                    throw new Error(result.error || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+                }
+            } catch (error) {
+                alert(`เกิดข้อผิดพลาด: ${error.message}`);
+            } finally {
+                uploadSpinner.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+    }
+
+    // =========================================================================
+    // MODAL: VIEW INFO & LIGHTBOX
+    // =========================================================================
+    if (viewInfoModal) {
+        const viewInfoBody = document.getElementById('view-info-body');
+        const viewInfoSpinner = document.getElementById('view-info-spinner');
+        const closeViewInfoModalBtn = document.querySelector('.close-view-info-modal');
+        const lightboxImage = lightbox.querySelector('.lightbox-image');
+        const lightboxClose = lightbox.querySelector('.lightbox-close');
+        const lightboxPrev = lightbox.querySelector('.lightbox-nav.prev');
+        const lightboxNext = lightbox.querySelector('.lightbox-nav.next');
+        const zoomInBtn = document.getElementById('zoom-in-btn');
+        const zoomOutBtn = document.getElementById('zoom-out-btn');
+        let currentLightboxUrls = [];
+        let currentLightboxIndex = 0;
+        let currentZoom = 1;
+
+        function buildInfoModalContent(data) {
+            const createInfoItem = (label, value) => (value === undefined || value === null || value === '') ? '' : `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`;
+            let contentHTML = '';
+            contentHTML += createInfoItem('Customer ID', data['Customer ID']);
+            contentHTML += createInfoItem('ชื่อ-นามสกุล', data['ชื่อ-นามสกุล']);
+            contentHTML += createInfoItem('สถานะ', data['สถานะ']);
+            contentHTML += createInfoItem('หมายเลขโทรศัพท์', data['หมายเลขโทรศัพท์']);
+            contentHTML += createInfoItem('วันที่อนุมัติ', data['วันที่อนุมัติ']);
+            contentHTML += createInfoItem('วงเงินที่อนุมัติ', data['วงเงินที่อนุมัติ']);
+            contentHTML += createInfoItem('ชื่อผู้ลงทะเบียน', data['ชื่อผู้ลงทะเบียน']);
+            
+            const imageUrls = (data['รูปถ่ายสัญญา'] || '').split(',').map(url => url.trim()).filter(url => url && url !== '-');
+            if (imageUrls.length > 0) {
+                let imagesHTML = '<div class="info-image-gallery">';
+                imageUrls.forEach((url, index) => {
+                    imagesHTML += `<div class="info-image-item"><a href="${url}" class="lightbox-trigger" data-index="${index}"><img src="${url}" alt="เอกสารสัญญา"></a><button class="delete-doc-btn" data-url="${url}" data-customer-id="${data['Customer ID']}">&times;</button></div>`;
+                });
+                imagesHTML += '</div>';
+                contentHTML += `<div class="info-item full-width"><div class="info-label">รูปถ่ายสัญญา (${imageUrls.length} รูป)</div>${imagesHTML}</div>`;
+            } else {
+                contentHTML += `<div class="info-item full-width"><div class="info-label">รูปถ่ายสัญญา</div><div class="info-value">- ยังไม่มีเอกสาร -</div></div>`;
+            }
+            viewInfoBody.innerHTML = contentHTML;
+        }
+
+        function openLightbox(urls, index) {
+            currentLightboxUrls = urls;
+            currentLightboxIndex = index;
+            currentZoom = 1;
+            updateLightboxImage();
+            lightbox.style.display = 'flex';
+            setTimeout(() => lightbox.classList.add('visible'), 10);
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('visible');
+            lightbox.addEventListener('transitionend', () => { if (!lightbox.classList.contains('visible')) lightbox.style.display = 'none'; }, { once: true });
+        }
+
+        function updateLightboxImage() {
+            if (currentLightboxUrls.length > 0) {
+                lightboxImage.src = currentLightboxUrls[currentLightboxIndex];
+                lightboxImage.style.transform = `scale(${currentZoom})`;
+                lightboxPrev.style.display = currentLightboxUrls.length > 1 ? 'flex' : 'none';
+                lightboxNext.style.display = currentLightboxUrls.length > 1 ? 'flex' : 'none';
+            }
+        }
+
+        function showNextImage() { currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxUrls.length; currentZoom = 1; updateLightboxImage(); }
+        function showPrevImage() { currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxUrls.length) % currentLightboxUrls.length; currentZoom = 1; updateLightboxImage(); }
+
+        function closeViewInfoModal() { viewInfoModal.style.display = 'none'; }
+        closeViewInfoModalBtn.addEventListener('click', closeViewInfoModal);
+        window.addEventListener('click', (event) => { if (event.target == viewInfoModal) closeViewInfoModal(); });
+
+        lightboxClose.addEventListener('click', closeLightbox);
+        lightboxNext.addEventListener('click', showNextImage);
+        lightboxPrev.addEventListener('click', showPrevImage);
+        zoomInBtn.addEventListener('click', () => { currentZoom = Math.min(currentZoom + 0.2, 3); lightboxImage.style.transform = `scale(${currentZoom})`; });
+        zoomOutBtn.addEventListener('click', () => { currentZoom = Math.max(currentZoom - 0.2, 0.5); lightboxImage.style.transform = `scale(${currentZoom})`; });
+        lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+        document.addEventListener('keydown', (e) => {
+            if (lightbox.classList.contains('visible')) {
+                if (e.key === 'ArrowRight') showNextImage();
+                if (e.key === 'ArrowLeft') showPrevImage();
+                if (e.key === 'Escape') closeLightbox();
+            }
+        });
+
+        viewInfoBody.addEventListener('click', async (e) => {
+            if (e.target.closest('.lightbox-trigger')) {
+                e.preventDefault();
+                const trigger = e.target.closest('.lightbox-trigger');
+                const gallery = trigger.closest('.info-image-gallery');
+                const allTriggers = Array.from(gallery.querySelectorAll('.lightbox-trigger'));
+                const urls = allTriggers.map(t => t.href);
+                const index = parseInt(trigger.dataset.index, 10);
+                openLightbox(urls, index);
+            }
+
+            if (e.target.classList.contains('delete-doc-btn')) {
+                e.preventDefault();
+                const button = e.target;
+                const urlToDelete = button.dataset.url;
+                const customerId = button.dataset.customerId;
+                if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพนี้?`)) {
+                    button.textContent = '...';
+                    button.disabled = true;
+                    try {
+                        const response = await fetch('/delete_contract_doc', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ customer_id: customerId, image_url_to_delete: urlToDelete })
+                        });
+                        const result = await response.json();
+                        if (response.ok && result.success) {
+                            button.closest('.info-image-item').remove();
+                            alert('ลบรูปภาพเรียบร้อยแล้ว');
+                        } else {
+                            throw new Error(result.error || 'เกิดข้อผิดพลาดในการลบรูปภาพ');
+                        }
+                    } catch (error) {
+                        alert(`เกิดข้อผิดพลาด: ${error.message}`);
+                        button.textContent = '×';
+                        button.disabled = false;
+                    }
+                }
+            }
+        });
+    }
 
     // =========================================================================
     // HELPER FUNCTIONS
@@ -2232,19 +2467,59 @@ document.addEventListener('DOMContentLoaded', () => {
             const customerPhone = button.dataset.phone;
 
             if (button.matches('.add-doc-btn')) {
-                // Logic for Add Document Modal
+                const addDocCustomerIdInput = document.getElementById('add-doc-customer-id');
+                const addDocModalTitle = document.getElementById('add-doc-modal-title');
+                const addDocForm = document.getElementById('add-doc-form');
+                const uploadSpinner = document.getElementById('upload-spinner');
+
+                addDocCustomerIdInput.value = customerId;
+                addDocModalTitle.textContent = `เพิ่มเอกสารสำหรับ: ${customerName}`;
+                
+                addDocForm.reset();
+                selectedDocFiles = [];
+                renderDocPreviews();
+                uploadSpinner.style.display = 'none';
+                addDocModal.querySelector('button[type="submit"]').disabled = false;
+
+                addDocModal.style.display = 'block';
+
             } else if (button.matches('.view-info-btn')) {
-                // Logic for View Info Modal
+                const viewInfoBody = document.getElementById('view-info-body');
+                const viewInfoSpinner = document.getElementById('view-info-spinner');
+                const viewInfoModalTitle = document.getElementById('view-info-modal-title');
+
+                viewInfoModal.style.display = 'block';
+                viewInfoBody.style.display = 'none';
+                viewInfoSpinner.style.display = 'block';
+                viewInfoModalTitle.textContent = `ข้อมูลลูกค้า: ${customerId}`;
+                viewInfoBody.innerHTML = '';
+
+                try {
+                    const response = await fetch(`/get-customer-info/${customerId}`);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    buildInfoModalContent(data);
+                } catch (error) {
+                    console.error('Error fetching customer info:', error);
+                    viewInfoBody.innerHTML = `<p style="color: var(--error-bg); grid-column: 1 / -1;">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}</p>`;
+                } finally {
+                    viewInfoSpinner.style.display = 'none';
+                    viewInfoBody.style.display = 'grid';
+                }
+
             } else if (button.matches('.closejob-action-btn')) {
-                // Logic for Close Job Modal
+                // ... (existing logic)
             } else if (button.matches('.bad-debt-btn')) {
-                // Logic for Bad Debt Modal
+                // ... (existing logic)
             } else if (button.matches('.pull-plug-btn')) {
-                // Logic for Pull Plug Modal
+                // ... (existing logic)
             } else if (button.matches('.return-principal-btn')) {
-                // Logic for Return Principal Modal
+                // ... (existing logic)
             } else if (button.matches('.finish-return-btn')) {
-                // Logic for Finish Return Principal
+                // ... (existing logic)
             }
         });
     }
@@ -2350,9 +2625,98 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Add other modal logic (Bad Debt, Pull Plug, etc.) here ---
-    // This part is extensive and can be refactored similarly if needed,
-    // but for now, the main issue of script execution is resolved.
-    // The existing modal logic from the original file can be placed here.
+    if (badDebtForm) {
+        const cancelBadDebtBtn = document.getElementById('cancel-bad-debt-btn');
+        cancelBadDebtBtn.addEventListener('click', () => badDebtModal.style.display = 'none');
+        badDebtForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(badDebtForm);
+            const data = Object.fromEntries(formData.entries());
+            const confirmBtn = badDebtForm.querySelector('button[type="submit"]');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'กำลังบันทึก...';
+            try {
+                const response = await fetch('/mark_as_bad_debt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    alert('บันทึกหนี้เสียเรียบร้อยแล้ว');
+                    badDebtModal.style.display = 'none';
+                    const customerId = data.customer_id;
+                    document.querySelectorAll(`tr[data-customer-id-row="${customerId}"]`).forEach(row => {
+                        row.cells[0].textContent = 'หนี้เสีย';
+                        row.dataset.status = 'หนี้เสีย';
+                        const actionCell = row.querySelector('td:last-child');
+                        if (actionCell) actionCell.innerHTML = '<span style="color: var(--error-bg);">หนี้เสีย</span>';
+                    });
+                } else { throw new Error(result.error || 'ไม่สามารถบันทึกได้'); }
+            } catch (error) {
+                alert('เกิดข้อผิดพลาด: ' + error.message);
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'ยืนยัน';
+            }
+        });
+    }
+
+    if (pullPlugForm) {
+        const cancelPullPlugBtn = document.getElementById('cancel-pull-plug-btn');
+        cancelPullPlugBtn.addEventListener('click', () => pullPlugModal.style.display = 'none');
+        pullPlugForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(pullPlugForm);
+            const data = Object.fromEntries(formData.entries());
+            const confirmBtn = pullPlugForm.querySelector('button[type="submit"]');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'กำลังบันทึก...';
+            try {
+                const response = await fetch('/mark_as_pull_plug', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    alert('บันทึกการชั๊กปลั๊กเรียบร้อยแล้ว');
+                    pullPlugModal.style.display = 'none';
+                    const customerId = data.customer_id;
+                    document.querySelectorAll(`tr[data-customer-id-row="${customerId}"]`).forEach(row => {
+                        row.cells[0].textContent = 'ชั๊กปลั๊ก';
+                        row.dataset.status = 'ชั๊กปลั๊ก';
+                        const actionCell = row.querySelector('td:last-child');
+                        if (actionCell) actionCell.innerHTML = '<span style="color: var(--warning-bg);">ชั๊กปลั๊ก</span>';
+                    });
+                } else { throw new Error(result.error || 'ไม่สามารถบันทึกได้'); }
+            } catch (error) { alert('เกิดข้อผิดพลาด: ' + error.message); } finally { confirmBtn.disabled = false; confirmBtn.textContent = 'ยืนยัน'; }
+        });
+    }
+
+    if (returnPrincipalForm) {
+        const cancelReturnPrincipalBtn = document.getElementById('cancel-return-principal-btn');
+        cancelReturnPrincipalBtn.addEventListener('click', () => returnPrincipalModal.style.display = 'none');
+        returnPrincipalForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(returnPrincipalForm);
+            const data = Object.fromEntries(formData.entries());
+            const confirmBtn = returnPrincipalForm.querySelector('button[type="submit"]');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'กำลังบันทึก...';
+            try {
+                const response = await fetch('/mark_as_return_principal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    alert('บันทึกการคืนต้นเรียบร้อยแล้ว');
+                    returnPrincipalModal.style.display = 'none';
+                    const customerId = data.customer_id;
+                    document.querySelectorAll(`tr[data-customer-id-row="${customerId}"]`).forEach(row => {
+                        row.cells[0].textContent = 'คืนต้น';
+                        row.dataset.status = 'คืนต้น';
+                        const actionCell = row.querySelector('td:last-child');
+                        if (actionCell) actionCell.innerHTML = '<span style="color: var(--info-bg);">คืนต้น</span>';
+                    });
+                } else { throw new Error(result.error || 'ไม่สามารถบันทึกได้'); }
+            } catch (error) { alert('เกิดข้อผิดพลาด: ' + error.message); } finally { confirmBtn.disabled = false; confirmBtn.textContent = 'ยืนยัน'; }
+        });
+    }
 
 });
 </script>
