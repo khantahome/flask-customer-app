@@ -52,26 +52,24 @@ def process_dataframe_and_import(df, table_name, column_map, source_name):
         df = df[valid_columns]
 
         if table_name == 'customer_records' and 'customer_id' in df.columns:
-            # --- REVISED: Generate PID-xxxx style IDs for missing values ---
-            # NEW: Get the next available ID from the database ONCE for efficiency.
-            # This prevents creating duplicate IDs if the script is run multiple times.
+            # --- REVISED: Generate numeric IDs for missing values, without "PID-" prefix ---
             with app.app_context():
-                # This query finds the highest numeric part of 'PID-xxxx' IDs.
-                last_id_scalar = db.session.query(db.func.max(db.func.cast(db.func.substr(CustomerRecord.customer_id, 5), db.Integer))).filter(CustomerRecord.customer_id.like('PID-%')).scalar()
+                # This query finds the highest numeric ID by casting the column to an integer.
+                last_id_scalar = db.session.query(db.func.max(db.func.cast(CustomerRecord.customer_id, db.Integer))).scalar()
                 
                 id_counter = (last_id_scalar or 1000) + 1
 
-                def generate_pid(value):
+                def generate_id(value):
                     nonlocal id_counter
                     # Check if the value is missing (NaN, None, or empty string)
                     if pd.isna(value) or str(value).strip() == '':
-                        new_id = f"PID-{id_counter}"
+                        new_id = f"{id_counter}"
                         id_counter += 1
                         return new_id
                     # If the value exists, keep it as is.
                     return str(value).strip()
 
-            df['customer_id'] = df['customer_id'].apply(generate_pid)
+            df['customer_id'] = df['customer_id'].apply(generate_id)
 
         # แปลงชนิดข้อมูลและจัดการค่าว่าง
         for col in df.columns:

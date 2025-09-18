@@ -316,23 +316,20 @@ def get_all_customer_records():
 
 # REFACTORED: Generates next ID based on the database's max ID.
 def generate_next_customer_id():
-    """Generates a new customer ID (e.g., PID-1001) based on the last ID in the database."""
-    # This logic is now aligned with the more robust method used in `migrate_data.py`.
-    # It directly queries for the highest numeric part of 'PID-xxxx' IDs, which is more
-    # efficient and reliable than fetching the last record and parsing its string ID.
+    """Generates a new numeric customer ID based on the last ID in the database."""
     try:
-        # This query finds the highest numeric part of 'PID-xxxx' IDs.
-        # It casts the substring after 'PID-' to an integer for correct sorting.
-        last_id_scalar = db.session.query(func.max(func.cast(func.substr(CustomerRecord.customer_id, 5), db.Integer))).filter(CustomerRecord.customer_id.like('PID-%')).scalar()
+        # This query finds the highest numeric ID by casting the column to an integer.
+        # This is more robust than string parsing.
+        last_id_scalar = db.session.query(func.max(func.cast(CustomerRecord.customer_id, db.Integer))).scalar()
         
-        # If no 'PID-' records exist, start from 1000. Otherwise, take the last number and add 1.
+        # If no records exist, start from 1001. Otherwise, take the last number and add 1.
         next_id_num = (last_id_scalar or 1000) + 1
-        return f"PID-{next_id_num}"
+        return f"{next_id_num}"
 
     except Exception as e:
         current_app.logger.error(f"Error generating next customer ID: {e}")
         # Fallback to a timestamp-based ID to avoid collision
-        return f"PID-ERR-{int(datetime.now().timestamp())}"
+        return f"ERR-{int(datetime.now().timestamp())}"
 
 # NEW HELPER: Get a single customer by their database ID
 def get_customer_by_db_id(record_id):
