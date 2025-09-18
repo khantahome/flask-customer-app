@@ -581,8 +581,13 @@ def edit_customer_data(record_id):
             customer.inspection_date = datetime.strptime(inspection_date_str, '%Y-%m-%d').date() if inspection_date_str else None
             
             inspection_time_str = request.form.get('inspection_time')
-            customer.inspection_time = datetime.strptime(inspection_time_str, '%H:%M').time() if inspection_time_str else None
-
+            if inspection_time_str:
+                # REVISED: Handle both 'HH:MM' and 'HH:MM:SS' formats from the time input
+                time_format = '%H:%M:%S' if len(inspection_time_str) > 5 else '%H:%M'
+                customer.inspection_time = datetime.strptime(inspection_time_str, time_format).time()
+            else:
+                customer.inspection_time = None
+                
             # --- REVISED: Handle image deletion and updates ---
             # 1. Delete images marked for removal from Cloudinary
             deleted_urls_str = request.form.get('deleted_image_urls', '')
