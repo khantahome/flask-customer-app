@@ -2523,7 +2523,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const status = row.dataset.status.trim();
 
                 // Check if the job can be closed
-                if (status !== 'รอปิดจ๊อบ') {
+                // REVISED: Allow closing jobs for both 'รอปิดจ๊อบ' and 'ปิดจ๊อบแล้ว' statuses
+                const allowedStatuses = ['รอปิดจ๊อบ', 'ปิดจ๊อบแล้ว'];
+                if (!allowedStatuses.includes(status)) {
                     alert(`ลูกค้าสถานะ "${status}" ไม่สามารถปิดจ๊อบได้`);
                     return;
                 }
