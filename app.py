@@ -771,60 +771,44 @@ def get_customer_info(customer_id):
         current_app.logger.error(f"Error fetching info for customer_id {customer_id}: {e}")
         return jsonify({'error': 'เกิดข้อผิดพลาดในเซิร์ฟเวอร์'}), 500
 
-@app.route('/upload_contract_docs', methods=['POST'])
-@login_required
-def upload_contract_docs():
-    """
-    API endpoint to upload contract document images for a specific customer.
-    Handles multiple file uploads and saves them to Cloudinary and the database.
-    """
-    if 'contract_files[]' not in request.files:
-        return jsonify({'success': False, 'error': 'No files selected for upload'}), 400
+# REVISED: This endpoint is replaced by the signature-based upload flow.
+# The new endpoint /api/save-contract-urls handles saving the URLs after frontend upload.
+# @app.route('/upload_contract_docs', methods=['POST'])
+# @login_required
+# def upload_contract_docs():
+#     ... (code removed for brevity)
 
-    files = request.files.getlist('contract_files[]')
-    customer_id = request.form.get('customer_id')
+@app.route('/api/save-contract-urls', methods=['POST'])
+@login_required
+def save_contract_urls():
+    """
+    API endpoint to save a list of contract document URLs for a customer.
+    This is used after a direct-to-cloudinary upload from the frontend.
+    """
+    data = request.get_json()
+    customer_id = data.get('customer_id')
+    image_urls = data.get('image_urls', [])
     username = session.get('username')
 
-    if not customer_id:
-        return jsonify({'success': False, 'error': 'Customer ID is missing'}), 400
-    
-    if not files or files[0].filename == '':
-        return jsonify({'success': False, 'error': 'No files selected for upload'}), 400
-
-    errors = []
+    if not customer_id or not image_urls:
+        return jsonify({'success': False, 'error': 'Missing customer ID or image URLs'}), 400
 
     try:
-        for file in files:
-            try:
-                # Upload to Cloudinary
-                upload_result = cloudinary.uploader.upload(
-                    file,
-                    folder="customer_app_images", # Same folder as in the signature API
-                    transformation=[{'width': 1000, 'height': 1000, 'crop': 'limit'}] # Apply a transformation
-                )
-                
-                # Create a new database record for the document
-                new_doc = ContractDocument(
-                    customer_id=customer_id,
-                    document_url=upload_result['secure_url'],
-                    uploaded_by=username
-                )
-                db.session.add(new_doc)
-            except Exception as upload_error:
-                current_app.logger.error(f"Error uploading file '{file.filename}' for customer {customer_id}: {upload_error}")
-                errors.append(f"Could not upload file {file.filename}.")
-
-        if errors:
-            db.session.rollback()
-            return jsonify({'success': False, 'error': '. '.join(errors)}), 500
+        for url in image_urls:
+            new_doc = ContractDocument(
+                customer_id=customer_id,
+                document_url=url,
+                uploaded_by=username
+            )
+            db.session.add(new_doc)
         
         db.session.commit()
-        return jsonify({'success': True, 'message': f'Successfully uploaded {len(files)} files.'})
+        return jsonify({'success': True, 'message': f'Successfully saved {len(image_urls)} document URLs.'})
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"General error in upload_contract_docs for customer {customer_id}: {e}")
-        return jsonify({'success': False, 'error': 'An unexpected server error occurred.'}), 500
+        current_app.logger.error(f"Error saving contract URLs for customer {customer_id}: {e}")
+        return jsonify({'success': False, 'error': 'An unexpected server error occurred while saving URLs.'}), 500
 
 @app.route('/api/customer-balance/<customer_id>', methods=['GET'])
 @login_required

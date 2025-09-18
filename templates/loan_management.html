@@ -2000,7 +2000,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelAddDocBtn.addEventListener('click', closeAddDocModal);
         closeAddDocModalBtn.addEventListener('click', closeAddDocModal);
         window.addEventListener('click', (event) => { if (event.target == addDocModal) closeAddDocModal(); });
-
+ 
         addDocForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (selectedDocFiles.length === 0) {
@@ -2008,29 +2008,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             const uploadSpinner = document.getElementById('upload-spinner');
-            uploadSpinner.style.display = 'block';
             const submitBtn = addDocModal.querySelector('button[type="submit"]');
+            
+            uploadSpinner.style.display = 'block';
             submitBtn.disabled = true;
-            const formData = new FormData(addDocForm);
-            // Clear and append files from our managed array
-            formData.delete('contract_files[]');
-            selectedDocFiles.forEach(file => { formData.append('contract_files[]', file); });
-
+            submitBtn.textContent = 'กำลังอัปโหลด...';
+ 
             try {
-                const response = await fetch('/upload_contract_docs', { method: 'POST', body: formData });
-                const result = await response.json();
-                if (response.ok && result.success) {
+                // Step 1: Get signature from our backend
+                const sigResponse = await fetch('/api/cloudinary-signature');
+                if (!sigResponse.ok) {
+                    const err = await sigResponse.json();
+                    throw new Error(err.error || 'ไม่สามารถรับลายเซ็นสำหรับอัปโหลดได้');
+                }
+                const sigData = await sigResponse.json();
+                const uploadUrl = `https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`;
+ 
+                // Step 2: Create an array of upload promises to Cloudinary
+                const uploadPromises = selectedDocFiles.map(file => {
+                    const cloudinaryFormData = new FormData();
+                    cloudinaryFormData.append('file', file);
+                    cloudinaryFormData.append('api_key', sigData.api_key);
+                    cloudinaryFormData.append('timestamp', sigData.timestamp);
+                    cloudinaryFormData.append('signature', sigData.signature);
+                    cloudinaryFormData.append('folder', 'customer_app_images');
+                    cloudinaryFormData.append('transformation', sigData.transformation);
+ 
+                    return fetch(uploadUrl, { method: 'POST', body: cloudinaryFormData })
+                        .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)));
+                });
+ 
+                // Step 3: Wait for all uploads to complete
+                const uploadResults = await Promise.all(uploadPromises);
+                const newlyUploadedUrls = uploadResults.map(result => result.secure_url);
+ 
+                // Step 4: Send the URLs to our backend to save in the database
+                submitBtn.textContent = 'กำลังบันทึก...';
+                const customerId = document.getElementById('add-doc-customer-id').value;
+                const saveResponse = await fetch('/api/save-contract-urls', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customer_id: customerId, image_urls: newlyUploadedUrls })
+                });
+ 
+                const saveResult = await saveResponse.json();
+                if (saveResponse.ok && saveResult.success) {
                     alert('อัปโหลดและบันทึกเอกสารเรียบร้อยแล้ว');
                     closeAddDocModal();
-                    window.location.reload(); // Reload to show updated info
                 } else {
-                    throw new Error(result.error || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+                    throw new Error(saveResult.error || 'เกิดข้อผิดพลาดในการบันทึก URL ของเอกสาร');
                 }
             } catch (error) {
-                alert(`เกิดข้อผิดพลาด: ${error.message}`);
+                console.error('Add document error:', error);
+                alert('เกิดข้อผิดพลาด: ' + (error.error ? error.error.message : error.message));
             } finally {
                 uploadSpinner.style.display = 'none';
                 submitBtn.disabled = false;
+                submitBtn.textContent = 'บันทึกเอกสาร';
             }
         });
     }
