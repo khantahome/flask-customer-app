@@ -2510,15 +2510,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } else if (button.matches('.closejob-action-btn')) {
-                // ... (existing logic)
+                const row = button.closest('tr');
+                if (!row) return;
+
+                // Get data from the row
+                const customerId = row.dataset.customerId;
+                const customerName = row.dataset.customerName;
+                const phone = row.cells[3].textContent.trim();
+                const approveDate = row.cells[4].textContent.trim();
+                const approvedAmount = row.cells[5].textContent.trim();
+                const assignedCompany = row.cells[6].textContent.trim();
+                const status = row.dataset.status.trim();
+
+                // Check if the job can be closed
+                if (status !== 'รอปิดจ๊อบ') {
+                    alert(`ลูกค้าสถานะ "${status}" ไม่สามารถปิดจ๊อบได้`);
+                    return;
+                }
+
+                // Populate the modal
+                approveForm.reset(); // Clear previous data
+                document.getElementById('customer_id').value = customerId;
+                document.getElementById('fullname').value = customerName;
+                document.getElementById('phone').value = phone;
+                document.getElementById('approve_date').value = approveDate;
+                document.getElementById('approved_amount').value = approvedAmount;
+                document.getElementById('assigned_company_hidden').value = assignedCompany;
+                document.getElementById('open_balance').value = 'กำลังคำนวณ...';
+
+                // Show the modal
+                approvePopup.style.display = 'block';
+
+                // Fetch the outstanding balance
+                try {
+                    const response = await fetch(`/api/customer-balance/${customerId}`);
+                    if (!response.ok) throw new Error('ไม่สามารถดึงยอดเงินคงค้างได้');
+                    const data = await response.json();
+                    const balance = data.total_transactions_value || 0;
+                    document.getElementById('open_balance').value = new Intl.NumberFormat('th-TH', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(balance);
+                } catch (error) {
+                    console.error('Error fetching balance:', error);
+                    document.getElementById('open_balance').value = 'เกิดข้อผิดพลาด';
+                }
+
             } else if (button.matches('.bad-debt-btn')) {
-                // ... (existing logic)
+                document.getElementById('bad-debt-customer-id').value = customerId;
+                document.getElementById('bad-debt-customer-name').textContent = customerName;
+                document.getElementById('bad-debt-phone').value = customerPhone;
+                const balanceInput = document.getElementById('bad-debt-balance');
+                balanceInput.value = 'กำลังคำนวณ...';
+                badDebtModal.style.display = 'block';
+
+                try {
+                    const response = await fetch(`/api/customer-balance/${customerId}`);
+                    if (!response.ok) throw new Error('Could not fetch balance');
+                    const data = await response.json();
+                    balanceInput.value = data.total_transactions_value || 0;
+                } catch (error) {
+                    console.error('Error fetching balance for bad debt:', error);
+                    balanceInput.value = '';
+                    balanceInput.placeholder = 'เกิดข้อผิดพลาดในการคำนวณ';
+                }
+
             } else if (button.matches('.pull-plug-btn')) {
-                // ... (existing logic)
+                document.getElementById('pull-plug-customer-id').value = customerId;
+                document.getElementById('pull-plug-customer-name').textContent = customerName;
+                document.getElementById('pull-plug-phone').value = customerPhone;
+                pullPlugModal.style.display = 'block';
+
             } else if (button.matches('.return-principal-btn')) {
-                // ... (existing logic)
+                document.getElementById('return-principal-customer-id').value = customerId;
+                document.getElementById('return-principal-customer-name').textContent = customerName;
+                document.getElementById('return-principal-phone').value = customerPhone;
+                returnPrincipalModal.style.display = 'block';
+
             } else if (button.matches('.finish-return-btn')) {
-                // ... (existing logic)
+                if (!confirm(`คุณแน่ใจหรือไม่ที่จะจบการคืนต้นของลูกค้า ${customerId}?`)) return;
+
+                button.disabled = true;
+                button.textContent = 'กำลังบันทึก...';
+
+                try {
+                    const response = await fetch('/finish_return_principal', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ customer_id: customerId })
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        alert(result.message);
+                        button.closest('tr').remove(); // Remove the row from the UI
+                    } else {
+                        throw new Error(result.error || 'ไม่สามารถอัปเดตสถานะได้');
+                    }
+                } catch (error) {
+                    alert('เกิดข้อผิดพลาด: ' + error.message);
+                    button.disabled = false;
+                    button.textContent = 'จบการคืนต้น';
+                }
             }
         });
     }
