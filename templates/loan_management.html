@@ -1807,32 +1807,34 @@
         <h3 id="add-doc-modal-title">เพิ่มเอกสารสัญญา</h3>
         <span class="close-add-doc-modal">&times;</span>
     </div>
-    <form id="add-doc-form" class="add-doc-body" autocomplete="off" enctype="multipart/form-data">
-        <input type="hidden" id="add-doc-customer-id" name="customer_id">
-        
-        <label for="contract-files-input" class="file-drop-zone">
-            <span class="drop-zone-text">
-                <i class="fas fa-cloud-upload-alt"></i>
-                ลากและวางไฟล์ที่นี่<br>หรือคลิกเพื่อเลือกไฟล์
-            </span>
-        </label>
-        <input type="file" id="contract-files-input" name="contract_files[]" multiple accept="image/*">
+    <form id="add-doc-form" autocomplete="off" enctype="multipart/form-data" style="display: flex; flex-direction: column; flex-grow: 1;">
+        <div class="add-doc-body">
+            <input type="hidden" id="add-doc-customer-id" name="customer_id">
+            
+            <label for="contract-files-input" class="file-drop-zone">
+                <span class="drop-zone-text">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    ลากและวางไฟล์ที่นี่<br>หรือคลิกเพื่อเลือกไฟล์
+                </span>
+            </label>
+            <input type="file" id="contract-files-input" name="contract_files[]" multiple accept="image/*">
 
-        <!-- Image Previews -->
-        <div id="doc-previews-container">
-            <!-- Previews will be injected here by JS -->
+            <!-- Image Previews -->
+            <div id="doc-previews-container">
+                <!-- Previews will be injected here by JS -->
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="upload-spinner" style="display: none; text-align: center; margin: 20px 0;">
+                <div class="spinner"></div>
+                <p>กำลังอัปโหลดไฟล์...</p>
+            </div>
         </div>
-
-        <!-- Loading Spinner -->
-        <div id="upload-spinner" style="display: none; text-align: center; margin: 20px 0;">
-            <div class="spinner"></div>
-            <p>กำลังอัปโหลดไฟล์...</p>
+        <div class="add-doc-footer">
+            <button type="button" id="cancel-add-doc-btn" class="btn btn-danger">ยกเลิก</button>
+            <button type="submit" class="btn btn-approve">บันทึกเอกสาร</button>
         </div>
     </form>
-    <div class="add-doc-footer">
-        <button type="button" id="cancel-add-doc-btn" class="btn btn-danger">ยกเลิก</button>
-        <button type="submit" form="add-doc-form" class="btn btn-approve">บันทึกเอกสาร</button>
-    </div>
   </div>
 </div>
 
