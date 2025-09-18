@@ -2179,7 +2179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Generic Table Refresh Function ---
-    async function refreshGenericTable(apiEndpoint, tbodyId, colSpan, emptyMessage) {
+    async function refreshGenericTable(apiEndpoint, tbodyId, colSpan, emptyMessage, columnKeys, actionColumnGenerator = null) {
         const tbody = document.getElementById(tbodyId);
         if (!tbody) return;
         tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>`;
@@ -2193,8 +2193,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 records.forEach(record => {
                     let rowHTML = '<tr>';
-                    for (const key in record) {
+                    // REVISED: Iterate over the provided keys to ensure correct column order
+                    columnKeys.forEach(key => {
                         rowHTML += `<td>${record[key] || '-'}</td>`;
+                    });
+                    // NEW: Add action column if a generator function is provided
+                    if (actionColumnGenerator) {
+                        rowHTML += actionColumnGenerator(record);
                     }
                     rowHTML += '</tr>';
                     tbody.insertAdjacentHTML('beforeend', rowHTML);
@@ -2203,43 +2208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error(`Error fetching ${apiEndpoint} records:`, error);
             tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
-        }
-    }
-
-    // --- Return Principal Table Refresh Function ---
-    async function refreshReturnPrincipalTable() {
-        const tbody = document.getElementById('returnprincipal-tbody');
-        if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>';
-        try {
-            const response = await fetch('/api/records/return-principal');
-            if (!response.ok) throw new Error('Network response was not ok');
-            const records = await response.json();
-            tbody.innerHTML = '';
-            if (records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">ไม่พบข้อมูลลูกค้าคืนต้น</td></tr>';
-            } else {
-                records.forEach(record => {
-                    const row = `
-                        <tr>
-                            <td>${record.Timestamp || '-'}</td>
-                            <td>${record.CustomerID || '-'}</td>
-                            <td>${record.CustomerName || '-'}</td>
-                            <td>${record.Phone || '-'}</td>
-                            <td>${record.ReturnAmount || '-'}</td>
-                            <td>${record.MarkedBy || '-'}</td>
-                            <td>${record.Notes || '-'}</td>
-                            <td>
-                                <button class="action-table-btn btn-danger finish-return-btn" data-id="${record.CustomerID}">จบการคืนต้น</button>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.insertAdjacentHTML('beforeend', row);
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching return principal records:', error);
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error-bg);">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
         }
     }
 
@@ -2321,13 +2289,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Fetch data for dynamic tables
             if (tableClass === 'baddebt-table-section') {
-                await refreshGenericTable('bad-debt', 'baddebt-tbody', 8, 'ไม่พบข้อมูลหนี้เสีย');
+                const badDebtKeys = ['Timestamp', 'CustomerID', 'CustomerName', 'Phone', 'ApprovedAmount', 'OutstandingBalance', 'MarkedBy', 'Notes'];
+                await refreshGenericTable('bad-debt', 'baddebt-tbody', 8, 'ไม่พบข้อมูลหนี้เสีย', badDebtKeys);
             }
             if (tableClass === 'pullplug-table-section') {
-                await refreshGenericTable('pull-plug', 'pullplug-tbody', 7, 'ไม่พบข้อมูลลูกค้าชั๊กปลั๊ก');
+                const pullPlugKeys = ['Timestamp', 'CustomerID', 'CustomerName', 'Phone', 'PullPlugAmount', 'MarkedBy', 'Notes'];
+                await refreshGenericTable('pull-plug', 'pullplug-tbody', 7, 'ไม่พบข้อมูลลูกค้าชั๊กปลั๊ก', pullPlugKeys);
             }
             if (tableClass === 'returnprincipal-table-section') {
-                await refreshReturnPrincipalTable();
+                const returnPrincipalKeys = ['Timestamp', 'CustomerID', 'CustomerName', 'Phone', 'ReturnAmount', 'MarkedBy', 'Notes'];
+                const returnPrincipalActionGenerator = (record) => {
+                    return `<td><button class="action-table-btn btn-danger finish-return-btn" data-id="${record.CustomerID}">จบการคืนต้น</button></td>`;
+                };
+                await refreshGenericTable('return-principal', 'returnprincipal-tbody', 8, 'ไม่พบข้อมูลลูกค้าคืนต้น', returnPrincipalKeys, returnPrincipalActionGenerator);
             }
         });
     });
