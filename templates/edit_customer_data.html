@@ -648,11 +648,11 @@ body {
     <div class="input-group">
         <label for="status">สถานะ</label>
         <select id="status" name="status" required>
-            <option value="" disabled>--- เลือกสถานะ ---</option>
-            <option value="รอดำเนินการ" {% if customer_data.get('สถานะ') == 'รอดำเนินการ' %}selected{% endif %}>รอดำเนินการ</option>
-            <option value="ไม่อนุมัติ" {% if customer_data.get('สถานะ') == 'ไม่อนุมัติ' %}selected{% endif %}>ไม่อนุมัติ</option>
-            <option value="อนุมัติ" {% if customer_data.get('สถานะ') == 'อนุมัติ' %}selected{% endif %}>อนุมัติ</option>
-            <option value="ยกเลิก" {% if customer_data.get('สถานะ') == 'ยกเลิก' %}selected{% endif %}>ยกเลิก</option>
+            <option value="" disabled selected>--- เลือกสถานะ ---</option>
+            <option value="รอดำเนินการ">รอดำเนินการ</option>
+            <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
+            <option value="อนุมัติ">อนุมัติ</option>
+            <option value="ยกเลิก">ยกเลิก</option>
         </select>
     </div>
 
