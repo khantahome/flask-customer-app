@@ -1433,7 +1433,6 @@
           <td>{{ record.get('บริษัทที่รับงาน', '-') }}</td>
           <td>{{ record.get('ชื่อผู้ลงทะเบียน', '-') }}</td>
           <td>
-            <button class="action-table-btn btn-view-info view-info-btn" data-id="{{ record.get('Customer ID', '') }}"><i class="fas fa-eye"></i> ดูข้อมูล</button>
             <button class="action-table-btn closejob-action-btn" data-id="{{ record.get('Customer ID', '') }}">ปิดจ๊อบ</button>
             <button class="action-table-btn btn-danger bad-debt-btn" 
                     data-id="{{ record.get('Customer ID', '') }}" 
