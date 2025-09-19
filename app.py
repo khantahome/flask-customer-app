@@ -847,6 +847,29 @@ def get_customer_balance(customer_id):
         current_app.logger.error(f"Error calculating balance for customer_id {customer_id}: {e}")
         return jsonify({'error': 'Could not calculate balance'}), 500
 
+@app.route('/api/latest-interest/<customer_id>', methods=['GET'])
+@login_required
+def get_latest_interest(customer_id):
+    """
+    Fetches the most recent interest rate for a given customer from the all_pid_jobs table.
+    """
+    try:
+        # Find the most recent transaction for this customer that has an interest rate
+        latest_job = AllPidJob.query.filter(
+            AllPidJob.customer_id == customer_id,
+            AllPidJob.interest.isnot(None)
+        ).order_by(AllPidJob.transaction_date.desc(), AllPidJob.transaction_time.desc()).first()
+
+        if latest_job and latest_job.interest is not None:
+            return jsonify({'interest': float(latest_job.interest)})
+        else:
+            # No previous interest rate found
+            return jsonify({'interest': None})
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching latest interest for customer_id {customer_id}: {e}")
+        return jsonify({'error': 'Could not fetch interest rate'}), 500
+
 @app.route('/save-approved-data', methods=['POST'])
 @login_required
 def save_approved_data():

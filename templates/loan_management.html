@@ -1647,10 +1647,13 @@
             <label class="form-label">ยอดเงินที่ใช้อยู่:</label>
             <input type="text" id="open_balance" name="open_balance" class="form-input" readonly placeholder="ไม่มียอดเงินที่ใช้อยู่">
         </div>
-            <div class="form-group">
-        <label class="form-label">ดอกเบี้ย:</label>
-        <input type="number" id="interest" name="interest" class="form-input" value="0" min="0" step="0.01">
-         </div>
+        <div class="form-group">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <label class="form-label" for="interest" style="margin-bottom: 0;">ดอกเบี้ย:</label>
+                <button type="button" id="edit-interest-btn" class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-size: 0.8em; line-height: 1.5; display: none;">แก้ไขดอกเบี้ย</button>
+            </div>
+            <input type="number" id="interest" name="interest" class="form-input" value="0" min="0" step="0.01">
+        </div>
         
         <!-- ช่องสำหรับส่วนแบ่ง (ตัวอย่าง) -->
         <div id="share-container">
@@ -2549,22 +2552,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('approved_amount').value = approvedAmount;
                 document.getElementById('assigned_company_hidden').value = assignedCompany;
                 document.getElementById('open_balance').value = 'กำลังคำนวณ...';
-
+                
                 // Show the modal
                 approvePopup.style.display = 'block';
 
-                // Fetch the outstanding balance
+                // --- NEW: Fetch latest interest rate and outstanding balance ---
+                const interestInput = document.getElementById('interest');
+                const editInterestBtn = document.getElementById('edit-interest-btn');
+
+                // Reset state first
+                interestInput.value = '0';
+                interestInput.readOnly = false;
+                editInterestBtn.style.display = 'none';
+
+                // Add event listener for the new button
+                editInterestBtn.onclick = () => {
+                    interestInput.readOnly = false;
+                    interestInput.focus();
+                    interestInput.select();
+                    editInterestBtn.style.display = 'none'; // Hide button after clicking
+                };
+
+                // Fetch both balance and interest concurrently
                 try {
-                    const response = await fetch(`/api/customer-balance/${customerId}`);
-                    if (!response.ok) throw new Error('ไม่สามารถดึงยอดเงินคงค้างได้');
-                    const data = await response.json();
-                    const balance = data.total_transactions_value || 0;
-                    document.getElementById('open_balance').value = new Intl.NumberFormat('th-TH', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(balance);
+                    const [balanceResponse, interestResponse] = await Promise.all([
+                        fetch(`/api/customer-balance/${customerId}`),
+                        fetch(`/api/latest-interest/${customerId}`)
+                    ]);
+
+                    // Handle balance
+                    if (balanceResponse.ok) {
+                        const data = await balanceResponse.json();
+                        const balance = data.total_transactions_value || 0;
+                        document.getElementById('open_balance').value = new Intl.NumberFormat('th-TH', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(balance);
+                    } else {
+                        document.getElementById('open_balance').value = 'เกิดข้อผิดพลาด';
+                    }
+
+                    // Handle interest
+                    if (interestResponse.ok) {
+                        const interestData = await interestResponse.json();
+                        if (interestData.interest !== null) {
+                            interestInput.value = interestData.interest;
+                            interestInput.readOnly = true;
+                            editInterestBtn.style.display = 'inline-block';
+                        }
+                    }
                 } catch (error) {
-                    console.error('Error fetching balance:', error);
+                    console.error('Error fetching data for close job modal:', error);
                     document.getElementById('open_balance').value = 'เกิดข้อผิดพลาด';
                 }
-
             } else if (button.matches('.bad-debt-btn')) {
                 document.getElementById('bad-debt-customer-id').value = customerId;
                 document.getElementById('bad-debt-customer-name').textContent = customerName;
