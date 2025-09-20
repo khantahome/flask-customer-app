@@ -1296,10 +1296,9 @@
             <!-- ปุ่ม "อนุมัติยอด" -->
             <div class="btn-group">
                 <button type="button" class="btn btn-approve dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-check-circle"></i> อนุมัติยอด
+                <i class="fas fa-check-circle"></i> เพิ่มเอกสารสัญญา
                 </button>
                 <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">เพิ่มยอด</a></li>
                 <li><a class="dropdown-item" href="#" data-table="approove-table-section">ตารางอนุมัติลูกค้า</a></li>
                 </ul>
             </div>
@@ -1625,12 +1624,16 @@
         </div>
         <input type="hidden" id="assigned_company_hidden" name="assigned_company_hidden">
         <div class="form-group">
-            <label class="form-label">ชื่อ-นามสกุล:</label>
-            <input type="text" id="fullname" name="fullname" class="form-input" readonly value="สมชาย ใจดี">
-        </div>
-        <div class="form-group">
-            <label class="form-label">หมายเลขโทรศัพท์:</label>
-            <input type="text" id="phone" name="phone" class="form-input" readonly value="081-234-5678">
+            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label class="form-label">ชื่อ-นามสกุล:</label>
+                    <input type="text" id="fullname" name="fullname" class="form-input" readonly value="สมชาย ใจดี">
+                </div>
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label class="form-label">หมายเลขโทรศัพท์:</label>
+                    <input type="text" id="phone" name="phone" class="form-input" readonly value="081-234-5678">
+                </div>
+            </div>
         </div>
         <div class="form-group">
             <label class="form-label">วันที่อนุมัติ:</label> 
