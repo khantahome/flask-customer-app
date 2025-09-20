@@ -1388,8 +1388,8 @@
   </table>
 </div>
 
-<div class="closejob-table-section" style="display:none;">
-  <h3>ตารางลูกค้าปิดจ๊อบ</h3>
+<div class="closejob-table-section">
+  <h3>ตารางลูกค้าทั้งหมด</h3>
   <!-- ฟอร์มค้นหา -->
   <div style="margin-bottom: 15px; display: flex; gap: 8px; align-items: flex-end;">
     <div style="flex:2;">
@@ -2375,10 +2375,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             resetBtn.addEventListener('click', () => {
                 searchInput.value = '';
-                showPendingOnly(); // Reset to default view
+                showRows(allRows); // Reset to show all customers
             });
 
-            showPendingOnly(); // Initial view
+            showRows(allRows); // Initial view: show all customers
         }
     }
 
