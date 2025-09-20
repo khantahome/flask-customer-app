@@ -2452,7 +2452,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const sectionClass = customerIndex % 2 === 0 ? 'even' : 'odd';
 
-                    let commonInfoHTML = ['CompanyName', 'CustomerID', 'CustomerName', 'Date', 'interest'].map(key => createRowHTML(key.replace('CompanyName', 'บริษัท').replace('CustomerID', 'รหัสลูกค้า').replace('CustomerName', 'ชื่อลูกค้า').replace('Date', 'วันที่'), firstRecord[key])).join('');
+                    let commonInfoHTML = ['CompanyName', 'CustomerID', 'CustomerName', 'Date', 'interest'].map(key => createRowHTML(key.replace('CompanyName', 'บริษัท').replace('CustomerID', 'รหัสลูกค้า').replace('CustomerName', 'ชื่อลูกค้า').replace('Date', 'วันที่').replace('interest', 'ดอกเบี้ย'), firstRecord[key])).join('');
                     
                     let transactionsHTML = records.map(record => [1, 2, 3].map(n => createTableGroupHTML(n, record)).join('')).join('');
 
