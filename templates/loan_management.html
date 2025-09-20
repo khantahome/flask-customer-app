@@ -1637,15 +1637,19 @@
             <input type="text" id="approve_date" name="approve_date" class="form-input" readonly> 
         </div>
         <div class="form-group">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                <label class="form-label" style="margin-bottom: 0;">วงเงินที่อนุมัติ:</label>
-                <button type="button" id="edit-approved-amount-btn" class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-size: 0.8em; line-height: 1.5;">เพิ่มวงเงิน</button>
+            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <label class="form-label" style="margin-bottom: 0;">วงเงินที่อนุมัติ:</label>
+                        <button type="button" id="edit-approved-amount-btn" class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-size: 0.8em; line-height: 1.5;">เพิ่มวงเงิน</button>
+                    </div>
+                    <input type="text" id="approved_amount" name="approved_amount" class="form-input" readonly>
+                </div>
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label class="form-label">ยอดเงินที่ใช้อยู่:</label>
+                    <input type="text" id="open_balance" name="open_balance" class="form-input" readonly placeholder="ไม่มียอดเงินที่ใช้อยู่">
+                </div>
             </div>
-            <input type="text" id="approved_amount" name="approved_amount" class="form-input" readonly>
-        </div>
-        <div class="form-group">
-            <label class="form-label">ยอดเงินที่ใช้อยู่:</label>
-            <input type="text" id="open_balance" name="open_balance" class="form-input" readonly placeholder="ไม่มียอดเงินที่ใช้อยู่">
         </div>
         <div class="form-group">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
