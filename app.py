@@ -657,6 +657,9 @@ def edit_customer_data(record_id):
 @login_required
 def loan_management():
     """Displays the loan management page with active loan records."""
+    # NEW: Check if the current user has permission to edit the transaction date.
+    can_edit_date = session.get('username') == 'khanhommha'
+
     try:
         # Fetch records from the 'approvals' table.
         approvals_obj = Approval.query.order_by(Approval.approval_date.desc()).all()
@@ -675,11 +678,11 @@ def loan_management():
                 'บริษัทที่รับงาน': record.assigned_company,
                 'ชื่อผู้ลงทะเบียน': record.registrar
             })
-        return render_template('loan_management.html', approove=approvals_list, username=session.get('username'))
+        return render_template('loan_management.html', approove=approvals_list, username=session.get('username'), can_edit_date=can_edit_date)
     except Exception as e:
         current_app.logger.error(f"Error fetching data for loan management: {e}")
         flash('เกิดข้อผิดพลาดในการโหลดข้อมูลจัดการสินเชื่อ', 'danger')
-        return render_template('loan_management.html', approove=[], username=session.get('username'))
+        return render_template('loan_management.html', approove=[], username=session.get('username'), can_edit_date=False)
 
 
 # REFACTORED: Uses database ID for deletion
@@ -887,6 +890,15 @@ def save_approved_data():
     if not customer_id or not transactions:
         return jsonify({'error': 'Missing customer ID or transactions'}), 400
 
+    # Get transaction date from payload, with a fallback to the current date.
+    transaction_date_str = data.get('transaction_date')
+    try:
+        # Use strptime if a string is provided, otherwise default to now.
+        transaction_date = datetime.strptime(transaction_date_str, '%Y-%m-%d').date() if transaction_date_str else datetime.now().date()
+    except (ValueError, TypeError):
+        # Fallback in case of invalid date format or other type errors
+        transaction_date = datetime.now().date()
+
     try:
         # 1. Update the approval status to 'ปิดจ๊อบแล้ว'
         approval_record = Approval.query.filter_by(customer_id=customer_id).first()
@@ -903,7 +915,15 @@ def save_approved_data():
 
         # 2. Add new records to AllPidJob for each transaction
         for trans in transactions:
-            new_job = AllPidJob(transaction_date=datetime.now().date(), transaction_time=datetime.now().time(), company_name=trans.get('company'), customer_id=customer_id, customer_name=data.get('fullname'), interest=data.get('interest'), main_assigned_company=data.get('assigned_company'))
+            new_job = AllPidJob(
+                transaction_date=transaction_date, 
+                transaction_time=datetime.now().time(), 
+                company_name=trans.get('company'), 
+                customer_id=customer_id, 
+                customer_name=data.get('fullname'), 
+                interest=data.get('interest'), 
+                main_assigned_company=data.get('assigned_company')
+            )
             
             action_type = trans.get('action_type')
             amount = trans.get('amount')
