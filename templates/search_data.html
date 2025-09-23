@@ -1575,17 +1575,31 @@
                         const record = JSON.parse(updateBtn.dataset.record);
                         if (!rowIndex) return;
 
-                        // Define the possible next statuses for each current status
-                        const nextStatusMap = {
-                            'รอติดต่อ': ['รอดำเนินการ', 'ยกเลิก'],
-                            'รอดำเนินการ': ['รอตรวจ', 'ไม่อนุมัติ'],
-                            'รอตรวจ': ['อนุมัติ', 'ไม่อนุมัติ', 'เลื่อนนัด']
-                        };
+                    // --- NEW LOGIC FOR SPECIAL USER PERMISSIONS ---
+                    const currentUser = "{{ username }}";
+                    const superUsers = ["glorycash.1", "khanhommha"];
+                    const closedStatuses = ['อนุมัติ', 'ไม่อนุมัติ', 'ยกเลิก'];
+                    const superUserStatusOptions = ['รอติดต่อ', 'รอดำเนินการ', 'อนุมัติ', 'ไม่อนุมัติ', 'ยกเลิก'];
 
-                        const availableOptions = nextStatusMap[currentStatus] || [];
+                    // Define the possible next statuses for each current status for NORMAL users
+                    const nextStatusMap = {
+                        'รอติดต่อ': ['รอดำเนินการ', 'ยกเลิก'],
+                        'รอดำเนินการ': ['รอตรวจ', 'ไม่อนุมัติ'],
+                        'รอตรวจ': ['อนุมัติ', 'ไม่อนุมัติ', 'เลื่อนนัด']
+                    };
+
+                    let availableOptions = [];
+
+                    // Check if the user is a super user and the status is a closed one
+                    if (superUsers.includes(currentUser) && closedStatuses.includes(currentStatus)) {
+                        availableOptions = superUserStatusOptions;
+                    } else {
+                        // Use the original logic for everyone else
+                        availableOptions = nextStatusMap[currentStatus] || [];
+                    }
 
                         if (availableOptions.length === 0) {
-                            alert(`สถานะ "${currentStatus}" ไม่สามารถเปลี่ยนแปลงได้ในหน้านี้`);
+                        alert(`สถานะ "${currentStatus}" ไม่สามารถเปลี่ยนแปลงได้`);
                             return;
                         }
 
@@ -1593,25 +1607,20 @@
                         updateStatusForm.reset();
                         document.getElementById('updateStatusRowIndex').value = rowIndex;
                         document.getElementById('currentStatusDisplay').value = currentStatus;
-
                         updateStatusSelect.innerHTML = '<option value="">-- เลือกสถานะใหม่ --</option>';
                         availableOptions.forEach(option => {
                             updateStatusSelect.innerHTML += `<option value="${option}">${option}</option>`;
                         });
-
                         // Pre-fill data for "เลื่อนนัด"
                         if (currentStatus === 'รอตรวจ') {
                             document.getElementById('status_inspection_date').value = record['วันที่นัดตรวจ'] || '';
                             document.getElementById('status_inspection_time').value = record['เวลานัดตรวจ'] || '';
                             document.getElementById('status_inspector').value = record['ผู้รับงานตรวจ'] || '';
                         }
-
                         // Trigger change event to set initial visibility of extra fields
                         updateStatusSelect.dispatchEvent(new Event('change'));
-
                         // NEW: Store the full record data on the form element itself for later use
                         updateStatusForm.dataset.record = updateBtn.dataset.record;
-
                         updateStatusModal.classList.add('visible');
                     }
 
