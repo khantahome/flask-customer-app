@@ -6,7 +6,7 @@ import sys
 import os
 from dotenv import load_dotenv
 # NEW: Import the Flask app and db object to create tables
-from app import app, db, CustomerRecord, User, generate_password_hash
+from app import User, app, db, CustomerRecord, generate_password_hash
 
 load_dotenv() # โหลดค่าจากไฟล์ .env
 
