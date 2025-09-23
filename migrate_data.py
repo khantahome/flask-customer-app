@@ -6,7 +6,7 @@ import sys
 import os
 from dotenv import load_dotenv
 # NEW: Import the Flask app and db object to create tables
-from app import app, db, CustomerRecord, generate_password_hash
+from app import app, db, CustomerRecord, User, generate_password_hash
 
 load_dotenv() # โหลดค่าจากไฟล์ .env
 
@@ -85,10 +85,26 @@ def process_dataframe_and_import(df, table_name, column_map, source_name):
             print("  - กำลังแฮชรหัสผ่าน...")
             df['password'] = df['password'].apply(lambda pwd: generate_password_hash(str(pwd)) if pd.notna(pwd) else None)
 
-        df.replace({np.nan: None, 'NaT': None}, inplace=True)
+            # --- NEW LOGIC TO PREVENT DUPLICATE USERS ---
+            with app.app_context():
+                # Get a list of all existing user IDs from the database
+                print("  - กำลังตรวจสอบผู้ใช้ที่ซ้ำกันในฐานข้อมูล...")
+                existing_user_ids = [user.user_id for user in db.session.query(User.user_id).all()]
+                
+                # Filter the DataFrame to only include users that are NOT already in the database
+                original_count = len(df)
+                df_new_users = df[~df['id'].isin(existing_user_ids)]
+                new_count = len(df_new_users)
 
-        # Since we are now dropping and creating tables, the TRUNCATE logic is no longer needed.
-        # We can directly append to the newly created empty tables.
+                if new_count == 0:
+                    print("  - ไม่พบผู้ใช้ใหม่ในไฟล์ CSV ที่จะต้องเพิ่มเข้าสู่ระบบ")
+                    return # Exit the function early if no new users
+                
+                print(f"  - พบผู้ใช้ทั้งหมด {original_count} คนในไฟล์, จะทำการเพิ่มผู้ใช้ใหม่ {new_count} คน")
+                df = df_new_users # Replace the original df with the filtered one
+            # --- END NEW LOGIC ---
+
+        df.replace({np.nan: None, 'NaT': None}, inplace=True)
 
         # REVISED: ใช้ engine จาก app context เพื่อหลีกเลี่ยงการสร้าง connection ซ้ำซ้อน
         with app.app_context():
@@ -178,46 +194,10 @@ def main():
     # --- REFACTORED: Define all migration tasks in a structured list ---
     migration_tasks = [
         {
-            'csv_path': 'data1.csv',
-            'table_name': 'customer_records',
-            'column_map': customer_records_map,
-            'dtype_spec': {'เบอร์มือถือ': str, 'เลขบัตรประชาชน': str}
-        },
-        {
             'csv_path': 'users.csv',
             'table_name': 'users',
             'column_map': users_map,
             'dtype_spec': None
-        },
-        {
-            'csv_path': 'approvals.csv',
-            'table_name': 'approvals',
-            'column_map': approvals_map,
-            'dtype_spec': {'หมายเลขโทรศัพท์': str}
-        },
-        {
-            'csv_path': 'bad_debts.csv',
-            'table_name': 'bad_debt_records',
-            'column_map': bad_debt_map,
-            'dtype_spec': {'Phone': str}
-        },
-        {
-            'csv_path': 'all_pid_jobs.csv',
-            'table_name': 'all_pid_jobs',
-            'column_map': all_pid_jobs_map,
-            'dtype_spec': None
-        },
-        {
-            'csv_path': 'pull_plug_records.csv',
-            'table_name': 'pull_plug_records',
-            'column_map': pull_plug_map,
-            'dtype_spec': {'Phone': str}
-        },
-        {
-            'csv_path': 'return_principal_records.csv',
-            'table_name': 'return_principal_records',
-            'column_map': return_principal_map,
-            'dtype_spec': {'Phone': str}
         }
     ]
 
