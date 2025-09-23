@@ -1632,7 +1632,9 @@
                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                         <label class="form-label" for="transaction_date" style="margin-bottom: 0;">วันที่ทำรายการ:</label>
+                        {% if can_edit_date %}
                         <button type="button" id="edit-transaction-date-btn" class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-size: 0.8em; line-height: 1.5;">แก้ไข</button>
+                        {% endif %}
                     </div>
                     <input type="date" id="transaction_date" name="transaction_date" class="form-input" readonly>
                 </div>
@@ -2568,6 +2570,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('assigned_company_hidden').value = assignedCompany;
                 document.getElementById('open_balance').value = 'กำลังคำนวณ...';
                 
+                // NEW: Set transaction date to today and make it readonly
+                const transactionDateInput = document.getElementById('transaction_date');
+
+                // Set to today's date
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                transactionDateInput.value = `${year}-${month}-${day}`;
+
+                // Set to readonly. The edit button's visibility is handled by Jinja.
+                transactionDateInput.readOnly = true;
+
                 // Show the modal
                 approvePopup.style.display = 'block';
 
@@ -2678,6 +2693,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Close Job Modal Logic ---
     if (approveForm) {
+        const transactionDateInput = document.getElementById('transaction_date');
+        const editTransactionDateBtn = document.getElementById('edit-transaction-date-btn');
+
+        // Add event listener for the date edit button if it exists
+        if (editTransactionDateBtn && transactionDateInput) {
+            editTransactionDateBtn.addEventListener('click', () => {
+                transactionDateInput.readOnly = false;
+                transactionDateInput.focus();
+            });
+        }
+
         if (addShareBtn) {
             addShareBtn.addEventListener('click', function() {
                 const row = shareContainer.querySelector('.share-row');
