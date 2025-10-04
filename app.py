@@ -674,7 +674,7 @@ def loan_management():
                 'ชื่อ-นามสกุล': record.full_name,
                 'หมายเลขโทรศัพท์': record.phone_number,
                 'วันที่อนุมัติ': record.approval_date.strftime('%Y-%m-%d') if record.approval_date else '',
-                'วงเงินที่อนุมัติ': f"{record.approved_amount:,.2f}" if record.approved_amount is not None else '-',
+                'วงเงินที่อนุมัติ': f"{record.approved_amount:,.0f}" if record.approved_amount is not None else '-',
                 'บริษัทที่รับงาน': record.assigned_company,
                 'ชื่อผู้ลงทะเบียน': record.registrar
             })
