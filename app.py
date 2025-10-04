@@ -1328,7 +1328,7 @@ def update_customer_status():
             customer.inspection_date = datetime.strptime(data.get('inspection_date'), '%Y-%m-%d').date() if data.get('inspection_date') else None
             customer.inspection_time = datetime.strptime(data.get('inspection_time'), '%H:%M').time() if data.get('inspection_time') else None
             customer.inspector = data.get('inspector')
-        if new_status in ['ยกเลิก', 'ไม่อนุมัติ']:
+        if new_status in ['ยกเลิก', 'ไม่อนุมัติ', 'ไม่ส่งเอกสาร']:
             note = data.get('note')
             customer.remarks = (customer.remarks or '') + f"\n[สถานะ: {new_status}] {note}"
 

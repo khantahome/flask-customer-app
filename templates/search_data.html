@@ -713,6 +713,7 @@
         .status-rejected { background-color: #DC3545; } /* Red */
         .status-cancelled { background-color: #b2b2b2; } /* Grey */
         .status-unknown { background-color: #ae008e; } /* Grey */
+        .status-no-docs { background-color: #9C27B0; color: white; } /* Purple */
         .status-inspection-needed { background-color: #fd7e14; } /* Orange for inspection */
         .status-contact-needed { background-color: #17A2B8; } /* Blue/Info color */
 
@@ -1231,7 +1232,7 @@
                                         {% elif 'ไม่อนุมัติ' in status %}<span class="status-badge status-rejected">ไม่อนุมัติ</span>
                                         {% elif 'อนุมัติ' in status %}<span class="status-badge status-approved">อนุมัติ</span>
                                         {% elif 'ยกเลิก' in status %}<span class="status-badge status-cancelled">ยกเลิก</span>
-                                        {% elif 'ไม่ส่งเอกสาร' in status %}<span class="status-badge status-rejected">ไม่ส่งเอกสาร</span>
+                                        {% elif 'ไม่ส่งเอกสาร' in status %}<span class="status-badge status-no-docs">ไม่ส่งเอกสาร</span>
                                         {% else %}<span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
                                         {% endif %}
                                         <button type="button" class="record-button update-status-btn" 
