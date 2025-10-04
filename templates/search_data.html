@@ -1584,7 +1584,7 @@
                     // Define the possible next statuses for each current status for NORMAL users
                     const nextStatusMap = {
                         'รอติดต่อ': ['รอดำเนินการ', 'ยกเลิก'],
-                        'รอดำเนินการ': ['รอตรวจ', 'ไม่อนุมัติ'],
+                        'รอดำเนินการ': ['รอตรวจ', 'ไม่อนุมัติ', 'ไม่ส่งเอกสาร'],
                         'รอตรวจ': ['อนุมัติ', 'ไม่อนุมัติ', 'เลื่อนนัด']
                     };
 
@@ -1649,7 +1649,7 @@
                     noteTextarea.required = false;
                     inspectionDate.required = false;
 
-                    if (['ยกเลิก', 'ไม่อนุมัติ'].includes(selectedStatus)) {
+                    if (['ยกเลิก', 'ไม่อนุมัติ', 'ไม่ส่งเอกสาร'].includes(selectedStatus)) {
                         noteGroup.style.display = 'block';
                         noteTextarea.required = true;
                     } else if (['รอตรวจ', 'เลื่อนนัด'].includes(selectedStatus)) {
