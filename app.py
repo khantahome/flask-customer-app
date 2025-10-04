@@ -413,6 +413,7 @@ def customer_data():
 @login_required
 def search_customer_data():
     search_keyword = request.args.get('search_keyword', '').strip()
+    status_filter = request.args.get('status_filter', '').strip() # NEW: Get status filter
     page = request.args.get('page', 1, type=int)
     per_page = 15  # Number of items per page
 
@@ -423,8 +424,15 @@ def search_customer_data():
     try:
         base_query = CustomerRecord.query
 
+        # Build display title
         if search_keyword:
             display_title = f"ผลการค้นหาสำหรับ: '{search_keyword}'"
+            if status_filter:
+                display_title += f" และสถานะ '{status_filter}'"
+        elif status_filter:
+            display_title = f"ข้อมูลลูกค้าสถานะ: '{status_filter}'"
+
+        if search_keyword:
             like_term = f"%{search_keyword}%"
             
             # REVISED: Use a universal LIKE search for all databases.
@@ -441,6 +449,10 @@ def search_customer_data():
             )
             base_query = base_query.filter(search_filter)
         
+        # NEW: Apply status filter if provided
+        if status_filter:
+            base_query = base_query.filter(CustomerRecord.status == status_filter)
+
         pagination = base_query.order_by(CustomerRecord.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
         results_obj = pagination.items
         results = [record.to_dict() for record in results_obj]
@@ -452,7 +464,13 @@ def search_customer_data():
         current_app.logger.error(f"Error during search for '{search_keyword}': {e}")
         flash('เกิดข้อผิดพลาดระหว่างการค้นหา', 'danger')
 
-    return render_template('search_data.html', customer_records=results, search_keyword=search_keyword, display_title=display_title, username=session.get('username'), pagination=pagination)
+    return render_template('search_data.html', 
+                           customer_records=results, 
+                           search_keyword=search_keyword, 
+                           display_title=display_title, 
+                           username=session.get('username'), 
+                           pagination=pagination,
+                           status_filter=status_filter) # NEW: Pass status filter back to template
 
 # REFACTORED: Uses SQLAlchemy to add a new record
 @app.route('/enter_customer_data', methods=['GET', 'POST'])

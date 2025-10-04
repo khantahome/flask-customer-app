@@ -239,6 +239,12 @@
             background-color: var(--background-color); /* Darker background for input */
             color: var(--text-color); /* Text color for input */
         }
+        /* NEW: Style for the status filter dropdown */
+        .input-group select {
+            width: 100%;
+            padding: 14px 18px;
+            /* Inherits other styles from the input[type="text"] rule */
+        }
 
         .input-group input[type="text"]:focus {
             border-color: var(--primary-color);
@@ -1138,6 +1144,21 @@
                         <label for="search_keyword">คำค้นหา (รหัสลูกค้า, ชื่อ, นามสกุล, เบอร์มือถือ, เลขบัตรประชาชน, ชื่อกิจการ)</label>
                         <input type="text" id="search_keyword" name="search_keyword" placeholder="กรอกคำค้นหา" value="{{ search_keyword if search_keyword else '' }}">
                     </div>
+                    <!-- NEW: Status Filter Dropdown -->
+                    <div class="input-group">
+                        <label for="status_filter">กรองตามสถานะ</label>
+                        <select id="status_filter" name="status_filter" class="input-group input[type='text']">
+                            <option value="">แสดงทั้งหมด</option>
+                            <option value="รอติดต่อ" {% if status_filter == 'รอติดต่อ' %}selected{% endif %}>รอติดต่อ</option>
+                            <option value="รอดำเนินการ" {% if status_filter == 'รอดำเนินการ' %}selected{% endif %}>รอดำเนินการ</option>
+                            <option value="รอตรวจ" {% if status_filter == 'รอตรวจ' %}selected{% endif %}>รอตรวจ</option>
+                            <option value="เลื่อนนัด" {% if status_filter == 'เลื่อนนัด' %}selected{% endif %}>เลื่อนนัด</option>
+                            <option value="อนุมัติ" {% if status_filter == 'อนุมัติ' %}selected{% endif %}>อนุมัติ</option>
+                            <option value="ไม่อนุมัติ" {% if status_filter == 'ไม่อนุมัติ' %}selected{% endif %}>ไม่อนุมัติ</option>
+                            <option value="ไม่ส่งเอกสาร" {% if status_filter == 'ไม่ส่งเอกสาร' %}selected{% endif %}>ไม่ส่งเอกสาร</option>
+                            <option value="ยกเลิก" {% if status_filter == 'ยกเลิก' %}selected{% endif %}>ยกเลิก</option>
+                        </select>
+                    </div>
                     
                     <div class="search-button-group">
                         <button type="submit" class="search-button">ค้นหาข้อมูล</button>
@@ -1197,6 +1218,7 @@
                                         {% elif 'ไม่อนุมัติ' in status %}<span class="status-badge status-rejected">ไม่อนุมัติ</span>
                                         {% elif 'อนุมัติ' in status %}<span class="status-badge status-approved">อนุมัติ</span>
                                         {% elif 'ยกเลิก' in status %}<span class="status-badge status-cancelled">ยกเลิก</span>
+                                        {% elif 'ไม่ส่งเอกสาร' in status %}<span class="status-badge status-rejected">ไม่ส่งเอกสาร</span>
                                         {% else %}<span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
                                         {% endif %}
                                         <button type="button" class="record-button update-status-btn" 
@@ -1222,7 +1244,7 @@
                 <div class="pagination-controls">
                     {# Previous Page Link #}
                     {% if pagination.has_prev %}
-                        <a href="{{ url_for('search_customer_data', page=pagination.prev_num, search_keyword=search_keyword) }}">&laquo; ก่อนหน้า</a>
+                        <a href="{{ url_for('search_customer_data', page=pagination.prev_num, search_keyword=search_keyword, status_filter=status_filter) }}">&laquo; ก่อนหน้า</a>
                     {% else %}
                         <span class="disabled">&laquo; ก่อนหน้า</span>
                     {% endif %}
@@ -1232,15 +1254,15 @@
                         {% if page_num %} {# iter_pages() can return None for gaps #}
                             {% if page_num == pagination.page %}
                             <span class="current-page">{{ page_num }}</span>
-                        {% else %}
-                            <a href="{{ url_for('search_customer_data', page=page_num, search_keyword=search_keyword) }}">{{ page_num }}</a>
-                        {% endif %}
+                            {% else %}
+                                <a href="{{ url_for('search_customer_data', page=page_num, search_keyword=search_keyword, status_filter=status_filter) }}">{{ page_num }}</a>
+                            {% endif %}
                         {% endif %} {# iter_pages() can return None for gaps #}
                     {% endfor %}
 
                     {# Next Page Link #}
                     {% if pagination.has_next %}
-                        <a href="{{ url_for('search_customer_data', page=pagination.next_num, search_keyword=search_keyword) }}">ถัดไป &raquo;</a>
+                        <a href="{{ url_for('search_customer_data', page=pagination.next_num, search_keyword=search_keyword, status_filter=status_filter) }}">ถัดไป &raquo;</a>
                     {% else %}
                         <span class="disabled">ถัดไป &raquo;</span>
                     {% endif %}
