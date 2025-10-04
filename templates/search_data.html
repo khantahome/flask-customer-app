@@ -43,6 +43,12 @@
         body.light-mode .input-group input[type="text"] {
             background-color: #FFFFFF;
         }
+        /* NEW: Set select background to white in light mode */
+        body.light-mode .input-group select {
+            background-color: #FFFFFF;
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
         /* NEW: Set dashboard layout background to white in light mode */
         body.light-mode .dashboard-layout {
             background-color: #FFFFFF;
@@ -239,11 +245,18 @@
             background-color: var(--background-color); /* Darker background for input */
             color: var(--text-color); /* Text color for input */
         }
-        /* NEW: Style for the status filter dropdown */
+        /* REVISED: Combine select styling with other inputs for consistency */
         .input-group select {
             width: 100%;
             padding: 14px 18px;
-            /* Inherits other styles from the input[type="text"] rule */
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1.1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'Kanit', sans-serif; /* Ensure font consistency */
         }
 
         .input-group input[type="text"]:focus {
@@ -1147,7 +1160,7 @@
                     <!-- NEW: Status Filter Dropdown -->
                     <div class="input-group">
                         <label for="status_filter">กรองตามสถานะ</label>
-                        <select id="status_filter" name="status_filter" class="input-group input[type='text']">
+                        <select id="status_filter" name="status_filter">
                             <option value="">แสดงทั้งหมด</option>
                             <option value="รอติดต่อ" {% if status_filter == 'รอติดต่อ' %}selected{% endif %}>รอติดต่อ</option>
                             <option value="รอดำเนินการ" {% if status_filter == 'รอดำเนินการ' %}selected{% endif %}>รอดำเนินการ</option>
