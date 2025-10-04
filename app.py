@@ -904,6 +904,11 @@ def save_approved_data():
         approval_record = Approval.query.filter_by(customer_id=customer_id).first()
         if approval_record:
             approval_record.status = 'ปิดจ๊อบแล้ว'
+            
+            # NEW: Update the approved amount if it was changed in the modal
+            new_approved_amount = data.get('approved_amount')
+            if new_approved_amount is not None:
+                approval_record.approved_amount = new_approved_amount
         
         # REFACTORED: Use a mapping for safer and clearer attribute setting.
         # This prevents arbitrary attribute setting and makes the logic easier to follow.

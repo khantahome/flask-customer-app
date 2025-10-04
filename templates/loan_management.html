@@ -2778,7 +2778,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 interest: formData.get('interest'),
                 assigned_company: formData.get('assigned_company_hidden'),
                 transaction_date: formData.get('transaction_date'),
-                transactions: transactions
+                transactions: transactions,
+                approved_amount: approvedAmount // เพิ่มวงเงินที่อนุมัติตัวใหม่เข้าไปใน payload
             };
 
             try {
