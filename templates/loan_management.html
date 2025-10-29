@@ -65,7 +65,7 @@
         .status-closed { background-color: #28a745; } /* Green */
         .status-bad-debt { background-color: #dc3545; } /* Red */
         .status-pull-plug { background-color: #ffc107; color: #333; } /* Yellow */
-        .status-return-principal { background-color: #17a2b8; } /* Cyan */
+        .status-return-principal { background-color: #fd7e14; } /* Orange */
     
 
         body.light-mode .form-input,
@@ -2613,6 +2613,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const approvedAmount = row.cells[5].textContent.trim();
                 const assignedCompany = row.cells[6].textContent.trim();
                 const status = row.dataset.status.trim();
+
+                // NEW: Re-add the check to prevent closing jobs for specific statuses.
+                const disallowedStatuses = ['หนี้เสีย', 'ชั๊กปลั๊ก', 'คืนต้น'];
+                if (disallowedStatuses.includes(status)) {
+                    alert(`ลูกค้าสถานะ "${status}" ไม่สามารถปิดจ๊อบได้`);
+                    return;
+                }
 
                 // The check for allowed statuses is removed to allow closing jobs for any customer.
                 // The backend will handle the logic of whether to change the status or not.
