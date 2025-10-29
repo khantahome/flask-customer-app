@@ -49,6 +49,25 @@
             --table-row-even: #F8F9FA;
             --table-border-color: #DEE2E6;
         }
+
+        /* NEW: Status Badge Styles */
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: white;
+            font-weight: 500;
+            font-size: 0.85em;
+            text-align: center;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .status-wait-close { background-color: #007bff; } /* Blue */
+        .status-closed { background-color: #28a745; } /* Green */
+        .status-bad-debt { background-color: #dc3545; } /* Red */
+        .status-pull-plug { background-color: #ffc107; color: #333; } /* Yellow */
+        .status-return-principal { background-color: #17a2b8; } /* Cyan */
+    
+
         body.light-mode .form-input,
         body.light-mode .closejob-modal-content {
             background-color: #FFFFFF;
@@ -1354,7 +1373,13 @@
       {% if approove %}
       {% for record in approove %}
       <tr data-customer-id-row="{{ record['Customer ID'] }}">
-        <td>{{ record['สถานะ'] }}</td>
+        <td class="status-cell">
+            {% set status = record['สถานะ'] %}
+            {% if status == 'รอปิดจ๊อบ' %}<span class="status-badge status-wait-close">{{ status }}</span>
+            {% elif status == 'ปิดจ๊อบแล้ว' %}<span class="status-badge status-closed">{{ status }}</span>
+            {% else %}<span class="status-badge">{{ status }}</span>
+            {% endif %}
+        </td>
         <td>{{ record['Customer ID'] }}</td>
         <td>{{ record['ชื่อ-นามสกุล'] }}</td>
         <td>{{ record['หมายเลขโทรศัพท์'] }}</td>
@@ -1411,7 +1436,7 @@
           data-customer-id="{{ record.get('Customer ID', '') }}" 
           data-customer-name="{{ record.get('ชื่อ-นามสกุล', '') }}"
         >
-          <td>{{ record.get('สถานะ', '-') }}</td>
+          <td class="status-cell">{{ record.get('สถานะ', '-') }}</td>
           <td>{{ record.get('Customer ID', '-') }}</td>
           <td>{{ record.get('ชื่อ-นามสกุล', '-') }}</td>
           <td>{{ record.get('หมายเลขโทรศัพท์', '-') }}</td>
@@ -2258,6 +2283,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- NEW: Function to update status badge in tables ---
+    function updateStatusBadge(customerId, newStatus) {
+        const statusCells = document.querySelectorAll(`tr[data-customer-id-row="${customerId}"] .status-cell, tr[data-customer-id="${customerId}"] .status-cell`);
+        
+        let badgeClass = '';
+        if (newStatus === 'รอปิดจ๊อบ') badgeClass = 'status-wait-close';
+        else if (newStatus === 'ปิดจ๊อบแล้ว') badgeClass = 'status-closed';
+        else if (newStatus === 'หนี้เสีย') badgeClass = 'status-bad-debt';
+        else if (newStatus === 'ชั๊กปลั๊ก') badgeClass = 'status-pull-plug';
+        else if (newStatus === 'คืนต้น') badgeClass = 'status-return-principal';
+
+        const badgeHTML = `<span class="status-badge ${badgeClass}">${newStatus}</span>`;
+
+        statusCells.forEach(cell => {
+            cell.innerHTML = badgeHTML;
+        });
+    }
     // =========================================================================
     // INITIALIZATION
     // =========================================================================
@@ -2287,6 +2329,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- NEW: Initial Status Coloring ---
+    function applyInitialStatusColors() {
+        document.querySelectorAll('#closejob-tbody tr').forEach(row => {
+            const status = row.dataset.status.trim();
+            const statusCell = row.querySelector('.status-cell');
+            if (!statusCell) return;
+
+            let badgeClass = '';
+            if (status === 'รอปิดจ๊อบ') badgeClass = 'status-wait-close';
+            else if (status === 'ปิดจ๊อบแล้ว') badgeClass = 'status-closed';
+            else if (status === 'หนี้เสีย') badgeClass = 'status-bad-debt';
+            else if (status === 'ชั๊กปลั๊ก') badgeClass = 'status-pull-plug';
+            else if (status === 'คืนต้น') badgeClass = 'status-return-principal';
+            statusCell.innerHTML = `<span class="status-badge ${badgeClass}">${status}</span>`;
+        });
+    }
+
     // --- Collapsible Sidebar ---
     if (sidebar) {
         const toggleButton = document.createElement('button');
@@ -2313,6 +2372,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateToggleIcon(savedState);
     }
+
+    // --- Run initial setup functions ---
+    applyInitialStatusColors();
 
     // =========================================================================
     // EVENT LISTENERS & LOGIC
@@ -2552,13 +2614,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const assignedCompany = row.cells[6].textContent.trim();
                 const status = row.dataset.status.trim();
 
-                // Check if the job can be closed
-                // REVISED: Allow closing jobs for both 'รอปิดจ๊อบ' and 'ปิดจ๊อบแล้ว' statuses
-                const allowedStatuses = ['รอปิดจ๊อบ', 'ปิดจ๊อบแล้ว'];
-                if (!allowedStatuses.includes(status)) {
-                    alert(`ลูกค้าสถานะ "${status}" ไม่สามารถปิดจ๊อบได้`);
-                    return;
-                }
+                // The check for allowed statuses is removed to allow closing jobs for any customer.
+                // The backend will handle the logic of whether to change the status or not.
 
                 // Populate the modal
                 approveForm.reset(); // Clear previous data
@@ -2793,8 +2850,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('บันทึกข้อมูลเรียบร้อย');
                 if (approvePopup) approvePopup.style.display = 'none';
 
-                const targetRow = allRows.find(row => (row.dataset.customerId || '').trim() === payload.customer_id);
-                if (targetRow) targetRow.dataset.status = 'ปิดจ๊อบแล้ว';
+                // If the original status was 'รอปิดจ๊อบ', update it to 'ปิดจ๊อบแล้ว' on the frontend.
+                const originalStatus = allRows.find(row => (row.dataset.customerId || '').trim() === payload.customer_id)?.dataset.status;
+                if (originalStatus === 'รอปิดจ๊อบ') {
+                    updateStatusBadge(payload.customer_id, 'ปิดจ๊อบแล้ว');
+                }
                 showPendingOnly();
 
             } catch (error) {
@@ -2825,13 +2885,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok && result.success) {
                     alert('บันทึกหนี้เสียเรียบร้อยแล้ว');
                     badDebtModal.style.display = 'none';
-                    const customerId = data.customer_id;
-                    document.querySelectorAll(`tr[data-customer-id-row="${customerId}"]`).forEach(row => {
-                        row.cells[0].textContent = 'หนี้เสีย';
-                        row.dataset.status = 'หนี้เสีย';
-                        const actionCell = row.querySelector('td:last-child');
-                        if (actionCell) actionCell.innerHTML = '<span style="color: var(--error-bg);">หนี้เสีย</span>';
-                    });
+                    updateStatusBadge(data.customer_id, 'หนี้เสีย');
                 } else { throw new Error(result.error || 'ไม่สามารถบันทึกได้'); }
             } catch (error) {
                 alert('เกิดข้อผิดพลาด: ' + error.message);
@@ -2858,13 +2912,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok && result.success) {
                     alert('บันทึกการชั๊กปลั๊กเรียบร้อยแล้ว');
                     pullPlugModal.style.display = 'none';
-                    const customerId = data.customer_id;
-                    document.querySelectorAll(`tr[data-customer-id-row="${customerId}"]`).forEach(row => {
-                        row.cells[0].textContent = 'ชั๊กปลั๊ก';
-                        row.dataset.status = 'ชั๊กปลั๊ก';
-                        const actionCell = row.querySelector('td:last-child');
-                        if (actionCell) actionCell.innerHTML = '<span style="color: var(--warning-bg);">ชั๊กปลั๊ก</span>';
-                    });
+                    updateStatusBadge(data.customer_id, 'ชั๊กปลั๊ก');
                 } else { throw new Error(result.error || 'ไม่สามารถบันทึกได้'); }
             } catch (error) { alert('เกิดข้อผิดพลาด: ' + error.message); } finally { confirmBtn.disabled = false; confirmBtn.textContent = 'ยืนยัน'; }
         });
@@ -2886,13 +2934,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok && result.success) {
                     alert('บันทึกการคืนต้นเรียบร้อยแล้ว');
                     returnPrincipalModal.style.display = 'none';
-                    const customerId = data.customer_id;
-                    document.querySelectorAll(`tr[data-customer-id-row="${customerId}"]`).forEach(row => {
-                        row.cells[0].textContent = 'คืนต้น';
-                        row.dataset.status = 'คืนต้น';
-                        const actionCell = row.querySelector('td:last-child');
-                        if (actionCell) actionCell.innerHTML = '<span style="color: var(--info-bg);">คืนต้น</span>';
-                    });
+                    updateStatusBadge(data.customer_id, 'คืนต้น');
                 } else { throw new Error(result.error || 'ไม่สามารถบันทึกได้'); }
             } catch (error) { alert('เกิดข้อผิดพลาด: ' + error.message); } finally { confirmBtn.disabled = false; confirmBtn.textContent = 'ยืนยัน'; }
         });

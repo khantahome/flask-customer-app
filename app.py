@@ -918,10 +918,12 @@ def save_approved_data():
         transaction_date = datetime.now().date()
 
     try:
-        # 1. Update the approval status to 'ปิดจ๊อบแล้ว'
+        # 1. Update the approval status to 'ปิดจ๊อบแล้ว' ONLY IF the current status is 'รอปิดจ๊อบ'
         approval_record = Approval.query.filter_by(customer_id=customer_id).first()
         if approval_record:
-            approval_record.status = 'ปิดจ๊อบแล้ว'
+            # Only change status if it's the initial job closing.
+            if approval_record.status == 'รอปิดจ๊อบ':
+                approval_record.status = 'ปิดจ๊อบแล้ว'
             
             # NEW: Update the approved amount if it was changed in the modal
             new_approved_amount = data.get('approved_amount')
