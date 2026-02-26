@@ -548,9 +548,9 @@
         }
         .kpi-card {
             flex: 1;
-            min-width: 220px;
+            min-width: 190px; /* Compact size */
             background-color: var(--card-background);
-            padding: 25px;
+            padding: 20px; /* Compact size */
             border-radius: 12px;
             box-shadow: var(--shadow-light);
             text-align: center;
@@ -563,20 +563,20 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px var(--primary-color); /* Dark Glow Effect */
         }
         .kpi-icon {
-            font-size: 2.5em;
+            font-size: 2.2em; /* Compact size */
             color: var(--secondary-color);
-            margin-bottom: 15px;
+            margin-bottom: 10px; /* Compact size */
             opacity: 0.9;
         }
         .kpi-value {
-            font-size: 2.2em;
+            font-size: 1.8em; /* Compact size */
             font-weight: 700;
             color: var(--text-color);
-            margin-bottom: 5px;
+            margin-bottom: 2px; /* Compact size */
         }
         .kpi-label {
             color: var(--light-text-color);
-            font-size: 1.1em;
+            font-size: 0.9em; /* Compact size */
             font-weight: 500;
         }
     </style>
@@ -633,6 +633,11 @@
                     <div class="kpi-icon"><i class="fas fa-bullhorn"></i></div>
                     <div class="kpi-value" id="kpiTopChannel">-</div>
                     <div class="kpi-label">ช่องทางยอดฮิต (เดือนนี้)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <div class="kpi-value" id="kpiTopProvince">-</div>
+                    <div class="kpi-label">จังหวัดลูกค้าสูงสุด (เดือนนี้)</div>
                 </div>
             </div>
 
@@ -1240,12 +1245,49 @@
                     populateChannelFilters(data.unique_years, data.all_months, data.unique_channels, data.unique_provinces);
                     updateChannelChart();
                     updateSummaryCharts(); // สร้างกราฟสรุปเพิ่มเติม
-                    updateTopChannelKPI(data.chart_data); // Update KPI Card 3
+                    updateTopChannelKPI(data.chart_data); // Update KPI Card: Top Channel
+                    updateTopProvinceKPI(data.chart_data); // Update KPI Card: Top Province
                 } catch (error) {
                     console.error('Error fetching channel/province chart data:', error);
                     alert('ไม่สามารถโหลดข้อมูลกราฟช่องทาง/จังหวัดได้');
                 } finally {
                     toggleChannelLoading(false);
+                }
+            }
+
+            function updateTopProvinceKPI(data) {
+                const now = new Date();
+                const currentYear = now.getFullYear().toString();
+                const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+                
+                const provinceCounts = {};
+
+                // Count provinces for current month
+                if (data[currentYear] && data[currentYear][currentMonth]) {
+                    const monthData = data[currentYear][currentMonth];
+                    for (const province in monthData) {
+                        for (const channel in monthData[province]) {
+                            for (const group in monthData[province][channel]) {
+                                provinceCounts[province] = (provinceCounts[province] || 0) + monthData[province][channel][group];
+                            }
+                        }
+                    }
+                }
+
+                // Find max
+                let topProvince = '-';
+                let maxCount = 0;
+                for (const [province, count] of Object.entries(provinceCounts)) {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        topProvince = province;
+                    }
+                }
+                
+                const kpiTopProvince = document.getElementById('kpiTopProvince');
+                if(kpiTopProvince) {
+                    kpiTopProvince.innerHTML = (topProvince !== '-') ? `${topProvince} (${maxCount})` : '-';
+                    kpiTopProvince.style.fontSize = topProvince.length > 10 ? '1.4em' : '1.8em';
                 }
             }
 
