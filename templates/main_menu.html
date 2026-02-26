@@ -579,6 +579,18 @@
             font-size: 0.9em; /* Compact size */
             font-weight: 500;
         }
+        .kpi-trend {
+            font-size: 0.85em;
+            margin-top: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .trend-up { color: #00e676; } /* Bright Green */
+        .trend-down { color: #ff5252; } /* Bright Red */
+        .trend-neutral { color: var(--light-text-color); }
     </style>
 <meta name="viewport" content="width=1200">
 </head>
@@ -623,21 +635,25 @@
                     <div class="kpi-icon"><i class="fas fa-user-plus"></i></div>
                     <div class="kpi-value" id="kpiNewCustomers">-</div>
                     <div class="kpi-label">ลูกค้าใหม่ (เดือนนี้)</div>
+                    <div class="kpi-trend" id="kpiNewCustomersTrend"></div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-icon"><i class="fas fa-users"></i></div>
                     <div class="kpi-value" id="kpiTotalCustomers">-</div>
                     <div class="kpi-label">ลูกค้าทั้งหมด (สะสม)</div>
+                    <div class="kpi-trend" id="kpiTotalCustomersTrend"></div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-icon"><i class="fas fa-bullhorn"></i></div>
                     <div class="kpi-value" id="kpiTopChannel">-</div>
                     <div class="kpi-label">ช่องทางยอดฮิต (เดือนนี้)</div>
+                    <div class="kpi-trend" id="kpiTopChannelTrend"></div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-icon"><i class="fas fa-map-marker-alt"></i></div>
                     <div class="kpi-value" id="kpiTopProvince">-</div>
                     <div class="kpi-label">จังหวัดลูกค้าสูงสุด (เดือนนี้)</div>
+                    <div class="kpi-trend" id="kpiTopProvinceTrend"></div>
                 </div>
             </div>
 
@@ -812,6 +828,18 @@
                 }
             }
 
+            // --- Helper: Calculate Trend HTML ---
+            function calculateTrendHTML(current, previous) {
+                if (previous === 0) {
+                    if (current === 0) return '<span class="trend-neutral"><i class="fas fa-minus"></i> 0%</span>';
+                    return '<span class="trend-up"><i class="fas fa-arrow-up"></i> 100%</span> <span style="font-size:0.8em; color:var(--light-text-color);">(เทียบเดือนก่อน)</span>';
+                }
+                const change = ((current - previous) / previous) * 100;
+                const icon = change > 0 ? 'fa-arrow-up' : (change < 0 ? 'fa-arrow-down' : 'fa-minus');
+                const colorClass = change > 0 ? 'trend-up' : (change < 0 ? 'trend-down' : 'trend-neutral');
+                return `<span class="${colorClass}"><i class="fas ${icon}"></i> ${Math.abs(change).toFixed(1)}%</span> <span style="font-size:0.8em; color:var(--light-text-color);">(เทียบเดือนก่อน)</span>`;
+            }
+
             // --- Helper: Update KPI Cards ---
             function updateKPICardsFromChartData(data) {
                 // 1. Calculate New Customers (This Month) & Total Customers
@@ -819,8 +847,15 @@
                 const currentYear = now.getFullYear().toString();
                 const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
                 
+                const prevDate = new Date();
+                prevDate.setMonth(prevDate.getMonth() - 1);
+                const prevYear = prevDate.getFullYear().toString();
+                const prevMonth = String(prevDate.getMonth() + 1).padStart(2, '0');
+
                 let newCustomersCount = 0;
+                let prevMonthNewCustomersCount = 0;
                 let totalCustomersCount = 0;
+                let prevTotalCustomersCount = 0;
 
                 for (const year in data) {
                     for (const month in data[year]) {
@@ -831,6 +866,15 @@
                             if (year === currentYear && month === currentMonth) {
                                 newCustomersCount += count;
                             }
+                            
+                            if (year === prevYear && month === prevMonth) {
+                                prevMonthNewCustomersCount += count;
+                            }
+
+                            // Calculate total up to previous month (exclude current month)
+                            if (year < currentYear || (year === currentYear && month < currentMonth)) {
+                                prevTotalCustomersCount += count;
+                            }
                         }
                     }
                 }
@@ -838,6 +882,10 @@
                 // Animate Numbers
                 animateValue("kpiNewCustomers", 0, newCustomersCount, 1000);
                 animateValue("kpiTotalCustomers", 0, totalCustomersCount, 1500);
+
+                // Update Trends
+                document.getElementById('kpiNewCustomersTrend').innerHTML = calculateTrendHTML(newCustomersCount, prevMonthNewCustomersCount);
+                document.getElementById('kpiTotalCustomersTrend').innerHTML = calculateTrendHTML(totalCustomersCount, prevTotalCustomersCount);
             }
 
             function animateValue(id, start, end, duration) {
@@ -1264,7 +1312,13 @@
                 const currentYear = now.getFullYear().toString();
                 const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
                 
+                const prevDate = new Date();
+                prevDate.setMonth(prevDate.getMonth() - 1);
+                const prevYear = prevDate.getFullYear().toString();
+                const prevMonth = String(prevDate.getMonth() + 1).padStart(2, '0');
+
                 const provinceCounts = {};
+                const prevProvinceCounts = {};
 
                 // Count provinces for current month
                 if (data[currentYear] && data[currentYear][currentMonth]) {
@@ -1273,6 +1327,18 @@
                         for (const channel in monthData[province]) {
                             for (const group in monthData[province][channel]) {
                                 provinceCounts[province] = (provinceCounts[province] || 0) + monthData[province][channel][group];
+                            }
+                        }
+                    }
+                }
+
+                // Count provinces for previous month
+                if (data[prevYear] && data[prevYear][prevMonth]) {
+                    const monthData = data[prevYear][prevMonth];
+                    for (const province in monthData) {
+                        for (const channel in monthData[province]) {
+                            for (const group in monthData[province][channel]) {
+                                prevProvinceCounts[province] = (prevProvinceCounts[province] || 0) + monthData[province][channel][group];
                             }
                         }
                     }
@@ -1288,11 +1354,15 @@
                     }
                 }
                 
+                const prevCount = (topProvince !== '-') ? (prevProvinceCounts[topProvince] || 0) : 0;
+
                 const kpiTopProvince = document.getElementById('kpiTopProvince');
                 if(kpiTopProvince) {
                     kpiTopProvince.innerHTML = (topProvince !== '-') ? `${topProvince} (${maxCount})` : '-';
                     kpiTopProvince.style.fontSize = topProvince.length > 10 ? '1.4em' : '1.8em';
                 }
+                
+                document.getElementById('kpiTopProvinceTrend').innerHTML = (topProvince !== '-') ? calculateTrendHTML(maxCount, prevCount) : '';
             }
 
             function updateTopChannelKPI(data) {
@@ -1300,7 +1370,13 @@
                 const currentYear = now.getFullYear().toString();
                 const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
                 
+                const prevDate = new Date();
+                prevDate.setMonth(prevDate.getMonth() - 1);
+                const prevYear = prevDate.getFullYear().toString();
+                const prevMonth = String(prevDate.getMonth() + 1).padStart(2, '0');
+
                 const channelCounts = {};
+                const prevChannelCounts = {};
 
                 // Count channels for current month
                 if (data[currentYear] && data[currentYear][currentMonth]) {
@@ -1309,6 +1385,18 @@
                         for (const channel in monthData[province]) {
                             for (const group in monthData[province][channel]) {
                                 channelCounts[channel] = (channelCounts[channel] || 0) + monthData[province][channel][group];
+                            }
+                        }
+                    }
+                }
+
+                // Count channels for previous month
+                if (data[prevYear] && data[prevYear][prevMonth]) {
+                    const monthData = data[prevYear][prevMonth];
+                    for (const province in monthData) {
+                        for (const channel in monthData[province]) {
+                            for (const group in monthData[province][channel]) {
+                                prevChannelCounts[channel] = (prevChannelCounts[channel] || 0) + monthData[province][channel][group];
                             }
                         }
                     }
@@ -1324,11 +1412,15 @@
                     }
                 }
                 
+                const prevCount = (topChannel !== '-') ? (prevChannelCounts[topChannel] || 0) : 0;
+
                 const kpiTopChannel = document.getElementById('kpiTopChannel');
                 if(kpiTopChannel) {
                     kpiTopChannel.innerHTML = topChannel;
                     kpiTopChannel.style.fontSize = topChannel.length > 15 ? '1.5em' : '2.2em'; // Adjust font size for long names
                 }
+
+                document.getElementById('kpiTopChannelTrend').innerHTML = (topChannel !== '-') ? calculateTrendHTML(maxCount, prevCount) : '';
             }
 
             function populateChannelFilters(years, months, channels, provinces) {
