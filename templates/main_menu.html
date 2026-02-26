@@ -896,15 +896,15 @@
                     return; // ออกจากฟังก์ชัน
                 }
 
+                const ctx = chartCanvas.getContext('2d');
                 // ส่ง global rawChartData ไปยัง prepareChartData
-                const chartData = prepareChartData(rawChartData);
+                const chartData = prepareChartData(rawChartData, ctx);
                 console.log('Chart Data being passed to Chart.js:', chartData);
 
                 if (customerChartInstance) {
                     customerChartInstance.destroy(); // ทำลาย instance กราฟเก่า
                 }
 
-                const ctx = chartCanvas.getContext('2d');
                 customerChartInstance = new Chart(ctx, {
                     type: 'line', // เปลี่ยนเป็นกราฟเส้น
                     data: chartData,
