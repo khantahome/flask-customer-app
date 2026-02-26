@@ -769,40 +769,31 @@
                 let datasets = [];
 
                 // ใช้สีจาก CSS variables หรือกำหนดสีคงที่
+                // ใช้ชุดสีที่มีความแตกต่างกันชัดเจน (High Contrast) และสลับโทนร้อน/เย็น เพื่อไม่ให้สีติดกันดูยาก
                 const colors = [
-                    primaryColor,                  // Use the dynamically fetched primary color
-                    '#4CAF50',                     // Green
-                    '#FF9800',                     // Orange
-                    '#2196F3',                     // Blue
-                    '#F44336',                     // Red
-                    '#FFD600',                     // Yellow
-                    '#00BCD4',                     // Cyan
-                    '#E91E63',                     // Pink
-                    '#795548',                     // Brown
-                    '#607D8B'                      // Blue Grey
+                    '#4E79A7', // Blue (Cool)
+                    '#F28E2B', // Orange (Warm)
+                    '#59A14F', // Green (Cool)
+                    '#E15759', // Red (Warm)
+                    '#76B7B2', // Teal (Cool)
+                    '#EDC948', // Yellow (Warm)
+                    '#B07AA1', // Purple (Cool)
+                    '#FF9DA7', // Pink (Warm)
+                    '#9C755F', // Brown (Neutral)
+                    '#BAB0AC'  // Grey (Neutral)
                 ];
 
-                // Helper function เพื่อสร้าง Dataset สำหรับกราฟเส้น (Area Chart Style)
-                const createLineDataset = (label, data, colorIndex) => {
+                // Helper function เพื่อสร้าง Dataset สำหรับกราฟแท่งแบบ Stacked
+                const createStackedBarDataset = (label, data, colorIndex) => {
                     const color = colors[colorIndex % colors.length];
-                    // สร้าง Gradient แนวตั้ง
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                    gradient.addColorStop(0, hexToRgba(color, 0.5)); // ด้านบนจางๆ
-                    gradient.addColorStop(1, hexToRgba(color, 0.0)); // ด้านล่างโปร่งใส
-
                     return {
                         label: label,
                         data: data,
+                        backgroundColor: color,
                         borderColor: color,
-                        backgroundColor: gradient, // ใช้ Gradient ระบายสี
-                        borderWidth: 3,
-                        tension: 0.4, // เส้นโค้ง Smooth
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        pointBackgroundColor: '#ffffff', // จุดสีขาว
-                        pointBorderColor: color, // ขอบจุดสีเดียวกับเส้น
-                        pointBorderWidth: 2,
-                        fill: true // ระบายสีใต้กราฟ
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
                     };
                 };
 
@@ -827,12 +818,12 @@
                         if (selectedGroup) {
                             // กลุ่มเดียวสำหรับทุกเดือนของปีที่เฉพาะเจาะจง
                             const dataCounts = allMonths.map(month => data[selectedYear]?.[month]?.[selectedGroup] || 0); // ใช้ 'data' parameter
-                            datasets.push(createLineDataset(selectedGroup, dataCounts, 0));
+                            datasets.push(createStackedBarDataset(selectedGroup, dataCounts, 0));
                         } else {
                             // ทุกกลุ่มสำหรับทุกเดือนของปีที่เฉพาะเจาะจง
                             uniqueCustomerGroups.forEach((group, groupIndex) => {
                                 const dataCounts = allMonths.map(month => data[selectedYear]?.[month]?.[group] || 0); // ใช้ 'data' parameter
-                                datasets.push(createLineDataset(group, dataCounts, groupIndex));
+                                datasets.push(createStackedBarDataset(group, dataCounts, groupIndex));
                             });
                         }
                     }
@@ -852,7 +843,7 @@
                             }
                             return sum;
                         });
-                        datasets.push(createLineDataset(selectedGroup, dataCounts, 0));
+                        datasets.push(createStackedBarDataset(selectedGroup, dataCounts, 0));
                     } else {
                         // ทุกกลุ่มสำหรับทุกปี
                         uniqueCustomerGroups.forEach((group, groupIndex) => {
@@ -866,7 +857,7 @@
                                 }
                                 return sum;
                             });
-                            datasets.push(createLineDataset(group, dataCounts, groupIndex));
+                            datasets.push(createStackedBarDataset(group, dataCounts, groupIndex));
                         });
                     }
                 }
@@ -938,7 +929,7 @@
                         },
                         scales: {
                             x: {
-                                stacked: false, // ยกเลิกการซ้อนทับ
+                                stacked: true, // เปิดใช้งาน Stacked
                                 grid: {
                                     display: false, // ซ่อนเส้นตารางแนวตั้งเพื่อความสะอาดตา
                                     drawBorder: false
@@ -960,7 +951,7 @@
                                 }
                             },
                             y: {
-                                stacked: false, // ยกเลิกการซ้อนทับ
+                                stacked: true, // เปิดใช้งาน Stacked
                                 beginAtZero: true,
                                 grid: {
                                     color: gridColor, // กำหนดสีเส้นตารางแกน Y
