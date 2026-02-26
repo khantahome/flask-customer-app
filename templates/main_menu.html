@@ -615,6 +615,27 @@
             let channelDistChartInstance;
             let topProvChartInstance;
 
+            // --- Gradient Helper Functions & Palette ---
+            const gradientPairs = [
+                ['#8A2BE2', '#00BCD4'], // ม่วง -> ฟ้า (ธีมหลัก)
+                ['#FF0077', '#FFD600'], // ชมพู -> เหลือง
+                ['#00F5FF', '#0066FF'], // ฟ้าสว่าง -> น้ำเงิน
+                ['#F53844', '#42378F'], // แดง -> ม่วงเข้ม
+                ['#23BCBB', '#45E994'], // เขียวทะเล -> เขียวสว่าง
+                ['#9C27B0', '#E040FB'], // ม่วง -> ม่วงอ่อน
+                ['#FF9800', '#FF5722'], // ส้ม -> ส้มเข้ม
+                ['#3F51B5', '#2196F3']  // น้ำเงินคราม -> ฟ้า
+            ];
+
+            function getGradient(ctx, colorStart, colorEnd, isHorizontal = false) {
+                const gradient = isHorizontal 
+                    ? ctx.createLinearGradient(0, 0, 400, 0) 
+                    : ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, colorStart);
+                gradient.addColorStop(1, colorEnd);
+                return gradient;
+            }
+
             // --- Theme Toggler Function ---
             const applyTheme = (theme) => {
                 const themeToggleCheckbox = document.getElementById('theme-checkbox');
@@ -898,11 +919,23 @@
                 const chartData = prepareChartData(rawChartData);
                 console.log('Chart Data being passed to Chart.js:', chartData);
 
+                // --- Apply Gradients to Customer Chart ---
+                const ctx = chartCanvas.getContext('2d');
+                if (chartData.datasets) {
+                    chartData.datasets.forEach((dataset, i) => {
+                        const pair = gradientPairs[i % gradientPairs.length];
+                        dataset.backgroundColor = getGradient(ctx, pair[0], pair[1]);
+                        dataset.borderColor = pair[0];
+                        dataset.borderWidth = 0;
+                        dataset.borderRadius = 6;
+                        dataset.borderSkipped = false;
+                    });
+                }
+
                 if (customerChartInstance) {
                     customerChartInstance.destroy(); // ทำลาย instance กราฟเก่า
                 }
 
-                const ctx = chartCanvas.getContext('2d');
                 customerChartInstance = new Chart(ctx, {
                     type: 'bar', // สามารถเป็น 'line', 'bar', 'pie' ได้
                     data: chartData,
@@ -1108,6 +1141,23 @@
                 if (!rawChannelData || Object.keys(rawChannelData).length === 0) return;
 
                 const chartData = prepareChannelChartData();
+                const ctx = channelChartCanvas.getContext('2d');
+                const isHorizontal = chartData.labels.length > 10;
+
+                // --- Apply Gradients to Channel/Province Chart ---
+                if (chartData.datasets) {
+                    chartData.datasets.forEach((dataset) => {
+                        // สร้าง Array ของ Gradient สำหรับแต่ละแท่ง (เพราะเป็นกราฟแท่งเดียวที่มีหลายสี)
+                        const gradients = dataset.data.map((_, index) => {
+                            const pair = gradientPairs[index % gradientPairs.length];
+                            return getGradient(ctx, pair[0], pair[1], isHorizontal);
+                        });
+                        dataset.backgroundColor = gradients;
+                        dataset.borderRadius = 5;
+                        dataset.borderWidth = 0;
+                    });
+                }
+
                 if (channelChartInstance) channelChartInstance.destroy();
                 
                 // NEW: More descriptive title logic
@@ -1121,7 +1171,7 @@
                     titleText = `ลูกค้าช่องทาง "${selectedChannel}" ตามจังหวัด`;
                 }
 
-                channelChartInstance = new Chart(channelChartCanvas.getContext('2d'), {
+                channelChartInstance = new Chart(ctx, {
                     type: 'bar', data: chartData,
                     options: {
                         responsive: true, maintainAspectRatio: false,
@@ -1166,18 +1216,22 @@
                 // 2. Prepare Channel Distribution Data (Doughnut Chart)
                 const channelLabels = Object.keys(channelCounts);
                 const channelData = Object.values(channelCounts);
-                const channelColors = [
-                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#8A2BE2'
-                ];
+                
+                // สร้าง Gradient สำหรับกราฟโดนัท
+                const ctxDoughnut = channelDistCanvas.getContext('2d');
+                const doughnutGradients = channelData.map((_, i) => {
+                    const pair = gradientPairs[i % gradientPairs.length];
+                    return getGradient(ctxDoughnut, pair[0], pair[1]);
+                });
 
                 if (channelDistChartInstance) channelDistChartInstance.destroy();
-                channelDistChartInstance = new Chart(channelDistCanvas.getContext('2d'), {
+                channelDistChartInstance = new Chart(ctxDoughnut, {
                     type: 'doughnut',
                     data: {
                         labels: channelLabels,
                         datasets: [{
                             data: channelData,
-                            backgroundColor: channelColors,
+                            backgroundColor: doughnutGradients,
                             borderColor: isLightMode ? '#ffffff' : '#2D3A50',
                             borderWidth: 2,
                             hoverOffset: 15 // ขยายเมื่อเอาเมาส์ชี้
@@ -1227,9 +1281,7 @@
 
                 // สร้าง Gradient สำหรับกราฟแท่งแนวนอน
                 const ctx = topProvCanvas.getContext('2d');
-                const gradient = ctx.createLinearGradient(0, 0, 400, 0);
-                gradient.addColorStop(0, '#8A2BE2'); // สีม่วง
-                gradient.addColorStop(1, '#00BCD4'); // สีฟ้า
+                const gradient = getGradient(ctx, '#8A2BE2', '#00BCD4', true); // ใช้ Helper Function
 
                 if (topProvChartInstance) topProvChartInstance.destroy();
                 topProvChartInstance = new Chart(topProvCanvas.getContext('2d'), {
