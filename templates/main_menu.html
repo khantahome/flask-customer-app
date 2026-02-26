@@ -636,6 +636,14 @@
                 return gradient;
             }
 
+            // Helper: Convert Hex to RGBA
+            function hexToRgba(hex, alpha) {
+                var r = parseInt(hex.slice(1, 3), 16),
+                    g = parseInt(hex.slice(3, 5), 16),
+                    b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+
             // --- Theme Toggler Function ---
             const applyTheme = (theme) => {
                 const themeToggleCheckbox = document.getElementById('theme-checkbox');
@@ -742,7 +750,7 @@
             }
 
             // ฟังก์ชันสำหรับเตรียมข้อมูลสำหรับ Chart.js
-            function prepareChartData(data) { // *** รับ parameter เพื่อให้ชัดเจนว่าใช้ข้อมูลที่ส่งเข้ามา ***
+            function prepareChartData(data, ctx) { // *** รับ ctx เพื่อทำ Gradient ***
                 // ดึงค่าสีล่าสุดทุกครั้งที่เตรียมข้อมูล
                 const rootStyles = getComputedStyle(document.documentElement);
                 const primaryColor = rootStyles.getPropertyValue('--primary-color').trim();
@@ -774,36 +782,44 @@
                     '#607D8B'                      // Blue Grey
                 ];
 
-                // Helper function เพื่อสร้าง Dataset สำหรับกราฟเส้น
-                const createLineDataset = (label, data, colorIndex) => ({
-                    label: label,
-                    data: data,
-                    borderColor: colors[colorIndex % colors.length], // สีเส้น
-                    backgroundColor: colors[colorIndex % colors.length], // สีจุด
-                    borderWidth: 3,
-                    tension: 0.4, // เส้นโค้ง Smooth
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    fill: false // ไม่ต้องระบายสีใต้กราฟ
-                });
+                // Helper function เพื่อสร้าง Dataset สำหรับกราฟเส้น (Area Chart Style)
+                const createLineDataset = (label, data, colorIndex) => {
+                    const color = colors[colorIndex % colors.length];
+                    // สร้าง Gradient แนวตั้ง
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, hexToRgba(color, 0.5)); // ด้านบนจางๆ
+                    gradient.addColorStop(1, hexToRgba(color, 0.0)); // ด้านล่างโปร่งใส
+
+                    return {
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: gradient, // ใช้ Gradient ระบายสี
+                        borderWidth: 3,
+                        tension: 0.4, // เส้นโค้ง Smooth
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#ffffff', // จุดสีขาว
+                        pointBorderColor: color, // ขอบจุดสีเดียวกับเส้น
+                        pointBorderWidth: 2,
+                        fill: true // ระบายสีใต้กราฟ
+                    };
+                };
 
                 if (selectedYear) {
                     if (selectedMonth) {
-                        // แสดงตามกลุ่มสำหรับเดือนที่เฉพาะเจาะจงของปีที่เฉพาะเจาะจง
-                        labels = [new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1).toLocaleString('th-TH', { month: 'long', year: 'numeric' })];
-                        let dataForMonth = data[selectedYear]?.[selectedMonth] || {}; // ใช้ 'data' parameter
+                        // กรณีเลือกเจาะจงเดือน: เปลี่ยนเป็น Bar Chart เปรียบเทียบกลุ่มลูกค้า
+                        // เพราะกราฟเส้นจุดเดียวดูไม่รู้เรื่อง
+                        labels = uniqueCustomerGroups; // แกน X เป็นชื่อกลุ่ม
+                        const dataCounts = uniqueCustomerGroups.map(group => data[selectedYear]?.[selectedMonth]?.[group] || 0);
                         
-                        if (selectedGroup) {
-                            // กลุ่มเดียวสำหรับเดือนที่เฉพาะเจาะจง
-                            const count = dataForMonth[selectedGroup] || 0;
-                            datasets.push(createLineDataset(selectedGroup, [count], 0));
-                        } else {
-                            // ทุกกลุ่มสำหรับเดือนที่เฉพาะเจาะจง
-                            uniqueCustomerGroups.forEach((group, index) => {
-                                const count = dataForMonth[group] || 0;
-                                datasets.push(createLineDataset(group, [count], index));
-                            });
-                        }
+                        datasets.push({
+                            label: 'จำนวนลูกค้า',
+                            data: dataCounts,
+                            backgroundColor: uniqueCustomerGroups.map((_, i) => colors[i % colors.length]),
+                            borderRadius: 6,
+                            barPercentage: 0.6
+                        });
                     } else {
                         // แสดงตามเดือนสำหรับปีที่เฉพาะเจาะจง (ทุกเดือน)
                         labels = allMonths.map(month => new Date(parseInt(selectedYear), parseInt(month) - 1, 1).toLocaleString('th-TH', { month: 'short' }));
@@ -924,7 +940,8 @@
                             x: {
                                 stacked: false, // ยกเลิกการซ้อนทับ
                                 grid: {
-                                    color: gridColor // กำหนดสีเส้นตารางแกน X
+                                    display: false, // ซ่อนเส้นตารางแนวตั้งเพื่อความสะอาดตา
+                                    drawBorder: false
                                 },
                                 title: {
                                     display: true,
@@ -946,7 +963,8 @@
                                 stacked: false, // ยกเลิกการซ้อนทับ
                                 beginAtZero: true,
                                 grid: {
-                                    color: gridColor // กำหนดสีเส้นตารางแกน Y
+                                    color: gridColor, // กำหนดสีเส้นตารางแกน Y
+                                    borderDash: [5, 5] // เส้นประ ดูเบาตาลง
                                 },
                                 title: {
                                     display: true,
