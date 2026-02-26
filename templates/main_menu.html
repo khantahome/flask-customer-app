@@ -497,16 +497,17 @@
         .chart-container.half-width {
             flex: 1;
             min-width: 300px;
-            padding: 20px; /* ลด padding สำหรับกราฟเล็ก */
+            padding: 15px; /* ลด padding ให้กระชับขึ้น */
         }
 
         /* NEW: Styles for smaller summary charts */
         .chart-container.half-width .chart-title {
-            font-size: 1.5em; /* ลดขนาดหัวข้อ */
-            margin-bottom: 15px;
+            font-size: 1.2em; /* ลดขนาดหัวข้อลงอีก */
+            margin-bottom: 10px;
         }
         .chart-container.half-width .chart-canvas-wrapper {
-            min-height: 260px; /* ลดความสูงขั้นต่ำของกราฟเล็ก */
+            height: 200px; /* กำหนดความสูงตายตัวให้เล็กลงชัดเจน (จากเดิม 300px+) */
+            min-height: 0; /* ยกเลิก min-height เดิมที่อาจจะดันความสูงไว้ */
         }
 
         /* NEW: Staggered Animation Delays (กำหนดเวลาดีเลย์ให้แต่ละการ์ด) */
