@@ -864,16 +864,9 @@
                 const ctx = chartCanvas.getContext('2d');
                 if (chartData.datasets) {
                     chartData.datasets.forEach(dataset => {
-                        const baseColor = dataset.backgroundColor || '#8A2BE2'; // ใช้สีเดิม หรือสีสำรองถ้าไม่มี
-                        // สร้าง Gradient ไล่สีจากบนลงล่าง
-                        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                        gradient.addColorStop(0, baseColor); 
-                        gradient.addColorStop(1, 'rgba(0,0,0,0)'); // จางหายด้านล่าง
-
-                        dataset.backgroundColor = gradient;
-                        dataset.borderColor = baseColor;
+                        // ปรับแต่งกราฟให้ดูทันสมัย (มุมมน) แต่ใช้สีทึบเพื่อให้ชัดเจน
                         dataset.borderWidth = 0;
-                        dataset.borderRadius = 4; // มุมมน
+                        dataset.borderRadius = 6; // มุมมน
                         dataset.borderSkipped = false; // มนทุกมุม
                         dataset.maxBarThickness = 50; // ไม่ให้แท่งใหญ่เกินไป
                     });
