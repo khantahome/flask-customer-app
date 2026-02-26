@@ -520,6 +520,23 @@
 
                 <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
             </div>
+
+            <!-- New Row for Summary Charts (Moved to Top) -->
+            <div class="charts-row">
+                <div class="chart-container half-width">
+                    <h3 class="chart-title">สัดส่วนช่องทาง (ทั้งหมด)</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="channelDistributionChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container half-width">
+                    <h3 class="chart-title">5 อันดับจังหวัดยอดฮิต</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="topProvincesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
              <div class="chart-container">
                 <h3 class="chart-title">กราฟข้อมูลลูกค้าใหม่</h3>
                 <div class="filters">
@@ -558,22 +575,6 @@
                 <div class="chart-canvas-wrapper">
                     <canvas id="channelProvinceChart"></canvas>
                     <div id="channelChartLoadingOverlay" class="loading-overlay" style="display: none;"><div class="spinner"></div></div>
-                </div>
-            </div>
-
-            <!-- New Row for Summary Charts -->
-            <div class="charts-row">
-                <div class="chart-container half-width">
-                    <h3 class="chart-title">สัดส่วนช่องทาง (ทั้งหมด)</h3>
-                    <div class="chart-canvas-wrapper">
-                        <canvas id="channelDistributionChart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-container half-width">
-                    <h3 class="chart-title">5 อันดับจังหวัดยอดฮิต</h3>
-                    <div class="chart-canvas-wrapper">
-                        <canvas id="topProvincesChart"></canvas>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1138,6 +1139,7 @@
                 const isLightMode = document.body.classList.contains('light-mode');
                 const textColor = isLightMode ? '#000000' : '#E0E0E0';
                 const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.2)' : '#3A3A5A';
+                const tooltipBg = isLightMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(30, 35, 50, 0.95)';
 
                 // 1. Aggregate Data (รวมข้อมูลทั้งหมดโดยไม่สน Filter)
                 const channelCounts = {};
@@ -1176,17 +1178,39 @@
                         datasets: [{
                             data: channelData,
                             backgroundColor: channelColors,
-                            borderColor: isLightMode ? '#ffffff' : '#1F283E',
-                            borderWidth: 2
+                            borderColor: isLightMode ? '#ffffff' : '#2D3A50',
+                            borderWidth: 2,
+                            hoverOffset: 15 // ขยายเมื่อเอาเมาส์ชี้
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        cutout: '65%', // ทำให้โดนัทบางลง ดูทันสมัย
                         plugins: {
-                            legend: { 
-                                position: 'right', 
-                                labels: { color: textColor, font: { family: 'Kanit' }, boxWidth: 12 } 
+                            legend: {
+                                position: 'right',
+                                labels: { color: textColor, font: { family: 'Kanit', size: 12 }, boxWidth: 12, usePointStyle: true, padding: 15 }
+                            },
+                            tooltip: {
+                                backgroundColor: tooltipBg,
+                                titleColor: isLightMode ? '#333' : '#fff',
+                                bodyColor: isLightMode ? '#666' : '#ccc',
+                                borderColor: gridColor,
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 8,
+                                titleFont: { family: 'Kanit', size: 14 },
+                                bodyFont: { family: 'Kanit', size: 13 },
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        let value = context.parsed;
+                                        let total = context.chart._metasets[context.datasetIndex].total;
+                                        let percentage = ((value / total) * 100).toFixed(1) + '%';
+                                        return ` ${label}: ${value} คน (${percentage})`;
+                                    }
+                                }
                             }
                         }
                     }
@@ -1201,6 +1225,12 @@
                 const provLabels = sortedProvinces.map(item => item[0]);
                 const provData = sortedProvinces.map(item => item[1]);
 
+                // สร้าง Gradient สำหรับกราฟแท่งแนวนอน
+                const ctx = topProvCanvas.getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+                gradient.addColorStop(0, '#8A2BE2'); // สีม่วง
+                gradient.addColorStop(1, '#00BCD4'); // สีฟ้า
+
                 if (topProvChartInstance) topProvChartInstance.destroy();
                 topProvChartInstance = new Chart(topProvCanvas.getContext('2d'), {
                     type: 'bar',
@@ -1209,18 +1239,35 @@
                         datasets: [{
                             label: 'จำนวนลูกค้า',
                             data: provData,
-                            backgroundColor: '#8A2BE2', // ใช้สีธีมหลัก
-                            borderRadius: 4
+                            backgroundColor: gradient,
+                            borderRadius: 10, // มุมมนมาก
+                            barPercentage: 0.6, // ขนาดแท่งกำลังดี
                         }]
                     },
                     options: {
                         indexAxis: 'y', // กราฟแนวนอน
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: tooltipBg,
+                                titleColor: isLightMode ? '#333' : '#fff',
+                                bodyColor: isLightMode ? '#666' : '#ccc',
+                                borderColor: gridColor,
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 8,
+                                titleFont: { family: 'Kanit', size: 14 },
+                                bodyFont: { family: 'Kanit', size: 13 }
+                            }
+                        },
                         scales: {
-                            x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Kanit' } } },
-                            y: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Kanit' } } }
+                            x: { display: false }, // ซ่อนแกน X เพื่อความสะอาดตา
+                            y: { 
+                                grid: { display: false, drawBorder: false }, 
+                                ticks: { color: textColor, font: { family: 'Kanit', size: 13 } } 
+                            }
                         }
                     }
                 });
