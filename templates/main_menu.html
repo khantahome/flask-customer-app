@@ -329,19 +329,20 @@
             background-color: var(--card-background);
             padding: 25px;
             border-radius: 12px; /* Consistent border radius */
-            box-shadow: var(--shadow-light), 0 0 15px rgba(138, 43, 226, 0.2); /* เพิ่มเงาเรืองแสง */
+            box-shadow: var(--shadow-light);
             margin-top: 0; /* Remove margin-top, handled by main-content-area gap */
             text-align: center;
             flex-grow: 1; /* Allow chart container to grow */
             
             /* NEW: Animation & Transition Properties */
-            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; /* Animation การปรากฏตัว (ใช้ both เพื่อให้เริ่มจาก opacity 0) */
+            opacity: 0; /* เริ่มต้นแบบซ่อนอยู่ */
+            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; /* Animation การปรากฏตัว */
             transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transition สำหรับ Hover Effect */
         }
 
         .chart-container:hover {
             transform: translateY(-10px); /* ลอยขึ้นเมื่อเอาเมาส์ชี้ */
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3), 0 0 25px rgba(138, 43, 226, 0.5); /* เงาเข้มขึ้นและเพิ่มการเรืองแสง */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); /* เงาเข้มขึ้นเพื่อให้ดูมิติ */
         }
 
         .chart-title {
@@ -496,18 +497,7 @@
         }
         .chart-container.half-width {
             flex: 1;
-            min-width: 300px;
-            padding: 15px; /* ลด padding ให้กระชับขึ้น */
-        }
-
-        /* NEW: Styles for smaller summary charts */
-        .chart-container.half-width .chart-title {
-            font-size: 1.2em; /* ลดขนาดหัวข้อลงอีก */
-            margin-bottom: 10px;
-        }
-        .chart-container.half-width .chart-canvas-wrapper {
-            height: 200px; /* กำหนดความสูงตายตัวให้เล็กลงชัดเจน (จากเดิม 300px+) */
-            min-height: 0; /* ยกเลิก min-height เดิมที่อาจจะดันความสูงไว้ */
+            min-width: 300px;    
         }
 
         /* NEW: Staggered Animation Delays (กำหนดเวลาดีเลย์ให้แต่ละการ์ด) */
@@ -519,11 +509,33 @@
             animation-delay: 0.2s;
         }
         /* แถวถัดมา: กราฟลูกค้าใหม่ และ กราฟช่องทาง (นับ div ทั้งหมดใน main-content-area) */
-        #customerChartCard {
+        .main-content-area > .chart-container:nth-of-type(3) {
             animation-delay: 0.3s;
         }
-        #channelChartCard {
+        .main-content-area > .chart-container:nth-of-type(4) {
             animation-delay: 0.4s;
+        }
+
+        /* NEW: Chart Toggle Button Style */
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .chart-toggle-btn {
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.3s ease;
+        }
+        .chart-toggle-btn:hover {
+            background: var(--primary-color);
+            color: white;
         }
     </style>
 <meta name="viewport" content="width=1200">
@@ -579,8 +591,11 @@
                 </div>
             </div>
 
-             <div class="chart-container" id="customerChartCard">
-                <h3 class="chart-title">กราฟข้อมูลลูกค้าใหม่</h3>
+             <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title" style="margin-bottom: 0;">กราฟข้อมูลลูกค้าใหม่</h3>
+                    <button id="toggleCustomerChartBtn" class="chart-toggle-btn" title="สลับมุมมอง (แท่ง/โดนัท)"><i class="fas fa-chart-pie"></i></button>
+                </div>
                 <div class="filters">
                     <label for="chartYearSelect">ปี:</label>
                     <select id="chartYearSelect" class="filter-select"></select>
@@ -599,8 +614,11 @@
                 </div>
             </div>
             <!-- New Chart Container for Channel/Province Data -->
-            <div class="chart-container" id="channelChartCard">
-                <h3 class="chart-title">กราฟข้อมูลลูกค้าตามช่องทางและจังหวัด</h3>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title" style="margin-bottom: 0;">กราฟข้อมูลลูกค้าตามช่องทางและจังหวัด</h3>
+                    <button id="toggleChannelChartBtn" class="chart-toggle-btn" title="สลับมุมมอง (แท่ง/โดนัท)"><i class="fas fa-chart-pie"></i></button>
+                </div>
                 <div class="filters">
                     <label for="channelChartYearSelect">ปี:</label>
                     <select id="channelChartYearSelect" class="filter-select"></select>
@@ -634,6 +652,10 @@
             const chartCanvas = document.getElementById('customerChart');
             const chartLoadingOverlay = document.getElementById('chartLoadingOverlay');
             let customerChartInstance; // เก็บ instance ของ Chart.js
+            
+            // NEW: State for Customer Chart Type
+            let currentCustomerChartType = 'bar'; // 'bar' or 'doughnut'
+            const toggleCustomerChartBtn = document.getElementById('toggleCustomerChartBtn');
 
             let rawChartData = {}; // เก็บข้อมูลทั้งหมดที่ดึงมาจาก API
             let uniqueCustomerGroups = [];
@@ -648,6 +670,11 @@
             const channelChartCanvas = document.getElementById('channelProvinceChart');
             const channelChartLoadingOverlay = document.getElementById('channelChartLoadingOverlay');
             let channelChartInstance;
+            
+            // NEW: State for Channel Chart Type
+            let currentChannelChartType = 'bar'; // 'bar' or 'doughnut'
+            const toggleChannelChartBtn = document.getElementById('toggleChannelChartBtn');
+
             let rawChannelData = {};
             let uniqueGroupsForChannelChart = [];
 
@@ -793,6 +820,18 @@
                 customerGroupSelect.value = ''; // ไม่เลือกกลุ่มลูกค้าเริ่มต้น
             }
 
+            // NEW: Toggle Button Event Listener for Customer Chart
+            toggleCustomerChartBtn.addEventListener('click', () => {
+                if (currentCustomerChartType === 'bar') {
+                    currentCustomerChartType = 'doughnut';
+                    toggleCustomerChartBtn.innerHTML = '<i class="fas fa-chart-bar"></i>'; // เปลี่ยนไอคอนเป็นกราฟแท่ง
+                } else {
+                    currentCustomerChartType = 'bar';
+                    toggleCustomerChartBtn.innerHTML = '<i class="fas fa-chart-pie"></i>'; // เปลี่ยนไอคอนเป็นกราฟโดนัท
+                }
+                updateChart();
+            });
+
             // ฟังก์ชันสำหรับเตรียมข้อมูลสำหรับ Chart.js
             function prepareChartData(data, ctx) { // *** รับ ctx เพื่อทำ Gradient ***
                 // ดึงค่าสีล่าสุดทุกครั้งที่เตรียมข้อมูล
@@ -841,7 +880,40 @@
                     };
                 };
 
-                if (selectedYear) {
+                // --- NEW: Logic for Doughnut Chart ---
+                if (currentCustomerChartType === 'doughnut') {
+                    // สำหรับ Doughnut เราต้องการผลรวมของแต่ละกลุ่มลูกค้า ตามช่วงเวลาที่เลือก
+                    const groupTotals = uniqueCustomerGroups.map(group => {
+                        let total = 0;
+                        // วนลูปหาผลรวม
+                        for (const year in data) {
+                            if (selectedYear && year !== selectedYear) continue;
+                            for (const month in data[year]) {
+                                if (selectedMonth && month !== selectedMonth) continue;
+                                total += data[year][month][group] || 0;
+                            }
+                        }
+                        return total;
+                    });
+
+                    // กรองเฉพาะกลุ่มที่มีค่า > 0
+                    const doughnutLabels = [];
+                    const doughnutData = [];
+                    const doughnutColors = [];
+                    
+                    uniqueCustomerGroups.forEach((group, i) => {
+                        if (groupTotals[i] > 0) {
+                            doughnutLabels.push(group);
+                            doughnutData.push(groupTotals[i]);
+                            doughnutColors.push(colors[i % colors.length]);
+                        }
+                    });
+
+                    return {
+                        labels: doughnutLabels,
+                        datasets: [{ data: doughnutData, backgroundColor: doughnutColors, borderWidth: 1 }]
+                    };
+                } else if (selectedYear) {
                     if (selectedMonth) {
                         // กรณีเลือกเจาะจงเดือน: เปลี่ยนเป็น Bar Chart เปรียบเทียบกลุ่มลูกค้า
                         // กรองเฉพาะกลุ่มที่มีข้อมูล (> 0) เพื่อประหยัดพื้นที่
@@ -955,12 +1027,15 @@
                     customerChartInstance.destroy(); // ทำลาย instance กราฟเก่า
                 }
 
+                const isDoughnut = currentCustomerChartType === 'doughnut';
+
                 customerChartInstance = new Chart(ctx, {
-                    type: 'bar', // เปลี่ยนเป็นกราฟแท่ง (Stacked Bar)
+                    type: currentCustomerChartType, // ใช้ตัวแปร state
                     data: chartData,
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        cutout: isDoughnut ? '60%' : 0, // ถ้าเป็นโดนัทให้เจาะรู
                         plugins: {
                             legend: {
                                 display: chartData.datasets.length > 1 || customerGroupSelect.value === '',
@@ -987,7 +1062,7 @@
                             }
                         },
                         scales: {
-                            x: {
+                            x: isDoughnut ? { display: false } : { // ซ่อนแกนถ้าเป็นโดนัท
                                 stacked: true, // เปิดใช้งาน Stacked
                                 grid: {
                                     display: false, // ซ่อนเส้นตารางแนวตั้งเพื่อความสะอาดตา
@@ -1009,7 +1084,7 @@
                                     color: textColor
                                 }
                             },
-                            y: {
+                            y: isDoughnut ? { display: false } : { // ซ่อนแกนถ้าเป็นโดนัท
                                 stacked: true, // เปิดใช้งาน Stacked
                                 beginAtZero: true,
                                 grid: {
@@ -1110,6 +1185,18 @@
                 });
             }
 
+            // NEW: Toggle Button Event Listener for Channel Chart
+            toggleChannelChartBtn.addEventListener('click', () => {
+                if (currentChannelChartType === 'bar') {
+                    currentChannelChartType = 'doughnut';
+                    toggleChannelChartBtn.innerHTML = '<i class="fas fa-chart-bar"></i>';
+                } else {
+                    currentChannelChartType = 'bar';
+                    toggleChannelChartBtn.innerHTML = '<i class="fas fa-chart-pie"></i>';
+                }
+                updateChannelChart();
+            });
+
             function prepareChannelChartData() {
                 const selectedYear = channelChartYearSelect.value;
                 const selectedMonth = channelChartMonthSelect.value;
@@ -1170,6 +1257,7 @@
                 const chartData = prepareChannelChartData();
                 const ctx = channelChartCanvas.getContext('2d');
                 const isHorizontal = chartData.labels.length > 10;
+                const isDoughnut = currentChannelChartType === 'doughnut';
 
                 // --- Apply Gradients to Channel/Province Chart ---
                 if (chartData.datasets) {
@@ -1199,12 +1287,13 @@
                 }
 
                 channelChartInstance = new Chart(ctx, {
-                    type: 'bar', data: chartData,
+                    type: currentChannelChartType, data: chartData,
                     options: {
                         responsive: true, maintainAspectRatio: false,
-                        indexAxis: chartData.labels.length > 10 ? 'y' : 'x',
+                        indexAxis: (!isDoughnut && chartData.labels.length > 10) ? 'y' : 'x',
+                        cutout: isDoughnut ? '60%' : 0,
                         plugins: { legend: { display: false }, title: { display: true, text: titleText, font: { family: 'Kanit', size: 18, weight: 'bold' }, color: textColor }},
-                        scales: { x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Kanit' } }}, y: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0, color: textColor, font: { family: 'Kanit' } }}}
+                        scales: isDoughnut ? { x: { display: false }, y: { display: false } } : { x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Kanit' } }}, y: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0, color: textColor, font: { family: 'Kanit' } }}}
                     }
                 });
             }
