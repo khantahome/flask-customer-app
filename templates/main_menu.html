@@ -800,14 +800,29 @@
                 if (selectedYear) {
                     if (selectedMonth) {
                         // กรณีเลือกเจาะจงเดือน: เปลี่ยนเป็น Bar Chart เปรียบเทียบกลุ่มลูกค้า
-                        // เพราะกราฟเส้นจุดเดียวดูไม่รู้เรื่อง
-                        labels = uniqueCustomerGroups; // แกน X เป็นชื่อกลุ่ม
-                        const dataCounts = uniqueCustomerGroups.map(group => data[selectedYear]?.[selectedMonth]?.[group] || 0);
+                        // กรองเฉพาะกลุ่มที่มีข้อมูล (> 0) เพื่อประหยัดพื้นที่
+                        const filteredGroups = [];
+                        const filteredCounts = [];
+                        const filteredColors = [];
+
+                        uniqueCustomerGroups.forEach((group, index) => {
+                            // ถ้ามีการเลือกกลุ่มลูกค้าเฉพาะเจาะจง ให้แสดงเฉพาะกลุ่มนั้น (ถ้ามีข้อมูล)
+                            if (selectedGroup && group !== selectedGroup) return;
+
+                            const count = data[selectedYear]?.[selectedMonth]?.[group] || 0;
+                            if (count > 0) {
+                                filteredGroups.push(group);
+                                filteredCounts.push(count);
+                                filteredColors.push(colors[index % colors.length]);
+                            }
+                        });
+
+                        labels = filteredGroups; 
                         
                         datasets.push({
                             label: 'จำนวนลูกค้า',
-                            data: dataCounts,
-                            backgroundColor: uniqueCustomerGroups.map((_, i) => colors[i % colors.length]),
+                            data: filteredCounts,
+                            backgroundColor: filteredColors,
                             borderRadius: 6,
                             barPercentage: 0.6
                         });
