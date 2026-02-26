@@ -329,7 +329,7 @@
             background-color: var(--card-background);
             padding: 25px;
             border-radius: 12px; /* Consistent border radius */
-            box-shadow: var(--shadow-light);
+            box-shadow: var(--shadow-light), 0 0 15px rgba(138, 43, 226, 0.2); /* เพิ่มเงาเรืองแสง */
             margin-top: 0; /* Remove margin-top, handled by main-content-area gap */
             text-align: center;
             flex-grow: 1; /* Allow chart container to grow */
@@ -341,7 +341,7 @@
 
         .chart-container:hover {
             transform: translateY(-10px); /* ลอยขึ้นเมื่อเอาเมาส์ชี้ */
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); /* เงาเข้มขึ้นเพื่อให้ดูมิติ */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3), 0 0 25px rgba(138, 43, 226, 0.5); /* เงาเข้มขึ้นและเพิ่มการเรืองแสง */
         }
 
         .chart-title {
