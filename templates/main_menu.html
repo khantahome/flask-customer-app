@@ -471,6 +471,18 @@
                 width: 100%;
             }
         }
+
+        /* New styles for side-by-side charts */
+        .charts-row {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+        .chart-container.half-width {
+            flex: 1;
+            min-width: 300px;    
+        }
     </style>
 <meta name="viewport" content="width=1200">
 </head>
@@ -548,6 +560,22 @@
                     <div id="channelChartLoadingOverlay" class="loading-overlay" style="display: none;"><div class="spinner"></div></div>
                 </div>
             </div>
+
+            <!-- New Row for Summary Charts -->
+            <div class="charts-row">
+                <div class="chart-container half-width">
+                    <h3 class="chart-title">สัดส่วนช่องทาง (ทั้งหมด)</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="channelDistributionChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container half-width">
+                    <h3 class="chart-title">5 อันดับจังหวัดยอดฮิต</h3>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="topProvincesChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -580,6 +608,12 @@
             let rawChannelData = {};
             let uniqueGroupsForChannelChart = [];
 
+            // --- New Summary Charts Variables ---
+            const channelDistCanvas = document.getElementById('channelDistributionChart');
+            const topProvCanvas = document.getElementById('topProvincesChart');
+            let channelDistChartInstance;
+            let topProvChartInstance;
+
             // --- Theme Toggler Function ---
             const applyTheme = (theme) => {
                 const themeToggleCheckbox = document.getElementById('theme-checkbox');
@@ -595,6 +629,9 @@
                 // NEW: Update the second chart as well when theme changes
                 if (channelChartInstance) {
                     updateChannelChart();
+                }
+                if (channelDistChartInstance) {
+                    updateSummaryCharts();
                 }
             };
 
@@ -961,6 +998,7 @@
                     
                     populateChannelFilters(data.unique_years, data.all_months, data.unique_channels, data.unique_provinces);
                     updateChannelChart();
+                    updateSummaryCharts(); // สร้างกราฟสรุปเพิ่มเติม
                 } catch (error) {
                     console.error('Error fetching channel/province chart data:', error);
                     alert('ไม่สามารถโหลดข้อมูลกราฟช่องทาง/จังหวัดได้');
@@ -1089,6 +1127,101 @@
                         indexAxis: chartData.labels.length > 10 ? 'y' : 'x',
                         plugins: { legend: { display: false }, title: { display: true, text: titleText, font: { family: 'Kanit', size: 18, weight: 'bold' }, color: textColor }},
                         scales: { x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Kanit' } }}, y: { beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0, color: textColor, font: { family: 'Kanit' } }}}
+                    }
+                });
+            }
+
+            // --- New Function: Update Summary Charts (Doughnut & Top 5) ---
+            function updateSummaryCharts() {
+                if (!rawChannelData || Object.keys(rawChannelData).length === 0) return;
+
+                const isLightMode = document.body.classList.contains('light-mode');
+                const textColor = isLightMode ? '#000000' : '#E0E0E0';
+                const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.2)' : '#3A3A5A';
+
+                // 1. Aggregate Data (รวมข้อมูลทั้งหมดโดยไม่สน Filter)
+                const channelCounts = {};
+                const provinceCounts = {};
+
+                for (const year in rawChannelData) {
+                    for (const month in rawChannelData[year]) {
+                        for (const province in rawChannelData[year][month]) {
+                            for (const channel in rawChannelData[year][month][province]) {
+                                for (const group in rawChannelData[year][month][province][channel]) {
+                                    const count = rawChannelData[year][month][province][channel][group];
+                                    
+                                    // รวมยอดตามช่องทาง
+                                    channelCounts[channel] = (channelCounts[channel] || 0) + count;
+
+                                    // รวมยอดตามจังหวัด
+                                    provinceCounts[province] = (provinceCounts[province] || 0) + count;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 2. Prepare Channel Distribution Data (Doughnut Chart)
+                const channelLabels = Object.keys(channelCounts);
+                const channelData = Object.values(channelCounts);
+                const channelColors = [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#8A2BE2'
+                ];
+
+                if (channelDistChartInstance) channelDistChartInstance.destroy();
+                channelDistChartInstance = new Chart(channelDistCanvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: channelLabels,
+                        datasets: [{
+                            data: channelData,
+                            backgroundColor: channelColors,
+                            borderColor: isLightMode ? '#ffffff' : '#1F283E',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                position: 'right', 
+                                labels: { color: textColor, font: { family: 'Kanit' }, boxWidth: 12 } 
+                            }
+                        }
+                    }
+                });
+
+                // 3. Prepare Top 5 Provinces Data (Horizontal Bar Chart)
+                // เรียงลำดับจากมากไปน้อย และตัดมาแค่ 5 อันดับแรก
+                const sortedProvinces = Object.entries(provinceCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+                
+                const provLabels = sortedProvinces.map(item => item[0]);
+                const provData = sortedProvinces.map(item => item[1]);
+
+                if (topProvChartInstance) topProvChartInstance.destroy();
+                topProvChartInstance = new Chart(topProvCanvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: provLabels,
+                        datasets: [{
+                            label: 'จำนวนลูกค้า',
+                            data: provData,
+                            backgroundColor: '#8A2BE2', // ใช้สีธีมหลัก
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // กราฟแนวนอน
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Kanit' } } },
+                            y: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Kanit' } } }
+                        }
                     }
                 });
             }
