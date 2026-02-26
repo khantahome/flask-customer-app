@@ -1143,6 +1143,10 @@
                     type: currentCustomerChartType, // ใช้ตัวแปร state
                     data: chartData,
                     options: {
+                        animation: {
+                            duration: 1200, // ระยะเวลาอนิเมชัน (ms)
+                            easing: 'easeOutQuart' // รูปแบบการเคลื่อนไหว
+                        },
                         responsive: true,
                         maintainAspectRatio: false,
                         cutout: isDoughnut ? '60%' : 0, // ถ้าเป็นโดนัทให้เจาะรู
@@ -1473,6 +1477,10 @@
                 channelChartInstance = new Chart(ctx, {
                     type: currentChannelChartType, data: chartData,
                     options: {
+                        animation: {
+                            duration: 1200,
+                            easing: 'easeOutQuart'
+                        },
                         responsive: true, maintainAspectRatio: false,
                         indexAxis: (!isDoughnut && chartData.labels.length > 10) ? 'y' : 'x',
                         cutout: isDoughnut ? '60%' : 0,
@@ -1538,6 +1546,11 @@
                         }]
                     },
                     options: {
+                        animation: {
+                            animateScale: true, // อนิเมชันการขยาย
+                            animateRotate: true, // อนิเมชันการหมุน
+                            duration: 1000
+                        },
                         responsive: true,
                         maintainAspectRatio: false,
                         cutout: '65%', // ทำให้โดนัทบางลง ดูทันสมัย
@@ -1597,6 +1610,10 @@
                         }]
                     },
                     options: {
+                        animation: {
+                            duration: 1200,
+                            easing: 'easeOutQuart'
+                        },
                         indexAxis: 'y', // กราฟแนวนอน
                         responsive: true,
                         maintainAspectRatio: false,
