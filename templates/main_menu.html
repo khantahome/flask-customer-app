@@ -335,8 +335,7 @@
             flex-grow: 1; /* Allow chart container to grow */
             
             /* NEW: Animation & Transition Properties */
-            opacity: 0; /* เริ่มต้นแบบซ่อนอยู่ */
-            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; /* Animation การปรากฏตัว */
+            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; /* Animation การปรากฏตัว (ใช้ both เพื่อให้เริ่มจาก opacity 0) */
             transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transition สำหรับ Hover Effect */
         }
 
@@ -509,10 +508,10 @@
             animation-delay: 0.2s;
         }
         /* แถวถัดมา: กราฟลูกค้าใหม่ และ กราฟช่องทาง (นับ div ทั้งหมดใน main-content-area) */
-        .main-content-area > .chart-container:nth-of-type(3) {
+        #customerChartCard {
             animation-delay: 0.3s;
         }
-        .main-content-area > .chart-container:nth-of-type(4) {
+        #channelChartCard {
             animation-delay: 0.4s;
         }
     </style>
@@ -569,7 +568,7 @@
                 </div>
             </div>
 
-             <div class="chart-container">
+             <div class="chart-container" id="customerChartCard">
                 <h3 class="chart-title">กราฟข้อมูลลูกค้าใหม่</h3>
                 <div class="filters">
                     <label for="chartYearSelect">ปี:</label>
@@ -589,7 +588,7 @@
                 </div>
             </div>
             <!-- New Chart Container for Channel/Province Data -->
-            <div class="chart-container">
+            <div class="chart-container" id="channelChartCard">
                 <h3 class="chart-title">กราฟข้อมูลลูกค้าตามช่องทางและจังหวัด</h3>
                 <div class="filters">
                     <label for="channelChartYearSelect">ปี:</label>
