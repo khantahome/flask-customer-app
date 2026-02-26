@@ -841,8 +841,8 @@
             function updateChart() { // *** ไม่รับ parameter ตรงนี้แล้ว ***
                 // --- [สำคัญ] ดึงค่าสีล่าสุดทุกครั้งที่อัปเดตกราฟ ---
                 const isLightMode = document.body.classList.contains('light-mode');
-                const textColor = isLightMode ? '#000000' : '#E0E0E0'; // สีตัวอักษร: ดำในโหมดสว่าง, ขาวในโหมดมืด
-                const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.2)' : '#3A3A5A'; // สีเส้นตาราง: เข้มในโหมดสว่าง, อ่อนในโหมดมืด
+                const textColor = isLightMode ? '#333333' : '#E0E0E0'; // ปรับสีให้อ่านง่ายขึ้น
+                const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)'; // ปรับเส้นตารางให้จางลง
                 // -----------------------------------------------------------------
 
                 // เพิ่มการตรวจสอบว่า rawChartData (global) มีข้อมูลหรือไม่
@@ -860,11 +860,29 @@
                 const chartData = prepareChartData(rawChartData);
                 console.log('Chart Data being passed to Chart.js:', chartData);
 
+                // --- ส่วนตกแต่งกราฟให้ทันสมัย (Gradient & Rounded Corners) ---
+                const ctx = chartCanvas.getContext('2d');
+                if (chartData.datasets) {
+                    chartData.datasets.forEach(dataset => {
+                        const baseColor = dataset.backgroundColor || '#8A2BE2'; // ใช้สีเดิม หรือสีสำรองถ้าไม่มี
+                        // สร้าง Gradient ไล่สีจากบนลงล่าง
+                        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                        gradient.addColorStop(0, baseColor); 
+                        gradient.addColorStop(1, 'rgba(0,0,0,0)'); // จางหายด้านล่าง
+
+                        dataset.backgroundColor = gradient;
+                        dataset.borderColor = baseColor;
+                        dataset.borderWidth = 0;
+                        dataset.borderRadius = 4; // มุมมน
+                        dataset.borderSkipped = false; // มนทุกมุม
+                        dataset.maxBarThickness = 50; // ไม่ให้แท่งใหญ่เกินไป
+                    });
+                }
+
                 if (customerChartInstance) {
                     customerChartInstance.destroy(); // ทำลาย instance กราฟเก่า
                 }
 
-                const ctx = chartCanvas.getContext('2d');
                 customerChartInstance = new Chart(ctx, {
                     type: 'bar', // สามารถเป็น 'line', 'bar', 'pie' ได้
                     data: chartData,
@@ -878,10 +896,25 @@
                                 labels: {
                                     font: {
                                         family: 'Kanit',
-                                        size: 14
+                                        size: 13
                                     },
-                                    color: textColor
+                                    color: textColor,
+                                    usePointStyle: true, // ใช้จุดกลมแทนสี่เหลี่ยม
+                                    boxWidth: 8
                                 }
+                            },
+                            tooltip: {
+                                backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(30, 35, 50, 0.95)',
+                                titleColor: isLightMode ? '#333' : '#fff',
+                                bodyColor: isLightMode ? '#666' : '#ccc',
+                                borderColor: gridColor,
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 8,
+                                titleFont: { family: 'Kanit', size: 14 },
+                                bodyFont: { family: 'Kanit', size: 13 },
+                                displayColors: true,
+                                usePointStyle: true,
                             },
                             title: {
                                 display: true,
@@ -889,23 +922,25 @@
                                 font: {
                                     family: 'Kanit',
                                     size: 18,
-                                    weight: 'bold'
+                                    weight: '600'
                                 },
-                                color: textColor
+                                color: textColor,
+                                padding: { bottom: 20 }
                             }
                         },
                         scales: {
                             x: {
                                 stacked: customerGroupSelect.value === '' && (chartYearSelect.value === '' || chartMonthSelect.value === ''),
                                 grid: {
-                                    color: gridColor // กำหนดสีเส้นตารางแกน X
+                                    display: false, // ซ่อนเส้นตารางแนวตั้ง
+                                    drawBorder: false
                                 },
                                 title: {
                                     display: true,
                                     text: chartYearSelect.value && !chartMonthSelect.value ? 'เดือน' : (chartYearSelect.value ? 'วันที่/เดือน/ปี' : 'ปี'),
                                     font: {
                                         family: 'Kanit',
-                                        size: 16
+                                        size: 14
                                     },
                                     color: textColor
                                 },
@@ -920,14 +955,16 @@
                                 stacked: customerGroupSelect.value === '' && (chartYearSelect.value === '' || chartMonthSelect.value === ''),
                                 beginAtZero: true,
                                 grid: {
-                                    color: gridColor // กำหนดสีเส้นตารางแกน Y
+                                    color: gridColor,
+                                    borderDash: [5, 5], // เส้นประแนวนอน
+                                    drawBorder: false
                                 },
                                 title: {
                                     display: true,
                                     text: 'จำนวนลูกค้า',
                                     font: {
                                         family: 'Kanit',
-                                        size: 16
+                                        size: 14
                                     },
                                     color: textColor
                                 },
@@ -937,8 +974,13 @@
                                         family: 'Kanit'
                                     },
                                     color: textColor
-                                }
+                                },
+                                border: { display: false } // ซ่อนเส้นแกน Y
                             }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
                         }
                     }
                 });
