@@ -154,14 +154,24 @@
 
         /* Main container for the menu */
         .main-container {
-            background-color: var(--card-background);
+            /* Glassmorphism + Gradient Banner Style */
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.85), rgba(0, 188, 212, 0.85));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: var(--shadow-light);
-            text-align: center;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            text-align: left;
             width: 100%;
             max-width: none; /* Remove max-width here, handled by main-content-area */
             animation: fadeIn 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
         }
 
         @keyframes fadeIn {
@@ -177,18 +187,37 @@
 
         /* Heading style */
         .main-container h2 {
-            color: var(--primary-color);
-            margin-bottom: 30px;
-            font-size: 2.2em;
-            font-weight: 600;
+            color: white;
+            margin-bottom: 5px;
+            font-size: 2.5em;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* Logged in user info */
         .logged-in-user {
-            color: var(--light-text-color); /* Use lighter text color */
-            margin-bottom: 25px;
-            font-size: 1.1em;
-            font-weight: 400;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0;
+            font-size: 1.2em;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        /* Banner specific styles */
+        .banner-content { z-index: 2; }
+        .banner-date { text-align: right; z-index: 2; }
+        .current-time { font-size: 3em; font-weight: bold; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .current-date { font-size: 1.1em; opacity: 0.9; font-weight: 300; }
+        
+        .decorative-icon {
+            position: absolute;
+            right: -20px;
+            bottom: -40px;
+            font-size: 15rem;
+            color: rgba(255, 255, 255, 0.1);
+            transform: rotate(-15deg);
+            z-index: 1;
+            pointer-events: none;
         }
 
         /* Flash messages styling */
@@ -449,6 +478,20 @@
             .main-container, .chart-container {
                 padding: 30px;
             }
+            .main-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            .main-container .logged-in-user { text-align: center; }
+            .banner-date { text-align: center; }
+            .decorative-icon {
+                font-size: 10rem;
+                right: 50%;
+                transform: translateX(50%) rotate(-15deg);
+                bottom: -20px;
+                opacity: 0.05;
+            }
             .action-button-group {
                 flex-direction: row; /* Buttons in a row on smaller screens */
                 flex-wrap: wrap;
@@ -640,18 +683,25 @@
             <p class="logged-in-user" style="margin-top: 25px; text-align: center;">สวัสดี, {{ username }}</p>
         </div>
         <div class="main-content-area">
+            <!-- Flash messages moved outside main-container for better layout with new banner -->
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="flash-message">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
             <div class="main-container">
-                <h2>เมนูหลัก</h2>
-
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="flash-message">{{ message }}</div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
+                <div class="banner-content">
+                    <h2>ยินดีต้อนรับกลับ, {{ username }}</h2>
+                    <p class="logged-in-user">ภาพรวมธุรกิจของคุณวันนี้</p>
+                </div>
+                <div class="banner-date">
+                    <div class="current-time" id="clockTime">--:--</div>
+                    <div class="current-date" id="clockDate">--/--/----</div>
+                </div>
+                <i class="fas fa-chart-line decorative-icon"></i>
             </div>
 
             <!-- KPI Cards Row -->
@@ -2141,6 +2191,21 @@
                 }
                 updateToggleIcon(savedState);
             }
+
+            // --- Real-time Clock for Banner ---
+            function updateClock() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                const dateString = now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                
+                const timeEl = document.getElementById('clockTime');
+                const dateEl = document.getElementById('clockDate');
+                
+                if (timeEl) timeEl.textContent = timeString;
+                if (dateEl) dateEl.textContent = dateString;
+            }
+            setInterval(updateClock, 1000);
+            updateClock(); // Initial call
         });
     </script>
 </body>
