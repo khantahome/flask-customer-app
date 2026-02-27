@@ -686,12 +686,34 @@
             <div class="charts-row">
                 <div class="chart-container half-width">
                     <h3 class="chart-title">สัดส่วนช่องทาง (ทั้งหมด)</h3>
+                    <!-- Stats Panel for Channel Distribution -->
+                    <div id="channelDistStatsPanel" class="stats-panel" style="gap: 10px; margin-bottom: 15px;">
+                        <div class="stat-item" style="min-width: 100px; padding: 8px;">
+                            <div class="stat-label">ทั้งหมด</div>
+                            <div class="stat-value" id="statChannelDistTotal" style="font-size: 1.2em;">-</div>
+                        </div>
+                        <div class="stat-item" style="min-width: 100px; padding: 8px;">
+                            <div class="stat-label">สูงสุด</div>
+                            <div class="stat-value" id="statChannelDistTop" style="font-size: 1.2em;">-</div>
+                        </div>
+                    </div>
                     <div class="chart-canvas-wrapper">
                         <canvas id="channelDistributionChart"></canvas>
                     </div>
                 </div>
                 <div class="chart-container half-width">
                     <h3 class="chart-title">5 อันดับจังหวัดยอดฮิต</h3>
+                    <!-- Stats Panel for Top Provinces -->
+                    <div id="topProvStatsPanel" class="stats-panel" style="gap: 10px; margin-bottom: 15px;">
+                        <div class="stat-item" style="min-width: 100px; padding: 8px;">
+                            <div class="stat-label">ทั้งหมด</div>
+                            <div class="stat-value" id="statTopProvTotal" style="font-size: 1.2em;">-</div>
+                        </div>
+                        <div class="stat-item" style="min-width: 100px; padding: 8px;">
+                            <div class="stat-label">สูงสุด</div>
+                            <div class="stat-value" id="statTopProvTop" style="font-size: 1.2em;">-</div>
+                        </div>
+                    </div>
                     <div class="chart-canvas-wrapper">
                         <canvas id="topProvincesChart"></canvas>
                     </div>
@@ -756,6 +778,23 @@
                     <label for="provinceSelect">จังหวัด:</label>
                     <select id="provinceSelect" class="filter-select"></select>
                 </div>
+
+                <!-- Stats Panel for Channel/Province Chart -->
+                <div id="channelProvinceStatsPanel" class="stats-panel" style="display: none;">
+                    <div class="stat-item">
+                        <div class="stat-label">จำนวนลูกค้า (ที่เลือก)</div>
+                        <div class="stat-value" id="statCPTotal">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">สัดส่วน (เทียบยอดรวม)</div>
+                        <div class="stat-value" id="statCPProportion">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">การเติบโต (เทียบก่อนหน้า)</div>
+                        <div class="stat-value" id="statCPGrowth">-</div>
+                    </div>
+                </div>
+
                 <div class="chart-canvas-wrapper">
                     <canvas id="channelProvinceChart"></canvas>
                     <div id="channelChartLoadingOverlay" class="loading-overlay" style="display: none;"><div class="spinner"></div></div>
@@ -1656,12 +1695,104 @@
                 };
             }
 
+            // --- NEW: Function to update Channel/Province Stats Panel ---
+            function updateChannelProvinceStats() {
+                const selectedYear = channelChartYearSelect.value;
+                const selectedMonth = channelChartMonthSelect.value;
+                const selectedChannel = channelSelect.value;
+                const selectedProvince = provinceSelect.value;
+                const statsPanel = document.getElementById('channelProvinceStatsPanel');
+
+                if (!rawChannelData || Object.keys(rawChannelData).length === 0) {
+                    statsPanel.style.display = 'none';
+                    return;
+                }
+                statsPanel.style.display = 'flex';
+
+                // Helper to get count from rawChannelData
+                // Structure: rawChannelData[year][month][province][channel][group]
+                const getCount = (y, m, p, c) => {
+                    let total = 0;
+                    for (const year in rawChannelData) {
+                        if (y && year !== y) continue;
+                        for (const month in rawChannelData[year]) {
+                            if (m && month !== m) continue;
+                            for (const province in rawChannelData[year][month]) {
+                                if (p && province !== p) continue;
+                                for (const channel in rawChannelData[year][month][province]) {
+                                    if (c && channel !== c) continue;
+                                    // Sum all groups
+                                    total += Object.values(rawChannelData[year][month][province][channel]).reduce((a, b) => a + b, 0);
+                                }
+                            }
+                        }
+                    }
+                    return total;
+                };
+
+                // 1. Current Value (Selected Filters)
+                const currentVal = getCount(selectedYear, selectedMonth, selectedProvince, selectedChannel);
+
+                // 2. Total for Period (Same Time, All Channels/Provinces)
+                // If no time selected, it's All Time Total
+                const totalPeriodVal = getCount(selectedYear, selectedMonth, null, null);
+
+                // 3. Previous Value (For Growth)
+                let prevVal = 0;
+                let hasPrev = false;
+
+                if (selectedYear) {
+                    if (selectedMonth) {
+                        // Compare with Previous Month
+                        let prevY = parseInt(selectedYear);
+                        let prevM = parseInt(selectedMonth) - 1;
+                        if (prevM === 0) { prevM = 12; prevY -= 1; }
+                        const prevMStr = String(prevM).padStart(2, '0');
+                        // Check if prev year exists in data to avoid unnecessary calls
+                        if (rawChannelData[String(prevY)]) {
+                            prevVal = getCount(String(prevY), prevMStr, selectedProvince, selectedChannel);
+                            hasPrev = true;
+                        }
+                    } else {
+                        // Compare with Previous Year
+                        const prevYStr = String(parseInt(selectedYear) - 1);
+                        if (rawChannelData[prevYStr]) {
+                            prevVal = getCount(prevYStr, null, selectedProvince, selectedChannel);
+                            hasPrev = true;
+                        }
+                    }
+                }
+
+                // Update UI
+                document.getElementById('statCPTotal').innerText = currentVal.toLocaleString();
+                document.getElementById('statCPProportion').innerText = totalPeriodVal > 0 ? ((currentVal / totalPeriodVal) * 100).toFixed(1) + '%' : '-';
+
+                const growthElem = document.getElementById('statCPGrowth');
+                if (hasPrev) {
+                    if (prevVal > 0) {
+                        const growth = ((currentVal - prevVal) / prevVal) * 100;
+                        const colorClass = growth > 0 ? 'positive' : (growth < 0 ? 'negative' : 'neutral');
+                        const icon = growth > 0 ? '<i class="fas fa-arrow-up"></i>' : (growth < 0 ? '<i class="fas fa-arrow-down"></i>' : '<i class="fas fa-minus"></i>');
+                        growthElem.innerHTML = `<span class="stat-change ${colorClass}">${icon} ${growth > 0 ? '+' : ''}${growth.toFixed(1)}%</span>`;
+                    } else if (currentVal > 0) {
+                        growthElem.innerHTML = `<span class="stat-change positive"><i class="fas fa-arrow-up"></i> +100%</span>`;
+                    } else {
+                        growthElem.innerHTML = `<span class="stat-change neutral"><i class="fas fa-minus"></i> 0%</span>`;
+                    }
+                } else {
+                    growthElem.innerText = '-';
+                }
+            }
+
             function updateChannelChart() {
                 const isLightMode = document.body.classList.contains('light-mode');
                 const textColor = isLightMode ? '#000000' : '#E0E0E0';
                 const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.2)' : '#3A3A5A';
 
                 if (!rawChannelData || Object.keys(rawChannelData).length === 0) return;
+
+                // Update Stats Panel
+                updateChannelProvinceStats();
 
                 const chartData = prepareChannelChartData();
                 const ctx = channelChartCanvas.getContext('2d');
@@ -1741,6 +1872,28 @@
                         }
                     }
                 }
+
+                // --- Update Stats Panels for Summary Charts ---
+                // 1. Channel Distribution Stats
+                const totalCustomers = Object.values(channelCounts).reduce((a, b) => a + b, 0);
+                let topChannelName = '-';
+                let topChannelCount = 0;
+                for (const [name, count] of Object.entries(channelCounts)) {
+                    if (count > topChannelCount) { topChannelCount = count; topChannelName = name; }
+                }
+                document.getElementById('statChannelDistTotal').innerText = totalCustomers.toLocaleString();
+                document.getElementById('statChannelDistTop').innerHTML = `${topChannelName} <span style="font-size:0.7em; color:var(--light-text-color);">(${((topChannelCount/totalCustomers)*100).toFixed(0)}%)</span>`;
+
+                // 2. Top Provinces Stats
+                const totalProvincesCount = Object.values(provinceCounts).reduce((a, b) => a + b, 0); // Should be same as totalCustomers
+                let topProvName = '-';
+                let topProvCount = 0;
+                for (const [name, count] of Object.entries(provinceCounts)) {
+                    if (count > topProvCount) { topProvCount = count; topProvName = name; }
+                }
+                document.getElementById('statTopProvTotal').innerText = totalProvincesCount.toLocaleString();
+                document.getElementById('statTopProvTop').innerHTML = `${topProvName} <span style="font-size:0.7em; color:var(--light-text-color);">(${((topProvCount/totalProvincesCount)*100).toFixed(0)}%)</span>`;
+                // ----------------------------------------------
 
                 // 2. Prepare Channel Distribution Data (Doughnut Chart)
                 const channelLabels = Object.keys(channelCounts);
