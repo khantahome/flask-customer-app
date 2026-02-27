@@ -591,6 +591,31 @@
         .trend-up { color: #00e676; } /* Bright Green */
         .trend-down { color: #ff5252; } /* Bright Red */
         .trend-neutral { color: var(--light-text-color); }
+
+        /* Stats Panel Styles */
+        .stats-panel {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            background-color: var(--background-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            min-width: 140px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            max-width: 200px;
+        }
+        .stat-value { font-size: 1.4em; font-weight: bold; color: var(--text-color); margin: 5px 0; }
+        .stat-label { font-size: 0.85em; color: var(--light-text-color); }
+        .stat-change { font-size: 0.9em; font-weight: 500; }
+        .stat-change.positive { color: #00e676; }
+        .stat-change.negative { color: #ff5252; }
+        .stat-change.neutral { color: var(--light-text-color); }
     </style>
 <meta name="viewport" content="width=1200">
 </head>
@@ -688,6 +713,23 @@
                     <label for="customerGroupSelect">กลุ่มลูกค้า:</label>
                     <select id="customerGroupSelect" class="filter-select"></select>
                 </div>
+                
+                <!-- Stats Panel inserted here -->
+                <div id="customerStatsPanel" class="stats-panel" style="display: none;">
+                    <div class="stat-item">
+                        <div class="stat-label">จำนวนลูกค้า (ที่เลือก)</div>
+                        <div class="stat-value" id="statTotalCustomers">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">สัดส่วน (เทียบยอดรวม)</div>
+                        <div class="stat-value" id="statProportion">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">การเติบโต (เทียบก่อนหน้า)</div>
+                        <div class="stat-value" id="statGrowth">-</div>
+                    </div>
+                </div>
+
                 <div class="chart-canvas-wrapper">
                     <canvas id="customerChart"></canvas>
                     <div id="chartLoadingOverlay" class="loading-overlay" style="display: none;">
@@ -1157,6 +1199,90 @@
                 };
             }
 
+            // --- NEW: Function to update Customer Stats Panel ---
+            function updateCustomerStats() {
+                const selectedYear = chartYearSelect.value;
+                const selectedMonth = chartMonthSelect.value;
+                const selectedGroup = customerGroupSelect.value;
+                const statsPanel = document.getElementById('customerStatsPanel');
+
+                if (!rawChartData || Object.keys(rawChartData).length === 0) {
+                    statsPanel.style.display = 'none';
+                    return;
+                }
+                statsPanel.style.display = 'flex';
+
+                // Helper to get count
+                const getCount = (y, m, g) => {
+                    if (!rawChartData[y]) return 0;
+                    if (m) {
+                        if (!rawChartData[y][m]) return 0;
+                        if (g) return rawChartData[y][m][g] || 0;
+                        return Object.values(rawChartData[y][m]).reduce((a, b) => a + b, 0);
+                    }
+                    let yearTotal = 0;
+                    for (const month in rawChartData[y]) {
+                        if (g) yearTotal += rawChartData[y][month][g] || 0;
+                        else yearTotal += Object.values(rawChartData[y][month]).reduce((a, b) => a + b, 0);
+                    }
+                    return yearTotal;
+                };
+
+                // 1. Current Value
+                let currentVal = 0;
+                if (selectedYear) {
+                    currentVal = getCount(selectedYear, selectedMonth, selectedGroup);
+                } else {
+                    for (const y in rawChartData) currentVal += getCount(y, selectedMonth, selectedGroup);
+                }
+
+                // 2. Total for Period (for Proportion)
+                let totalPeriodVal = 0;
+                if (selectedYear) {
+                    totalPeriodVal = getCount(selectedYear, selectedMonth, null);
+                } else {
+                    for (const y in rawChartData) totalPeriodVal += getCount(y, selectedMonth, null);
+                }
+
+                // 3. Previous Value (for Growth)
+                let prevVal = 0;
+                let hasPrev = false;
+
+                if (selectedYear) {
+                    if (selectedMonth) {
+                        let prevY = parseInt(selectedYear);
+                        let prevM = parseInt(selectedMonth) - 1;
+                        if (prevM === 0) { prevM = 12; prevY -= 1; }
+                        const prevMStr = String(prevM).padStart(2, '0');
+                        prevVal = getCount(String(prevY), prevMStr, selectedGroup);
+                        hasPrev = true;
+                    } else {
+                        prevVal = getCount(String(parseInt(selectedYear) - 1), null, selectedGroup);
+                        hasPrev = true;
+                    }
+                }
+
+                // Update UI
+                document.getElementById('statTotalCustomers').innerText = currentVal.toLocaleString();
+                document.getElementById('statProportion').innerText = totalPeriodVal > 0 ? ((currentVal / totalPeriodVal) * 100).toFixed(1) + '%' : '-';
+
+                const growthElem = document.getElementById('statGrowth');
+                if (hasPrev) {
+                    if (prevVal > 0) {
+                        const growth = ((currentVal - prevVal) / prevVal) * 100;
+                        const colorClass = growth > 0 ? 'positive' : (growth < 0 ? 'negative' : 'neutral');
+                        const icon = growth > 0 ? '<i class="fas fa-arrow-up"></i>' : (growth < 0 ? '<i class="fas fa-arrow-down"></i>' : '<i class="fas fa-minus"></i>');
+                        growthElem.innerHTML = `<span class="stat-change ${colorClass}">${icon} ${growth > 0 ? '+' : ''}${growth.toFixed(1)}%</span>`;
+                    } else if (currentVal > 0) {
+                        growthElem.innerHTML = `<span class="stat-change positive"><i class="fas fa-arrow-up"></i> +100%</span>`;
+                    } else {
+                        growthElem.innerHTML = `<span class="stat-change neutral"><i class="fas fa-minus"></i> 0%</span>`;
+                    }
+                } else {
+                    growthElem.innerText = '-';
+                }
+            }
+
             // ฟังก์ชันสำหรับอัปเดตกราฟ (แก้ไขบรรทัดนี้)
             function updateChart() { // *** ไม่รับ parameter ตรงนี้แล้ว ***
                 // --- [สำคัญ] ดึงค่าสีล่าสุดทุกครั้งที่อัปเดตกราฟ ---
@@ -1175,6 +1301,9 @@
                     // อาจแสดงข้อความบน UI ว่า "ไม่มีข้อมูลสำหรับกราฟ" ที่นี่
                     return; // ออกจากฟังก์ชัน
                 }
+
+                // Update Stats Panel
+                updateCustomerStats();
 
                 const ctx = chartCanvas.getContext('2d');
                 // ส่ง global rawChartData ไปยัง prepareChartData
