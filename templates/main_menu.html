@@ -12,7 +12,7 @@
             --primary-color: #8A2BE2; /* A vibrant purple for accent */
             --secondary-color: #00BCD4; /* Cyan for secondary accent */
             --background-color: #1A1A2E; /* Deep dark blue-purple for main background */
-            --card-background: #1F283E; /* Slightly lighter dark blue-purple for cards */
+            --card-background: rgba(31, 40, 62, 0.75); /* Semi-transparent for Glassmorphism */
             --text-color: #E0E0E0; /* Light grey for general text */
             --light-text-color: #B0B0B0; /* Even lighter for secondary text */
             --border-color: #3A3A5A; /* Darker border for elements */
@@ -98,6 +98,7 @@
         /* Basic styles for the body to center content and set font */
         body {
             font-family: 'Kanit', sans-serif;
+            background-color: #0f0c29; /* Fallback background color matching Aurora */
             margin: 0;
             box-sizing: border-box;
             color: var(--text-color); /* Apply global text color */
@@ -165,6 +166,8 @@
             flex-shrink: 0; /* Prevent sidebar from shrinking */
             transition: width 0.3s ease-in-out;
             position: relative;
+            backdrop-filter: blur(10px); /* Glass effect for sidebar */
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .sidebar-title {
@@ -397,6 +400,8 @@
             margin-top: 0; /* Remove margin-top, handled by main-content-area gap */
             text-align: center;
             flex-grow: 1; /* Allow chart container to grow */
+            backdrop-filter: blur(10px); /* Glass effect for charts */
+            -webkit-backdrop-filter: blur(10px);
             
             /* NEW: Animation & Transition Properties */
             opacity: 0; /* เริ่มต้นแบบซ่อนอยู่ */
@@ -547,6 +552,7 @@
         @media (max-width: 600px) { /* Adjust for mobile screens */
             .dashboard-layout {
                 margin: 10px; /* ✨ ลด margin รอบๆ dashboard-layout สำหรับมือถือ ✨ */
+                width: calc(100% - 20px); /* Fix overflow issue: 100% width + margin causes scroll */
                 border-radius: 10px;
             }
             .main-container h2 {
@@ -638,6 +644,8 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(10px); /* Glass effect for KPI */
+            -webkit-backdrop-filter: blur(10px);
         }
         .kpi-card:hover {
             transform: translateY(-5px);
