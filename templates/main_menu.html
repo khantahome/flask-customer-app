@@ -696,6 +696,10 @@
                             <div class="stat-label">สูงสุด</div>
                             <div class="stat-value" id="statChannelDistTop" style="font-size: 1.2em;">-</div>
                         </div>
+                        <div class="stat-item" style="min-width: 100px; padding: 8px;">
+                            <div class="stat-label">แนวโน้ม (ล่าสุด)</div>
+                            <div class="stat-value" id="statChannelDistGrowth" style="font-size: 1.2em;">-</div>
+                        </div>
                     </div>
                     <div class="chart-canvas-wrapper">
                         <canvas id="channelDistributionChart"></canvas>
@@ -712,6 +716,10 @@
                         <div class="stat-item" style="min-width: 100px; padding: 8px;">
                             <div class="stat-label">สูงสุด</div>
                             <div class="stat-value" id="statTopProvTop" style="font-size: 1.2em;">-</div>
+                        </div>
+                        <div class="stat-item" style="min-width: 100px; padding: 8px;">
+                            <div class="stat-label">ส่วนแบ่ง Top 5</div>
+                            <div class="stat-value" id="statTopProvConcentration" style="font-size: 1.2em;">-</div>
                         </div>
                     </div>
                     <div class="chart-canvas-wrapper">
@@ -1884,6 +1892,57 @@
                 document.getElementById('statChannelDistTotal').innerText = totalCustomers.toLocaleString();
                 document.getElementById('statChannelDistTop').innerHTML = `${topChannelName} <span style="font-size:0.7em; color:var(--light-text-color);">(${((topChannelCount/totalCustomers)*100).toFixed(0)}%)</span>`;
 
+                // --- NEW: Calculate Growth for Top Channel (Latest Month vs Previous) ---
+                let latestYear = 0;
+                let latestMonth = 0;
+                Object.keys(rawChannelData).forEach(y => {
+                    if (parseInt(y) > latestYear) latestYear = parseInt(y);
+                });
+                if (latestYear > 0) {
+                    Object.keys(rawChannelData[latestYear]).forEach(m => {
+                        if (parseInt(m) > latestMonth) latestMonth = parseInt(m);
+                    });
+                }
+
+                let growthHtml = '-';
+                if (latestYear > 0 && latestMonth > 0) {
+                    const currentYStr = String(latestYear);
+                    const currentMStr = String(latestMonth).padStart(2, '0');
+                    
+                    let prevY = latestYear;
+                    let prevM = latestMonth - 1;
+                    if (prevM === 0) { prevM = 12; prevY -= 1; }
+                    const prevYStr = String(prevY);
+                    const prevMStr = String(prevM).padStart(2, '0');
+
+                    const getChannelCount = (y, m, ch) => {
+                        let count = 0;
+                        if (rawChannelData[y] && rawChannelData[y][m]) {
+                            for (const p in rawChannelData[y][m]) {
+                                if (rawChannelData[y][m][p][ch]) {
+                                    count += Object.values(rawChannelData[y][m][p][ch]).reduce((a, b) => a + b, 0);
+                                }
+                            }
+                        }
+                        return count;
+                    };
+
+                    const currentCount = getChannelCount(currentYStr, currentMStr, topChannelName);
+                    const prevCount = getChannelCount(prevYStr, prevMStr, topChannelName);
+
+                    if (prevCount > 0) {
+                        const growth = ((currentCount - prevCount) / prevCount) * 100;
+                        const colorClass = growth > 0 ? 'positive' : (growth < 0 ? 'negative' : 'neutral');
+                        const icon = growth > 0 ? '<i class="fas fa-arrow-up"></i>' : (growth < 0 ? '<i class="fas fa-arrow-down"></i>' : '<i class="fas fa-minus"></i>');
+                        growthHtml = `<span class="stat-change ${colorClass}">${icon} ${Math.abs(growth).toFixed(1)}%</span>`;
+                    } else if (currentCount > 0) {
+                        growthHtml = `<span class="stat-change positive"><i class="fas fa-arrow-up"></i> 100%</span>`;
+                    } else {
+                        growthHtml = `<span class="stat-change neutral"><i class="fas fa-minus"></i> 0%</span>`;
+                    }
+                }
+                document.getElementById('statChannelDistGrowth').innerHTML = growthHtml;
+
                 // 2. Top Provinces Stats
                 const totalProvincesCount = Object.values(provinceCounts).reduce((a, b) => a + b, 0); // Should be same as totalCustomers
                 let topProvName = '-';
@@ -1893,6 +1952,12 @@
                 }
                 document.getElementById('statTopProvTotal').innerText = totalProvincesCount.toLocaleString();
                 document.getElementById('statTopProvTop').innerHTML = `${topProvName} <span style="font-size:0.7em; color:var(--light-text-color);">(${((topProvCount/totalProvincesCount)*100).toFixed(0)}%)</span>`;
+                
+                // --- NEW: Calculate Top 5 Concentration ---
+                const sortedProvincesForStats = Object.entries(provinceCounts).sort((a, b) => b[1] - a[1]);
+                const top5Sum = sortedProvincesForStats.slice(0, 5).reduce((sum, item) => sum + item[1], 0);
+                const concentration = totalProvincesCount > 0 ? ((top5Sum / totalProvincesCount) * 100).toFixed(1) : 0;
+                document.getElementById('statTopProvConcentration').innerText = `${concentration}%`;
                 // ----------------------------------------------
 
                 // 2. Prepare Channel Distribution Data (Doughnut Chart)
