@@ -274,6 +274,12 @@ class ContractDocument(db.Model):
     uploaded_by = db.Column(db.String(100))
     upload_timestamp = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
 
+class LoginHistory(db.Model):
+    __tablename__ = 'login_history'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), nullable=False)
+    login_timestamp = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+
 
 # =================================================================================
 # AUTHENTICATION & DECORATORS
@@ -384,6 +390,15 @@ def login():
         if user and check_password_hash(user.password, password_candidate):
             session['logged_in'] = True
             session['username'] = username
+            
+            # NEW: Record login history
+            try:
+                new_login = LoginHistory(username=username)
+                db.session.add(new_login)
+                db.session.commit()
+            except Exception as e:
+                current_app.logger.error(f"Error recording login history: {e}")
+
             flash('เข้าสู่ระบบสำเร็จ', 'success')
             return redirect(url_for('dashboard'))
         else:
@@ -1343,10 +1358,31 @@ def update_customer_status():
         return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาด: {e}'}), 500
 
 # =================================================================================
+# NEW API: LOGIN HISTORY
+# =================================================================================
+
+@app.route('/api/login_history', methods=['GET'])
+@login_required
+def get_login_history():
+    if session.get('username') != 'khanhommha':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        # Fetch last 100 records
+        history = LoginHistory.query.order_by(LoginHistory.login_timestamp.desc()).limit(100).all()
+        data = [{'username': h.username, 'timestamp': h.login_timestamp.strftime('%Y-%m-%d %H:%M:%S')} for h in history]
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Error fetching login history: {e}")
+        return jsonify({'error': 'Internal Server Error'}), 500
+
+# =================================================================================
 # MAIN EXECUTION
 # =================================================================================
 
 if __name__ == '__main__':
     # Use app.run() only for local development.
     # For production, use a proper WSGI server like Gunicorn or uWSGI.
+    with app.app_context():
+        db.create_all() # Ensure tables exist
     app.run(debug=True)
