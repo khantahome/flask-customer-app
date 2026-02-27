@@ -1370,7 +1370,8 @@ def get_login_history():
     try:
         # Fetch last 100 records
         history = LoginHistory.query.order_by(LoginHistory.login_timestamp.desc()).limit(100).all()
-        data = [{'username': h.username, 'timestamp': h.login_timestamp.strftime('%Y-%m-%d %H:%M:%S')} for h in history]
+        # Convert UTC to Thai Time (UTC+7)
+        data = [{'username': h.username, 'timestamp': (h.login_timestamp + timedelta(hours=7)).strftime('%Y-%m-%d %H:%M:%S')} for h in history]
         return jsonify(data)
     except Exception as e:
         current_app.logger.error(f"Error fetching login history: {e}")
