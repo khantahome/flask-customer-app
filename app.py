@@ -414,7 +414,7 @@ def logout():
 @app.route('/')
 @login_required
 def dashboard(): # <-- แก้ชื่อฟังก์ชันตรงนี้
-    return render_template('main_menu.html')
+    return render_template('main_menu.html', username=session.get('username'))
 
 @app.route('/customer_data')
 @login_required
