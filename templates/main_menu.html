@@ -98,10 +98,6 @@
         /* Basic styles for the body to center content and set font */
         body {
             font-family: 'Kanit', sans-serif;
-            background-image: url('/static/images/your_background_image.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
             margin: 0;
             box-sizing: border-box;
             color: var(--text-color); /* Apply global text color */
@@ -113,10 +109,48 @@
             display: flex;
             width: 100%;
             min-height: 100vh; /* Make dashboard take full screen height */
-            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent overlay over background image */
+            background-color: rgba(26, 26, 46, 0.5); /* Semi-transparent dark blue to show Aurora */
+            backdrop-filter: blur(15px); /* Glass effect for the whole dashboard */
+            -webkit-backdrop-filter: blur(15px);
             box-shadow: var(--shadow-light);
             overflow: hidden; /* For rounded corners */
             margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- Animated Aurora Background --- */
+        .aurora-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* Deep space base */
+            overflow: hidden;
+        }
+
+        .aurora-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px); /* Make it soft and glowing */
+            opacity: 0.6;
+            animation: float 20s infinite alternate;
+        }
+
+        /* Define blobs with theme colors */
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--primary-color); animation-delay: 0s; }
+        .blob-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: var(--secondary-color); animation-delay: -5s; }
+        .blob-3 { top: 30%; left: 40%; width: 40vw; height: 40vw; background: #ff0077; opacity: 0.4; animation-delay: -10s; }
+        .blob-4 { bottom: 10%; left: 10%; width: 30vw; height: 30vw; background: #4e00c2; opacity: 0.5; animation-delay: -15s; }
+
+        /* Floating Animation */
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
         }
 
         /* Sidebar styles */
@@ -667,6 +701,14 @@
 <meta name="viewport" content="width=1200">
 </head>
 <body>
+    <!-- Animated Aurora Background Elements -->
+    <div class="aurora-background">
+        <div class="aurora-blob blob-1"></div>
+        <div class="aurora-blob blob-2"></div>
+        <div class="aurora-blob blob-3"></div>
+        <div class="aurora-blob blob-4"></div>
+    </div>
+
     <div class="dashboard-layout">
         <div class="sidebar">
             <h3 class="sidebar-title">เมนู</h3>
