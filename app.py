@@ -67,6 +67,7 @@ if not DB_PASSWORD:
 app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}?charset=utf8mb4'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle': 280} # Prevents connection timeouts
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365) # ตั้งค่า Cookie ให้อยู่นาน 1 ปี (เพื่อรองรับ Superadmin)
 
 # --- Cloudinary Configuration ---
 cloudinary.config(
@@ -284,6 +285,26 @@ class LoginHistory(db.Model):
 # =================================================================================
 # AUTHENTICATION & DECORATORS
 # =================================================================================
+
+@app.before_request
+def manage_session_timeout():
+    session.permanent = True # บังคับให้ Session เป็นแบบถาวร (ตามเวลาที่ตั้งไว้ใน config)
+    
+    # ตรวจสอบ Timeout สำหรับผู้ใช้ทั่วไป (ยกเว้น khanhommha)
+    if 'logged_in' in session and session.get('username') != 'khanhommha':
+        now = datetime.now(UTC).timestamp()
+        last_active = session.get('last_active')
+        
+        if last_active:
+            # 15 ชั่วโมง = 54000 วินาที
+            if now - last_active > 54000:
+                session.clear()
+                if request.path.startswith('/api/') or request.is_json:
+                    return jsonify({'error': 'Session expired'}), 401
+                flash('เซสชันหมดอายุเนื่องจากไม่ได้ใช้งานนานเกินไป กรุณาเข้าสู่ระบบใหม่', 'warning')
+                return redirect(url_for('login'))
+        
+        session['last_active'] = now
 
 def login_required(f):
     @wraps(f)
