@@ -942,8 +942,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // ลงทะเบียนปลั๊กอิน datalabels เพื่อให้ Chart.js ใช้งานได้
+            Chart.register(ChartDataLabels);
+
             // --- Combined Variables for Theme and Both Charts ---
             const body = document.body;
 
@@ -1528,6 +1532,25 @@
                                     weight: 'bold'
                                 },
                                 color: textColor
+                            },
+                            datalabels: {
+                                display: isDoughnut, // แสดงผลเฉพาะตอนเป็นกราฟโดนัท
+                                formatter: (value, context) => {
+                                    const datapoints = context.chart.data.datasets[0].data;
+                                    const total = datapoints.reduce((total, datapoint) => total + datapoint, 0);
+                                    const percentage = (value / total * 100);
+                                    if (percentage < 3) return ''; // ซ่อนป้ายกำกับที่เล็กเกินไป
+                                    return percentage.toFixed(1) + "%";
+                                },
+                                color: '#FFFFFF',
+                                font: {
+                                    family: 'Kanit',
+                                    weight: 'bold',
+                                    size: 14
+                                },
+                                // เพิ่มเงาให้ตัวอักษรเพื่อให้อ่านง่ายขึ้น
+                                textShadowBlur: 6,
+                                textShadowColor: 'rgba(0, 0, 0, 0.75)'
                             }
                         },
                         scales: {
@@ -1970,7 +1993,27 @@
                     options: {
                         animation: {
                             duration: 1200,
-                            easing: 'easeOutQuart'
+                            easing: 'easeOutQuart',
+                        },
+                        responsive: true, maintainAspectRatio: false,
+                        indexAxis: (!isDoughnut && chartData.labels.length > 10) ? 'y' : 'x',
+                        cutout: isDoughnut ? '60%' : 0,
+                        plugins: { 
+                            legend: { display: false }, 
+                            title: { display: true, text: titleText, font: { family: 'Kanit', size: 18, weight: 'bold' }, color: textColor },
+                            datalabels: {
+                                display: isDoughnut, // แสดงผลเฉพาะตอนเป็นกราฟโดนัท
+                                formatter: (value, context) => {
+                                    const datapoints = context.chart.data.datasets[0].data;
+                                    const total = datapoints.reduce((total, datapoint) => total + datapoint, 0);
+                                    const percentage = (value / total * 100);
+                                    if (percentage < 3) return ''; // ซ่อนป้ายกำกับที่เล็กเกินไป
+                                    return percentage.toFixed(1) + "%";
+                                },
+                                color: '#FFFFFF',
+                                font: { family: 'Kanit', weight: 'bold', size: 14 },
+                                textShadowBlur: 6, textShadowColor: 'rgba(0, 0, 0, 0.75)'
+                            }
                         },
                         responsive: true, maintainAspectRatio: false,
                         indexAxis: (!isDoughnut && chartData.labels.length > 10) ? 'y' : 'x',
@@ -2148,6 +2191,20 @@
                                         return ` ${label}: ${value} คน (${percentage})`;
                                     }
                                 }
+                            },
+                            datalabels: {
+                                formatter: (value, context) => {
+                                    const datapoints = context.chart.data.datasets[0].data;
+                                    const total = datapoints.reduce((total, datapoint) => total + datapoint, 0);
+                                    const percentage = (value / total * 100);
+                                    if (percentage < 3) return ''; // ซ่อนป้ายกำกับที่เล็กเกินไป
+                                    return percentage.toFixed(1) + "%";
+                                },
+                                color: '#FFFFFF',
+                                font: {
+                                    family: 'Kanit', weight: 'bold', size: 14
+                                },
+                                textShadowBlur: 6, textShadowColor: 'rgba(0, 0, 0, 0.75)'
                             }
                         }
                     }
