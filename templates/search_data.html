@@ -1199,6 +1199,8 @@
                                         <th>วงเงินที่ต้องการ</th>
                                         <th>วันที่ขอเข้ามา</th>
                                         <th>หมายเหตุ</th>
+                                        <th>สถานะ</th>
+                                        <th>การกระทำ</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1212,6 +1214,27 @@
                                         <td>{{ record.get('วงเงินที่ต้องการ', '-') }}</td>
                                         <td>{{ record.get('วันที่ขอเข้ามา', '-') }}</td>
                                         <td>{{ record.get('หมายเหตุ', '-') }}</td>
+                                        <td id="status-cell-{{ record.row_index }}">
+                                            <div class="status-cell-content">
+                                                {% set status = record.get('สถานะ', 'unknown') | string | lower %}
+                                                {% if 'รอติดต่อ' in status %}<span class="status-badge status-contact-needed">รอติดต่อ</span>
+                                                {% elif 'รอดำเนินการ' in status %}<span class="status-badge status-pending">รอดำเนินการ</span>
+                                                {% elif 'รอตรวจ' in status %}<span class="status-badge status-inspection-needed">รอตรวจ</span>
+                                                {% elif 'ไม่อนุมัติ' in status %}<span class="status-badge status-rejected">ไม่อนุมัติ</span>
+                                                {% elif 'อนุมัติ' in status %}<span class="status-badge status-approved">อนุมัติ</span>
+                                                {% elif 'ยกเลิก' in status %}<span class="status-badge status-cancelled">ยกเลิก</span>
+                                                {% elif 'ไม่ส่งเอกสาร' in status %}<span class="status-badge status-no-docs">ไม่ส่งเอกสาร</span>
+                                                {% else %}<span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
+                                                {% endif %}
+                                                <button type="button" class="record-button update-status-btn" 
+                                                        data-row-index="{{ record.row_index }}" 
+                                                        data-current-status="{{ record.get('สถานะ') }}"
+                                                        data-record='{{ record | tojson | safe }}'>
+                                                    <i class="fas fa-pen"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td id="action-cell-{{ record.row_index }}"><button type="button" class="record-button view-details-btn" data-record='{{ record | tojson | safe }}'>ดูข้อมูล</button></td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
