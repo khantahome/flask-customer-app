@@ -2811,14 +2811,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(e.target);
             const approvedAmount = parseFloat(String(formData.get('approved_amount')).replace(/,/g, '')) || 0;
             let totalOpeningAmount = 0;
+            let totalPrincipalReturn = 0;
+
             formData.getAll('amount[]').forEach((amount, i) => {
-                if (['เปิดยอด', 'เปิดสุทธิ'].includes(formData.getAll('action_type[]')[i])) {
-                    totalOpeningAmount += parseFloat(amount) || 0;
+                const actionType = formData.getAll('action_type[]')[i];
+                const numericAmount = parseFloat(amount) || 0;
+                if (['เปิดยอด', 'เปิดสุทธิ'].includes(actionType)) {
+                    totalOpeningAmount += numericAmount;
+                } else if (actionType === 'คืนต้น') {
+                    totalPrincipalReturn += numericAmount;
                 }
             });
 
-            if (totalOpeningAmount > approvedAmount) {
-                alert(`ยอดเปิดรวม (${new Intl.NumberFormat('th-TH').format(totalOpeningAmount)}) เกินวงเงินที่อนุมัติ (${new Intl.NumberFormat('th-TH').format(approvedAmount)})`);
+            // Get current balance and calculate the final balance after this transaction
+            const currentBalance = parseFloat(String(document.getElementById('open_balance').value).replace(/,/g, '')) || 0;
+            const finalBalance = currentBalance + totalOpeningAmount - totalPrincipalReturn;
+
+            // Validation 1: Final balance cannot exceed the approved limit.
+            if (finalBalance > approvedAmount) {
+                alert(`ยอดเงินคงค้างใหม่ (${new Intl.NumberFormat('th-TH').format(finalBalance)}) จะเกินวงเงินที่อนุมัติ (${new Intl.NumberFormat('th-TH').format(approvedAmount)})`);
+                return;
+            }
+
+            // Validation 2: Final balance cannot be negative.
+            if (finalBalance < 0) {
+                alert(`ยอดคืนต้นมากเกินไป ทำให้ยอดคงค้างติดลบ (${new Intl.NumberFormat('th-TH').format(finalBalance)})`);
                 return;
             }
 
