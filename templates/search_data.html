@@ -122,6 +122,12 @@
             box-sizing: border-box; /* Include padding in element's total width and height */
         }
 
+        /* Animation for banner */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* Dashboard Layout (New) */
         .dashboard-layout {
             display: flex;
@@ -168,31 +174,45 @@
 
         /* Styles for the main container (search form) */
         .main-container {
-            background-color: var(--card-background);
+            /* Glassmorphism + Gradient Banner Style */
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.85), rgba(0, 188, 212, 0.85));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: var(--shadow-light);
-            text-align: center;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            text-align: left; /* Changed from center */
             width: 100%;
-            max-width: none; /* Remove max-width here, handled by main-content-area */
+            max-width: none;
             box-sizing: border-box;
-            margin-bottom: 0; /* Managed by gap in main-content-area */
-            margin-top: 0; /* Managed by gap in main-content-area */
+            position: relative; /* For decorative icon */
+            overflow: hidden; /* For decorative icon and border-radius */
+            color: white; /* Text inside should be white */
+            animation: fadeIn 0.8s ease-out; /* Add fade in animation */
         }
 
         /* Styles for the heading */
         .main-container h2 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-            font-weight: 600;
-            font-size: 2.2em; /* Slightly larger heading */
+            color: white;
+            margin-bottom: 5px;
+            font-weight: 700;
+            font-size: 2.2em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* Style for the logged-in user display */
-        .logged-in-user {
-            font-size: 1em; /* Slightly larger */
+        .main-container .logged-in-user {
+            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        .sidebar .logged-in-user {
+            font-size: 1em;
             color: var(--light-text-color);
-            margin-bottom: 20px;
+            margin-top: 25px;
+            text-align: center;
         }
 
         /* Flash messages styling */
@@ -221,48 +241,50 @@
         }
 
         /* Styles for input groups (label + input) */
+        /* Generic input group for modals */
         .input-group {
-            margin-bottom: 20px; /* More space between input groups */
+            margin-bottom: 20px;
             text-align: left;
         }
 
-        .input-group label {
+        /* Banner-specific input styles */
+        .main-container .input-group label {
             display: block;
-            margin-bottom: 8px; /* More space between label and input */
-            font-weight: 400;
-            color: var(--light-text-color); /* Lighter text for labels */
-            font-size: 1em; /* Slightly larger font */
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1em;
         }
 
-        .input-group input[type="text"] {
-            width: 100%;
-            padding: 14px 18px; /* Larger padding */
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 1.1em; /* Larger font size */
-            box-sizing: border-box;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-            background-color: var(--background-color); /* Darker background for input */
-            color: var(--text-color); /* Text color for input */
-        }
-        /* REVISED: Combine select styling with other inputs for consistency */
-        .input-group select {
+        .main-container .input-group input[type="text"],
+        .main-container .input-group select {
             width: 100%;
             padding: 14px 18px;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: 8px;
             font-size: 1.1em;
             box-sizing: border-box;
             transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            font-family: 'Kanit', sans-serif; /* Ensure font consistency */
+            background-color: rgba(0, 0, 0, 0.2);
+            color: white;
+            font-family: 'Kanit', sans-serif;
         }
 
-        .input-group input[type="text"]:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(138, 43, 226, 0.3); /* Stronger shadow for focus */
+        .main-container .input-group input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .main-container .input-group input[type="text"]:focus,
+        .main-container .input-group select:focus {
+            border-color: white;
+            background-color: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
             outline: none;
+        }
+
+        .main-container .input-group select option {
+            background-color: #2D3A50;
+            color: white;
         }
 
         /* Styles for the search and clear buttons */
@@ -270,45 +292,44 @@
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
-            margin-top: 30px; /* More space above buttons */
-            justify-content: center;
+            margin-top: 30px;
+            justify-content: flex-start; /* Align to left */
         }
 
         .search-button {
-            background-color: var(--primary-color);
+            background-color: rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 10px 20px; /* Smaller padding */
-            border: none;
+            padding: 12px 25px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: 8px;
-            font-size: 1em; /* Smaller font size */
+            font-size: 1.1em;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            flex: 1;
-            min-width: 150px; /* Wider min-width */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex: 0 1 200px;
             font-weight: 600;
-            letter-spacing: 0.5px;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: none;
         }
 
         .search-button.clear {
-            background-color: #FFC107; /* Orange for clear button */
-            color: #333; /* Dark text for clear button */
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: white; /* Ensure text is white */
         }
 
         .search-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
         .search-button:active {
             transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            background-color: rgba(255, 255, 255, 0.25);
         }
         .search-button.clear:hover {
-            background-color: #e0a800;
+            background-color: rgba(255, 255, 255, 0.25);
         }
 
         /* Action button group (for sidebar) */
@@ -377,6 +398,17 @@
             box-sizing: border-box;
             margin-top: 0; /* Managed by gap in main-content-area */
             text-align: left;
+        }
+
+        .decorative-icon {
+            position: absolute;
+            right: -20px;
+            bottom: -40px;
+            font-size: 10rem; /* A bit smaller for this context */
+            color: rgba(255, 255, 255, 0.1);
+            transform: rotate(-15deg);
+            z-index: -1; /* Behind the form content */
+            pointer-events: none;
         }
 
         .results-container h3 {
@@ -1138,20 +1170,20 @@
                 </div>
                 <a href="{{ url_for('logout') }}" class="action-button logout"><i class="fas fa-sign-out-alt"></i><span class="link-text">ออกจากระบบ</span></a>
             </div>
-            <p class="logged-in-user" style="margin-top: 25px; text-align: center;">สวัสดี, {{ username }}</p>
+        <p class="logged-in-user">สวัสดี, {{ username }}</p>
         </div>
         <div class="main-content-area">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
             <div class="main-container">
                 <h2>ค้นหาข้อมูลลูกค้า</h2>
                 <p class="logged-in-user">เข้าสู่ระบบโดย: {{ username }}</p>
-
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="flash-message {{ category }}">{{ message }}</div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
 
                 <form method="GET" action="{{ url_for('search_customer_data') }}" class="search-form">
                     <div class="input-group">
@@ -1179,6 +1211,7 @@
                         <button type="button" class="search-button clear" id="clearSearchButton">ล้างข้อมูลการค้นหา</button>
                     </div>
                 </form>
+            <i class="fas fa-search decorative-icon"></i>
             </div>
 
             <div class="results-container">
