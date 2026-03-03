@@ -1185,73 +1185,106 @@
                 <h3>{{ display_title }}</h3>
 
                 {% if customer_records %}
-                <div class="table-responsive">
-                    <table class="results-table">
-                        <thead>
-                            <tr>
-                                <th>รหัส<br>ลูกค้า</th>
-                                <th>ชื่อ-นามสกุล</th>
-                                <th>เบอร์มือถือ</th>
-                                <th>ชื่อกิจการ</th>
-                                <th>จังหวัด</th>
-                                <th>วงเงินที่<br>ต้องการ</th>
-                                <th>ดอกเบี้ย</th>
-                                <th>วันที่<br>ขอเข้ามา</th>
-                                <th>บริษัท<br>ที่รับงาน</th>
-                                <th>ขอเข้ามา<br>ทางไหน</th>
-                                <th>วันที่<br>นัดตรวจ</th>
-                                <th>เวลา<br>นัดตรวจ</th>
-                                <th>ผู้รับ<br>งานตรวจ</th>
-                                <th>สถานะ</th>
-                                <th>ผู้บันทึก</th>
-                                <th>การกระทำ</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for record in customer_records %}
-                            <tr>
-                                <td>{{ record.get('Customer ID', '-') }}</td>
-                                <td>{{ record.get('ชื่อ', '') }} {{ record.get('นามสกุล', '') }}</td>
-                                <td>{{ record.get('เบอร์มือถือ', '-') }}</td>
-                                <td title="{{ record.get('ชื่อกิจการ', '-') }}">{{ record.get('ชื่อกิจการ', '-') }}</td>
-                                <td>{{ record.get('จังหวัดที่อยู่', '-') }}</td>
-                                <td>{{ record.get('วงเงินที่ต้องการ', '-') }}</td>
-                                <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td>
-                                <td>{{ record.get('วันที่ขอเข้ามา', '-') }}</td>
-                                <td>{{ record.get('บริษัทที่รับงาน', '-') }}</td>
-                                <td>{{ record.get('ขอเข้ามาทางไหน', '-') }}</td>
-                                <td>{{ record.get('วันที่นัดตรวจ', '-') }}</td>
-                                <td>{{ record.get('เวลานัดตรวจ', '-') }}</td>
-                                <td>{{ record.get('ผู้รับงานตรวจ', '-') }}</td>
-                                <td id="status-cell-{{ record.row_index }}">
-                                    <div class="status-cell-content">
-                                        {% set status = record.get('สถานะ', 'unknown') | string | lower %}
-                                        {% if 'รอติดต่อ' in status %}<span class="status-badge status-contact-needed">รอติดต่อ</span>
-                                        {% elif 'รอดำเนินการ' in status %}<span class="status-badge status-pending">รอดำเนินการ</span>
-                                        {% elif 'รอตรวจ' in status %}<span class="status-badge status-inspection-needed">รอตรวจ</span>
-                                        {% elif 'ไม่อนุมัติ' in status %}<span class="status-badge status-rejected">ไม่อนุมัติ</span>
-                                        {% elif 'อนุมัติ' in status %}<span class="status-badge status-approved">อนุมัติ</span>
-                                        {% elif 'ยกเลิก' in status %}<span class="status-badge status-cancelled">ยกเลิก</span>
-                                        {% elif 'ไม่ส่งเอกสาร' in status %}<span class="status-badge status-no-docs">ไม่ส่งเอกสาร</span>
-                                        {% else %}<span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
-                                        {% endif %}
-                                        <button type="button" class="record-button update-status-btn" 
-                                                data-row-index="{{ record.row_index }}" 
-                                                data-current-status="{{ record.get('สถานะ') }}"
-                                                data-record='{{ record | tojson | safe }}'>
-                                            <i class="fas fa-pen"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                                <td>{{ record.get('Logged In User', '-') }}</td>
-                                <td id="action-cell-{{ record.row_index }}">
-                                    <button type="button" class="record-button view-details-btn" data-record='{{ record | tojson | safe }}'>ดูข้อมูล</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                    <div class="table-responsive">
+                        {% if status_filter == 'ยกเลิก' %}
+                            {# ตารางใหม่สำหรับแสดงสถานะ "ยกเลิก" #}
+                            <table class="results-table">
+                                <thead>
+                                    <tr>
+                                        <th>รหัสลูกค้า</th>
+                                        <th>ชื่อ-นามสกุล</th>
+                                        <th>เบอร์มือถือ</th>
+                                        <th>ชื่อกิจการ</th>
+                                        <th>จังหวัด</th>
+                                        <th>วงเงินที่ต้องการ</th>
+                                        <th>วันที่ขอเข้ามา</th>
+                                        <th>หมายเหตุ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in customer_records %}
+                                    <tr>
+                                        <td>{{ record.get('Customer ID', '-') }}</td>
+                                        <td>{{ record.get('ชื่อ', '') }} {{ record.get('นามสกุล', '') }}</td>
+                                        <td>{{ record.get('เบอร์มือถือ', '-') }}</td>
+                                        <td>{{ record.get('ชื่อกิจการ', '-') }}</td>
+                                        <td>{{ record.get('จังหวัดที่อยู่', '-') }}</td>
+                                        <td>{{ record.get('วงเงินที่ต้องการ', '-') }}</td>
+                                        <td>{{ record.get('วันที่ขอเข้ามา', '-') }}</td>
+                                        <td>{{ record.get('หมายเหตุ', '-') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            {# ตารางเดิมสำหรับแสดงสถานะอื่นๆ ทั้งหมด #}
+                            <table class="results-table">
+                                <thead>
+                                    <tr>
+                                        <th>รหัส<br>ลูกค้า</th>
+                                        <th>ชื่อ-นามสกุล</th>
+                                        <th>เบอร์มือถือ</th>
+                                        <th>ชื่อกิจการ</th>
+                                        <th>จังหวัด</th>
+                                        <th>วงเงินที่<br>ต้องการ</th>
+                                        <th>ดอกเบี้ย</th>
+                                        <th>วันที่<br>ขอเข้ามา</th>
+                                        <th>บริษัท<br>ที่รับงาน</th>
+                                        <th>ขอเข้ามา<br>ทางไหน</th>
+                                        <th>วันที่<br>นัดตรวจ</th>
+                                        <th>เวลา<br>นัดตรวจ</th>
+                                        <th>ผู้รับ<br>งานตรวจ</th>
+                                        <th>สถานะ</th>
+                                        <th>ผู้บันทึก</th>
+                                        <th>การกระทำ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in customer_records %}
+                                    <tr>
+                                        <td>{{ record.get('Customer ID', '-') }}</td>
+                                        <td>{{ record.get('ชื่อ', '') }} {{ record.get('นามสกุล', '') }}</td>
+                                        <td>{{ record.get('เบอร์มือถือ', '-') }}</td>
+                                        <td title="{{ record.get('ชื่อกิจการ', '-') }}">{{ record.get('ชื่อกิจการ', '-') }}</td>
+                                        <td>{{ record.get('จังหวัดที่อยู่', '-') }}</td>
+                                        <td>{{ record.get('วงเงินที่ต้องการ', '-') }}</td>
+                                        <td>{{ record.get('หักดอกหัวท้าย', '-') }}</td>
+                                        <td>{{ record.get('วันที่ขอเข้ามา', '-') }}</td>
+                                        <td>{{ record.get('บริษัทที่รับงาน', '-') }}</td>
+                                        <td>{{ record.get('ขอเข้ามาทางไหน', '-') }}</td>
+                                        <td>{{ record.get('วันที่นัดตรวจ', '-') }}</td>
+                                        <td>{{ record.get('เวลานัดตรวจ', '-') }}</td>
+                                        <td>{{ record.get('ผู้รับงานตรวจ', '-') }}</td>
+                                        <td id="status-cell-{{ record.row_index }}">
+                                            <div class="status-cell-content">
+                                                {% set status = record.get('สถานะ', 'unknown') | string | lower %}
+                                                {% if 'รอติดต่อ' in status %}<span class="status-badge status-contact-needed">รอติดต่อ</span>
+                                                {% elif 'รอดำเนินการ' in status %}<span class="status-badge status-pending">รอดำเนินการ</span>
+                                                {% elif 'รอตรวจ' in status %}<span class="status-badge status-inspection-needed">รอตรวจ</span>
+                                                {% elif 'ไม่อนุมัติ' in status %}<span class="status-badge status-rejected">ไม่อนุมัติ</span>
+                                                {% elif 'อนุมัติ' in status %}<span class="status-badge status-approved">อนุมัติ</span>
+                                                {% elif 'ยกเลิก' in status %}<span class="status-badge status-cancelled">ยกเลิก</span>
+                                                {% elif 'ไม่ส่งเอกสาร' in status %}<span class="status-badge status-no-docs">ไม่ส่งเอกสาร</span>
+                                                {% else %}<span class="status-badge status-unknown">{{ record.get('สถานะ', 'N/A') }}</span>
+                                                {% endif %}
+                                                <button type="button" class="record-button update-status-btn" 
+                                                        data-row-index="{{ record.row_index }}" 
+                                                        data-current-status="{{ record.get('สถานะ') }}"
+                                                        data-record='{{ record | tojson | safe }}'>
+                                                    <i class="fas fa-pen"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td>{{ record.get('Logged In User', '-') }}</td>
+                                        <td id="action-cell-{{ record.row_index }}">
+                                            <button type="button" class="record-button view-details-btn" data-record='{{ record | tojson | safe }}'>ดูข้อมูล</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
 
                 {# Pagination Controls #}
                 {% if pagination and pagination.pages > 1 %}
